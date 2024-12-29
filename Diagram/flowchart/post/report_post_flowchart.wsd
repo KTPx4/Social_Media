@@ -1,0 +1,11 @@
+@startuml 
+title report_post_flowchart
+|User|
+start
+: choose report category  ; 
+: fill in report message  ;  
+: click send report;  
+|#lightgray|System|
+: notify the admin of the post report ;  
+stop
+@enduml

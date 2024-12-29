@@ -1,0 +1,16 @@
+
+
+@startuml 
+title delete_conversation_flowchart
+|User|
+start  
+repeat: view_conversation_flowchart| 
+:click on delete chat;
+if(group chat ? ) then (single chat)
+break   
+endif
+|#lightgray|System|
+repeat while(is chat creator or owner) is (no) not (yes)
+: notify the users;
+: delete chat ; 
+@enduml
