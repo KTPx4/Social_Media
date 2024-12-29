@@ -1,0 +1,12 @@
+@startuml 
+title login_user_flowchart
+|User|
+start
+repeat: fill in login credential ; 
+: click login;  
+|#lightgray|System|
+backward:show error message ;
+repeat while(info  is valid) is (no) not (yes)
+:redirected to user homepage ; 
+stop
+@enduml

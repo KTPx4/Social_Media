@@ -1,0 +1,25 @@
+
+
+@startuml 
+title view_conversation_flowchart
+|User|
+start
+: click on converstaion ; 
+: see conversation current and past history ; 
+
+if(send chat message) then (yes)
+: type chat message  ;  
+|#lightgray|System|   
+: notify users of chat message  ;  
+: chat message receive;
+else(connect call)
+|User|
+: click on call button  ;
+|#lightgray|System|    
+: notify users of call ; 
+: call pick up ;
+endif
+
+stop
+
+@enduml
