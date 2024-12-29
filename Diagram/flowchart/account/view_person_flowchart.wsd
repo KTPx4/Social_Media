@@ -1,0 +1,26 @@
+@startuml 
+title view_person_flowchart
+|User|
+start
+:click on a person profile ; 
+|#lightgray|System|
+:redirected to person page ; 
+|User| 
+if(Relationship) then (yes)
+    if(Add friend) then (yes)
+
+        :add friend to user group ; 
+    else(unfriend)
+        :remove person from user friend group; 
+    endif
+else (status)  
+    if(block) then (yes)
+        :block person ; 
+    else(unblock)
+        :unblock person ; 
+    endif
+endif
+|#lightgray|System|
+:update person changest ; 
+stop
+@enduml
