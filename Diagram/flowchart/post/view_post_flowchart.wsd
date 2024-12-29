@@ -1,19 +1,20 @@
 @startuml 
-title view_post_flowchart
+title View Post Flowchart
 |User|
 start
-:view post ;
-if (click report button)  then  (yes) 
-:report_post_flowchart|
-else(engage with post)
-if(like) then (yes)
-: click post  like button ; 
-else(comment) 
-: click comment button  ; 
-: fill in the commment text arae; 
-endif 
+:View Post ;
+if (Click Report Button)  then  (Yes) 
+:Report Post Flowchart|
+else(Engage With Post)
+    if(Like) then (Yes)
+    : Click Post Like Button ; 
+    else(Comment) 
+    : Click Comment Button  ; 
+    : Fill In The Comment Text Area; 
+    : Click Post comment ;
+    endif 
 endif 
 |#lightgray|System|
-:update post changest;
+:Update Post Changes;
 stop
 @enduml

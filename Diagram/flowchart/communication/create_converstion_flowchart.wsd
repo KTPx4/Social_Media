@@ -1,16 +1,14 @@
-
-
 @startuml 
-title create_converstion_flowchart
+title Create Conversation Flowchart
 |User|
 start
-: click on create chat ; 
-if(create group chat) then(yes)
-: add friends to chat group  ; 
-else(create single chat)
-: connect with a friend ; 
+: Click On Create Chat ; 
+if(Create Group Chat) then(Yes)
+: Add Friends To Chat Group  ; 
+else(Create Single Chat)
+: Connect With A Friend ; 
 endif
 |#lightgray|System|  
-: create chat ;  
+: Create Chat ;  
 stop
 @enduml

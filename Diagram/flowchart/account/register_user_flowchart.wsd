@@ -1,14 +1,14 @@
 @startuml 
-title register_user_flowchart
+title Register User Flowchart
 |User|
 start
-: click register ;  
-repeat: fill in user info and password; 
-:click register  ;
+: Click Register ;  
+repeat: Fill In User Info And Password; 
+:Click Register  ;
 |#lightgray|System|
-backward:show error message ;
-repeat while(info  is valid) is (no) not (yes)
-: create new user ;
-:redirected to user homepage ; 
+backward:Show Error Message ;
+repeat while(Info  Is Valid) is (No) not (Yes)
+: Create New User ;
+:Redirected To User Homepage ; 
 stop
 @enduml
