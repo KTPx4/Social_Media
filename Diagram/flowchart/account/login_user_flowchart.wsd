@@ -1,12 +1,14 @@
 @startuml 
-title login_user_flowchart
+title Login User Flowchart
 |User|
 start
-repeat: fill in login credential ; 
-: click login;  
+repeat: Fill In Login Credential ; 
+: Click Login;  
 |#lightgray|System|
-backward:show error message ;
-repeat while(info  is valid) is (no) not (yes)
-:redirected to user homepage ; 
+backward:Show Error Message
+Promt User To Re-Enter Credentials;
+repeat while(Info  Is Valid) is (No) not (Yes)
+:Redirected To User Homepage 
+Promt User To Re-Enter Credentials; 
 stop
 @enduml

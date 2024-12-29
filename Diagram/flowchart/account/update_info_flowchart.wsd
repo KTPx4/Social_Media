@@ -1,18 +1,18 @@
 @startuml 
-title update_info_flowchart
+title Update Info Flowchart
 |User|
 start
-:login_user_flowchart|
-:click edit user info;
+:Login User Flowchart|
+:Click Edit User Info;
 |#lightgray|System|
-:redirected to user info form ; 
+:Redirected To User Info Form ; 
 |User| 
-repeat: change info;
-: click save  ; 
+repeat: Change Info;
+: Click Save  ; 
 |#lightgray|System| 
-backward:show error message ;
-repeat while(info  is valid) is (no) not (yes)
-:show success message ;
-:update user info ;
+backward:Show Error Message ;
+repeat while(Info  Is Valid) is (No) not (Yes)
+:Show Success Message ;
+:Update User Info ;
 stop
 @enduml

@@ -1,28 +1,25 @@
-
-
 @startuml 
-title manage_post_flowchart
+title Manage Post Flowchart
 |User|
 start
-if(choose manage action) then (create post)  
-: click on create post ;  
-: fill in the post information ; 
-: adjust the post setting  ; 
-: click create post ; 
+if(Choose Manage Action) then (Create Post)  
+: Click On Create Post ;  
+: Fill In The Post Information ; 
+: Adjust The Post Setting  ; 
+: Click Create Post ; 
 |#lightgray|System| 
-: create post ; 
+: Create Post ; 
 |User|
-else(modifile post)
-: click on a post edit button  ; 
-: change the post information ;
-: change the post setting ;
-: click save post ; 
+else(Modify Post)
+: Click On A Post Edit Button  ; 
+: Change The Post Information ;
+: Change The Post Setting ;
+: Click Save Post ; 
 |#lightgray|System| 
-: update post ; 
+: Update Post ; 
 endif 
-' : notify the admin of the post report ;  
 |User|
-: show message notifying  success ; 
+: Show Message Notifying Success ; 
 stop
 
 @enduml
