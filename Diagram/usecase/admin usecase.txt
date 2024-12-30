@@ -1,0 +1,44 @@
+@startuml
+
+left to right direction
+
+actor "Admin" as Admin
+actor "Moderator Post" as MPost
+actor "Moderator Account" as MAccount
+
+package "Manage System" as MSyste{
+
+    usecase "Manage post" as UCMPost
+    usecase "Manage account" as UCMAccount
+    usecase "View Chart" as UCVChart
+    usecase "View report" as UCVReport
+    usecase "Write history" as UCWhis
+    
+    MPost --> UCMPost
+    MPost --> UCVChart
+    MPost --> UCVReport
+    MAccount --> UCMAccount
+    MAccount --> UCVChart
+    MAccount --> UCVReport
+    
+    UCMAccount <.. UCWhis : <<Extend>>
+    UCMPost <.. UCWhis : <<Extend>>
+    /'Admin -up-> UCMPost'/
+    /'Admin -up-> UCMAccount'/
+    /'Admin -up-> UCVChart'/
+    /'Admin --> UCVReport'/
+    
+}
+Admin -->MSyste
+
+package "Manage Moderator"{
+    usecase "Manage Moderator" as UCMMod
+    usecase "Authorization" as UCAuth
+    usecase "View history" as UCViewhis
+    Admin --> UCMMod
+    Admin --> UCAuth
+    Admin --> UCViewhis
+}
+ 
+
+@enduml
