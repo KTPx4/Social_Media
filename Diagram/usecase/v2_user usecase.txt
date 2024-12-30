@@ -1,15 +1,14 @@
 @startuml
 
 left to right direction
-
 actor "User" as User
-actor "System" as System
 
-package "Manager Account" {
+
+package "Account" {
     usecase "Login" as UCL
-    usecase "Update" as UCU
-    usecase "Forgot pass" as UCF
-    usecase "Register" as UCRegister
+    usecase "Update Info" as UCU
+    usecase "Recover password " as UCF
+    usecase "Register user" as UCRegister
     usecase "View person" as UCView
     usecase "Relationship" as UCFriend
     usecase "Status" as UCStatus
@@ -22,34 +21,33 @@ package "Manager Account" {
     User --> (UCView)
     User --> UCF
     User --> UCU
-    System --> (suggest friend)
+    
 }
 
-package "Manager Post" as QL{
+package "Post" as QL{
     usecase "Report" as UCRUser
-    usecase "Create" as UCCreatePost
-    usecase "Modifile" as UCUpdatePost
-    usecase "Setting" as UCSettingPost
+    
     usecase "Interact" as UCInteractPost
+    usecase "Manage Post" as UCMMyPost
+    User --> UCMMyPost
     User --> (UCInteractPost)
     UCInteractPost <|-- (React)
     UCInteractPost <|-- (Comment)
-    User --> (UCCreatePost)
-    User --> (UCUpdatePost)
-    UCUpdatePost ..> UCCreatePost : "Include"
-    User --> (UCSettingPost)
-    UCSettingPost ..> UCCreatePost : "Include"
     User --> (Save)
     User --> (UCRUser)
 }
  
 
 package "Communication" {
-    User --> (Chat)
-    (Chat) <.. (file) : <<Extend>>
-    (Chat) <.. (text) : <<Extend>>
-    User --> (Group chat)
-    User --> (Call)
+    User --> (View conversation)
+    User --> (Delete conversation)
+    (Delete conversation) ..> (View conversation) : <<Include>>
+    (View conversation) <.. (Chat) : <<extend>>
+    (View conversation) <.. (Call) : <<extend>>
+    
+    User --> (Create conversation)
+    (Create conversation) <.. (Chat single) : <<Extend>>
+    (Create conversation) <.. (Chat group) : <<Extend>>
 }   
 
 @enduml
