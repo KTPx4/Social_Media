@@ -7,12 +7,8 @@
       "RelativeMoniker": "D:0:0:{A0F655A8-A8E8-4B52-A93C-22974102B17C}|Server.csproj|solutionrelative:data\\apidbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A0F655A8-A8E8-4B52-A93C-22974102B17C}|Server.csproj|d:\\tdtu\\dacntt\\social_media\\server\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A0F655A8-A8E8-4B52-A93C-22974102B17C}|Server.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A0F655A8-A8E8-4B52-A93C-22974102B17C}|Server.csproj|d:\\tdtu\\dacntt\\social_media\\server\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{A0F655A8-A8E8-4B52-A93C-22974102B17C}|Server.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+      "AbsoluteMoniker": "D:0:0:{A0F655A8-A8E8-4B52-A93C-22974102B17C}|Server.csproj|d:\\tdtu\\dacntt\\social_media\\server\\models\\community\\posts\\post.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A0F655A8-A8E8-4B52-A93C-22974102B17C}|Server.csproj|solutionrelative:models\\community\\posts\\post.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -22,8 +18,21 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Post.cs",
+              "DocumentMoniker": "D:\\TDTU\\DACNTT\\Social_Media\\Server\\Models\\Community\\Posts\\Post.cs",
+              "RelativeDocumentMoniker": "Models\\Community\\Posts\\Post.cs",
+              "ToolTip": "D:\\TDTU\\DACNTT\\Social_Media\\Server\\Models\\Community\\Posts\\Post.cs",
+              "RelativeToolTip": "Models\\Community\\Posts\\Post.cs",
+              "ViewState": "AgIAABUAAAAAAAAAAAA1wCgAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-01-02T10:07:44.955Z",
+              "EditorCaption": ""
+            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
@@ -32,35 +41,9 @@
               "RelativeDocumentMoniker": "Data\\APIDbContext.cs",
               "ToolTip": "D:\\TDTU\\DACNTT\\Social_Media\\Server\\Data\\APIDbContext.cs",
               "RelativeToolTip": "Data\\APIDbContext.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAJAAAAAAAAAA==",
+              "ViewState": "AgIAAJQAAAAAAAAAAAAwwKkAAAAyAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-12-30T03:57:50.59Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "Program.cs",
-              "DocumentMoniker": "D:\\TDTU\\DACNTT\\Social_Media\\Server\\Program.cs",
-              "RelativeDocumentMoniker": "Program.cs",
-              "ToolTip": "D:\\TDTU\\DACNTT\\Social_Media\\Server\\Program.cs",
-              "RelativeToolTip": "Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-12-30T03:56:38.381Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "appsettings.json",
-              "DocumentMoniker": "D:\\TDTU\\DACNTT\\Social_Media\\Server\\appsettings.json",
-              "RelativeDocumentMoniker": "appsettings.json",
-              "ToolTip": "D:\\TDTU\\DACNTT\\Social_Media\\Server\\appsettings.json",
-              "RelativeToolTip": "appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2024-12-30T03:55:12.399Z",
+              "WhenOpened": "2025-01-02T10:06:31.108Z",
               "EditorCaption": ""
             }
           ]
