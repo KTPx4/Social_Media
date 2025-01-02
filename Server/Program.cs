@@ -1,6 +1,8 @@
-
+﻿
 using Microsoft.EntityFrameworkCore;
+using Server.Configs;
 using Server.Data;
+using Server.Services;
 
 namespace Server
 {
@@ -23,7 +25,23 @@ namespace Server
                 opt.UseSqlServer(builder.Configuration.GetConnectionString("MSSQL"))
             );
 
+            // Sử dụng lớp cấu hình để đăng ký dịch vụ
+            builder.Services.AddUserService();
+
+
+            // register middware jwt
+            builder.Services.AddJwtAuthentication(builder.Configuration);
+
+            // config authorization
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+                options.AddPolicy("ModOnly", policy => policy.RequireRole("Mod"));
+                options.AddPolicy("UserOnly", policy => policy.RequireRole("User"));
+            });
+
             var app = builder.Build();
+
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
@@ -34,6 +52,7 @@ namespace Server
 
             app.UseHttpsRedirection();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
 

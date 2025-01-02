@@ -21,18 +21,34 @@ namespace Server.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // User
+            // Users
             modelBuilder.Entity<User>(e =>
-            {
-                e.ToTable("User");
+            {              
                 e.HasKey(u => u.Id);
                 e.Property(u => u.CreatedAt).HasDefaultValueSql("getutcdate()");
+
+                e.Property(u => u.UserProfile).IsRequired(false);
+                e.Property(u => u.Bio).IsRequired(false);
+                e.Property(u => u.Name).IsRequired(false);
+                e.Property(u => u.Gender).IsRequired(false);
+                e.Property(u => u.Email).IsRequired(false);
+                e.Property(u => u.Phone).IsRequired(false);
+                e.Property(u => u.ImageUrl).IsRequired(false);
+
             });
 
             // Staff
             modelBuilder.Entity<Staff>(e =>
             {                 
                 e.Property(u => u.CreatedAt).HasDefaultValueSql("getutcdate()");
+
+                e.Property(u => u.UserProfile).IsRequired(false);
+                e.Property(u => u.Bio).IsRequired(false);
+                e.Property(u => u.Name).IsRequired(false);
+                e.Property(u => u.Gender).IsRequired(false);
+                e.Property(u => u.Email).IsRequired(false);
+                e.Property(u => u.Phone).IsRequired(false);
+                e.Property(u => u.ImageUrl).IsRequired(false);
             });
 
             // Report
@@ -70,8 +86,8 @@ namespace Server.Data
             //notify
             modelBuilder.Entity<UserNotify>(e =>
             {
-                e.HasOne(un => un.User)             // Một UserNotify có một User
-                    .WithMany(u => u.UserNotifies)     // Một User có nhiều UserNotify
+                e.HasOne(un => un.User)             // Một UserNotify có một Users
+                    .WithMany(u => u.UserNotifies)     // Một Users có nhiều UserNotify
                     .HasForeignKey(un => un.UserId)    // Khóa ngoại là UserId
                     .OnDelete(DeleteBehavior.Cascade); // Cascade delete
 
@@ -89,7 +105,7 @@ namespace Server.Data
                         .HasForeignKey(f => f.UserId)
                         .OnDelete(DeleteBehavior.NoAction);
 
-                // Thiết lập quan hệ với User qua FriendId
+                // Thiết lập quan hệ với Users qua FriendId
                 entity.HasOne(f => f.Friend)
                       .WithMany() // Không tạo ICollection cho FriendId
                       .HasForeignKey(f => f.FriendId)
@@ -109,7 +125,7 @@ namespace Server.Data
                 entity.HasOne(m => m.User)
                     .WithMany(u => u.ConversationMembers)
                     .HasForeignKey(m => m.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);  // Đảm bảo xóa khi User bị xóa
+                    .OnDelete(DeleteBehavior.Cascade);  // Đảm bảo xóa khi Users bị xóa
 
                 entity.HasOne(m => m.Conversation)
                     .WithMany(c => c.Members)
@@ -127,7 +143,7 @@ namespace Server.Data
                 .HasForeignKey(m => m.ConversationId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-                // relation with User 1-n
+                // relation with Users 1-n
                 entity.HasOne(m => m.Sender)
                 .WithMany()
                 .HasForeignKey(m => m.SenderId)
@@ -218,7 +234,7 @@ namespace Server.Data
                 .HasForeignKey(p => p.PostShareId)
                 .OnDelete(DeleteBehavior.NoAction);
 
-                // 1-n User
+                // 1-n Users
                 entity.HasOne(p => p.Author)
                 .WithMany(u => u.MyPosts)
                 .HasForeignKey(p => p.AuthorId)
@@ -232,7 +248,7 @@ namespace Server.Data
                 .WithMany(p => p.UserTags)
                 .HasForeignKey(t => t.PostId)
                 .OnDelete(DeleteBehavior.Cascade);
-                // 1-n User
+                // 1-n Users
                 entity.HasOne(t => t.User)
                 .WithMany()
                 .HasForeignKey(t => t.UserId)
@@ -248,7 +264,7 @@ namespace Server.Data
                 .HasForeignKey(s => s.PostId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-                // 1-n User
+                // 1-n Users
                 entity.HasOne(s => s.User)
                 .WithMany(u => u.PostSaveds)
                 .HasForeignKey(s => s.UserId)
@@ -328,7 +344,7 @@ namespace Server.Data
                 .HasForeignKey(p => p.PostShareId)
                 .OnDelete(DeleteBehavior.NoAction);
 
-                // 1-n User
+                // 1-n Users
                 entity.HasOne(p => p.Author)
                 .WithMany()
                 .HasForeignKey(p => p.AuthorId)
@@ -350,5 +366,35 @@ namespace Server.Data
             });
 
         }
+        
+        public DbSet<User> Users { get; set; }  
+        
+        public DbSet<Staff> Staffs { get; set; }
+        public DbSet<UserNotify> UserNotifies { get; set; }
+        public DbSet<UserSetting> UserSettings { get; set; }
+
+        public DbSet<Conversation> Conversations { get; set; }
+        public DbSet<ConvMember> ConvMembers { get; set; }
+        public DbSet<ConvSetting> ConvSettings { get; set; }
+        public DbSet<Message> Messages { get; set; }
+        public DbSet<MessageReaction> MessagesReactions { get; set; }
+        public DbSet<MessageSeen> MessagesSeens { get; set; }
+
+        public DbSet<CommentReaction> CommentReactions { get; set; }
+        public DbSet<Post> Posts { get; set; }
+        public DbSet<PostComment> PostComments { get; set; }
+        public DbSet<PostLike> PostLikes { get; set; }
+        public DbSet<PostMedia> PostMedias { get; set; }
+        public DbSet<PostSave> PostSaves { get; set; }
+        public DbSet<PostUserTag> PostUserTags { get; set; }
+        
+        public DbSet<PostMediaUpdate> PostMediaUpdates { get; set; }
+        public DbSet<PostUpdate> PostUpdates { get; set; }
+        public DbSet<Story> Stories { get; set; }
+        public DbSet<StorySeen> StoriesSeen { get; set; }
+        public DbSet<Follow> Follows { get; set; }
+        public DbSet<FriendShip> FriendShips { get; set; }
+        public DbSet<Report> Reports { get; set; }
+        
     }
 }
