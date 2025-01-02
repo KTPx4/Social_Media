@@ -7,7 +7,7 @@ namespace Server.Models.Community.Posts
     [Table("PostComment")]
     public class PostComment
     {
-        public enum MediaType
+        public enum CommentMediaType
         {
             Image = 0, Video = 1
         }
@@ -19,7 +19,7 @@ namespace Server.Models.Community.Posts
         public Guid? RootCommentId { get; set; }
         public string Content { get; set; }
         public string MediaUrl { get; set; }
-        public MediaType MType { get; set; }
+        public CommentMediaType MType { get; set; }
         public DateTime CreatedAt { get; set; }
 
         public Post Post { get; set; }

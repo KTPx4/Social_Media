@@ -11,15 +11,9 @@ namespace Server.Models.Community.PostsUpdates
     [Table("PostUpdate")]
     public class PostUpdate
     {
-        public enum PostStatus
-        {
-            Public = 0, Private = 1, Friend = 2
-        }
+      
 
-        public enum PostType
-        {
-            Posts = 0, Share = 1
-        }
+        
         [Key]
         public Guid Id { get; set; }
         public Guid PostId { get; set; }
@@ -29,8 +23,8 @@ namespace Server.Models.Community.PostsUpdates
         public string Content { get; set; }
         public Guid? PostShareId { get; set; }
         public bool IsHide { get; set; }
-        public PostStatus Satus { get; set; }
-        public PostType Type { get; set; }
+        public Post.PostStatus Satus { get; set; }
+        public Post.PostType Type { get; set; }
 
         public Post OriginPost { get; set; }
         public User Author { get; set; }
