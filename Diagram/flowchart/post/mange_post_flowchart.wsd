@@ -1,0 +1,25 @@
+@startuml 
+title Manage Post Flowchart
+|User|
+start
+if(Choose Manage Action) then (Create Post)  
+: Click On Create Post ;  
+: Fill In The Post Information ; 
+: Adjust The Post Setting  ; 
+: Click Create Post ; 
+|#lightgray|System| 
+: Create Post ; 
+|User|
+else(Modify Post)
+: Click On A Post Edit Button  ; 
+: Change The Post Information ;
+: Change The Post Setting ;
+: Click Save Post ; 
+|#lightgray|System| 
+: Update Post ; 
+endif 
+|User|
+: Show Message Notifying Success ; 
+stop
+
+@enduml

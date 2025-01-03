@@ -1,0 +1,18 @@
+@startuml 
+title Update Info Flowchart
+|User|
+start
+:Login User Flowchart|
+:Click Edit User Info;
+|#lightgray|System|
+:Redirected To User Info Form ; 
+|User| 
+repeat: Change Info;
+: Click Save  ; 
+|#lightgray|System| 
+backward:Show Error Message ;
+repeat while(Info  Is Valid) is (No) not (Yes)
+:Show Success Message ;
+:Update User Info ;
+stop
+@enduml

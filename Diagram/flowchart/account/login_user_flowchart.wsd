@@ -1,0 +1,14 @@
+@startuml 
+title Login User Flowchart
+|User|
+start
+repeat: Fill In Login Credential ; 
+: Click Login;  
+|#lightgray|System|
+backward:Show Error Message
+Promt User To Re-Enter Credentials;
+repeat while(Info  Is Valid) is (No) not (Yes)
+:Redirected To User Homepage 
+Promt User To Re-Enter Credentials; 
+stop
+@enduml

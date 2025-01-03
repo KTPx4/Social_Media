@@ -1,0 +1,14 @@
+@startuml 
+title Create Conversation Flowchart
+|User|
+start
+: Click On Create Chat ; 
+if(Create Group Chat) then(Yes)
+: Add Friends To Chat Group  ; 
+else(Create Single Chat)
+: Connect With A Friend ; 
+endif
+|#lightgray|System|  
+: Create Chat ;  
+stop
+@enduml

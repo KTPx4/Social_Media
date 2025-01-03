@@ -1,0 +1,14 @@
+@startuml 
+title Register User Flowchart
+|User|
+start
+: Click Register ;  
+repeat: Fill In User Info And Password; 
+:Click Register  ;
+|#lightgray|System|
+backward:Show Error Message ;
+repeat while(Info  Is Valid) is (No) not (Yes)
+: Create New User ;
+:Redirected To User Homepage ; 
+stop
+@enduml
