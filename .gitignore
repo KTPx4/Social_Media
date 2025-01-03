@@ -1,1 +1,4 @@
 example_diagram/
+.vs/
+Server/appsettings.json
+Server/appsettings.Development.json
