@@ -1,0 +1,39 @@
+@startmindmap
+*[#Red] Page 
+++[#Blue] Middle
++++ Header   
+++++  name  
++++++ edit group name 
++++++ create nick name
+++++ group photo 
++++++ edit group photo 
+++++ icon button  
++++++ call  ( send chat)
++++++ video   
++++ chat message    
+++++  deliver  
+++++ seen  
+++++ side button  
++++++ edit text (edit conversation)
++++ chat input  flied
+++++ send  file ( send chat)
+++++ send message 
+--[#lightgreen] Right Side Bar
+--- search  bar 
+---- search message 
+---- search member 
+---- search media   
+--- tab bar  
+---- media tab  
+---- group member tab  
+----- remove members  
+**[#FFBBCC] Left Side Bar
+***  header
+****  search conversation (search conversation )
+**** plus icon (create conversation)   
+*** list chats  
+**** chat conversation (view conversation)
+***** popup 
+****** unfriend 
+****** block  
+@endmindmap

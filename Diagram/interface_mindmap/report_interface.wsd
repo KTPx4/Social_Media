@@ -1,0 +1,25 @@
+@startmindmap
+*[#Red] Page  
+++[#Blue] Tabs
++++ filter box 
+++++ search input 
+++++ report types drop down 
+++++ status drop down  
+++++ staff resolve drop down
+++++ report time picker  
++++ Table    
+++++ Row  
++++++ Report Types Columns  
++++++ Reason Description Columns
++++++ Peoples Columns 
++++++ Status Columns  
++++++ staff resolve Columns  
++++++ Created At Column
++++++ Resolved At Column
++++++ Details Columns 
++++++ Drop Down Actions Columns 
+--[#Lightgreen] Charts Tab
+--- Line Chart 
+--- Pie Chart 
+--- Columns Charts 
+@endmindmap
