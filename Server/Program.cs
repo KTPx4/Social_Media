@@ -11,7 +11,18 @@ namespace Server
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-
+          
+            // config CORS
+            var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy(name: MyAllowSpecificOrigins,
+                                  policy =>
+                                  {
+                                      policy.WithOrigins("*");
+                                      
+                                  });
+            });
 
             // Add services to the container.
 
@@ -36,7 +47,11 @@ namespace Server
             builder.Services.AddAuthorization(options =>
             {
                 options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
-                options.AddPolicy("ModOnly", policy => policy.RequireRole("Mod"));
+                options.AddPolicy("ModAllOnly", policy => policy.RequireRole("Mod-All"));
+                options.AddPolicy("ModAccountOnly", policy => policy.RequireRole("Mod-Account"));
+                options.AddPolicy("ModPostOnly", policy => policy.RequireRole("Mod-Post"));
+                options.AddPolicy("ModStoryOnly", policy => policy.RequireRole("Mod-Story"));
+
                 options.AddPolicy("UserOnly", policy => policy.RequireRole("User"));
             });
 
@@ -52,9 +67,10 @@ namespace Server
 
             app.UseHttpsRedirection();
 
+            app.UseCors(MyAllowSpecificOrigins);
+
             app.UseAuthentication();
             app.UseAuthorization();
-
 
             app.MapControllers();
 

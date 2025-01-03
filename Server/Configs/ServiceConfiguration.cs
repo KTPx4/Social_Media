@@ -12,7 +12,7 @@ namespace Server.Configs
             // Đăng ký UserService vào DI container
             services.AddScoped<UserService>();
 
-
+            services.AddScoped<GmailSenderService>();
         }
     }
 }
