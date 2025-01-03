@@ -1,4 +1,74 @@
 example_diagram/
 .vs/
+
 appsettings.json
 appsettings.Development.json
+
+Server/appsettings.json
+Server/appsettings.Development.json
+Server/bin/
+Server/obj/
+
+# .NET Core
+## User-specific files
+.idea/
+.vscode/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.mst
+
+# Windows Installer log files
+*.cab
+*.msi
+*.msm
+*.mst
+
+# Windows Installer files
+*.vspscc
+.vsconfig
+
+# ASP.NET Core build files
+bin/
+obj/
+
+# User-specific files
+*.user
+*.userosscache
+*.suo
+*.userprefs
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.mst
+
+# Windows Installer log files
+*.cab
+*.msi
+*.msm
+*.mst
+
+# .NET Core SDK folders
+.vs/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.mst
+
+# JetBrains Rider files
+.idea/
+
+# .NET Core Publish Folder
+publish/
+
+# Logs
+*.log
+
+# User-specific files
+*.swp
