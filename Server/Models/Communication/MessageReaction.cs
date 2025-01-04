@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
  
 namespace Server.Models.Communication
 {
-    [Table("MessageReaction")]
+    [Table("MessageReactions")]
     public class MessageReaction
     {
 

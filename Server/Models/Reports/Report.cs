@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Server.Models.Reports
 {
-    [Table("Report")]
+    [Table("Reports")]
 
     public class Report
     {

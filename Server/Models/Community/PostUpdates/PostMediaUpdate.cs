@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Server.Models.Community.PostUpdates
 {
-    [Table("PostMediaUpdate")]
+    [Table("PostMediaUpdates")]
     public class PostMediaUpdate
     {
 

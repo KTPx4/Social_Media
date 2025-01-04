@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Server.Models.Community.Story
 {
-    [Table("StorySeen")]
+    [Table("StorySeens")]
     public class StorySeen
     {
         public Guid StoryId { get; set; }

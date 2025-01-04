@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Server.Models.Communication
 {
-    [Table("MessageSeen")]
+    [Table("MessageSeens")]
     public class MessageSeen
     {
         public enum SeenStatus

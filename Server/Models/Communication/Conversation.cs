@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Server.Models.Communication
 {
-    [Table("Conversation")]
+    [Table("Conversations")]
     public class Conversation
     {
         public enum ConversationType

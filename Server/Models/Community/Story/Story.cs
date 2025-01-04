@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Server.Models.Community.Story
 {
-    [Table("Story")]
+    [Table("Storys")]
     public class Story
     {
         public enum StoryStatus

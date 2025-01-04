@@ -4,7 +4,7 @@ using Server.Models.Account;
 
 namespace Server.Models.RelationShip
 {
-    [Table("Follow")]
+    [Table("Follows")]
 
     public class Follow
     {

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Server.Models.Account
 {
-    [Table("UserNotify")]
+    [Table("UserNotifys")]
 
     public class UserNotify
     {
