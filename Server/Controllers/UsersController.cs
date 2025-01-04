@@ -27,6 +27,11 @@ namespace Server.Controllers
         private readonly GmailSenderService _gmailSenderService;
         private readonly string _ClientHost;
         private readonly string _ClientResetUrl;
+        
+        private readonly string _ServerHost;
+        private readonly string _RootImgAccount;
+        private readonly string _AccessImgHost;
+        private readonly string _ServerIMGHost;
 
         public UsersController(APIDbContext context, UserService userService, TokenService tokenService, GmailSenderService gmailSenderService, IConfiguration configuration)
         {
@@ -39,10 +44,16 @@ namespace Server.Controllers
             _ClientHost = clientSettings["HostName"];
             _ClientResetUrl = clientSettings["ResetUrl"];
 
+            var serverSetting = configuration.GetSection("ServerSettings");
+            _ServerHost = serverSetting["HostName"];
+            _RootImgAccount = serverSetting["RootImgAccount"];
+            _AccessImgHost = serverSetting["AccessImgHost"];
+
+            _ServerIMGHost = Path.Combine(_ServerHost, _AccessImgHost);
+
         }
 
         [HttpPost("login")]
-        [Consumes("application/json", "multipart/form-data", "application/x-www-form-urlencoded")]
         public async Task<IActionResult> Login([FromBody] LoginModel userLogin)
         {
             try
@@ -93,6 +104,9 @@ namespace Server.Controllers
                     data = user,
                     token = token
                 };
+
+                await CopyDefaultImage(user.Id.ToString()); // copy default img
+
                 return Ok(rs);
 
             }
@@ -116,8 +130,11 @@ namespace Server.Controllers
                 {
                     return Unauthorized(new { message = "User not found in token" });
                 }
-
-                return Ok(userId);
+                var user = await _userService.GetMyInfo(userId);
+                
+                if (user == null) return NotFound(new { message = "Your account not found or was deleted" });
+                
+                return Ok(new {message = "Get info success", data = user, imghost= _ServerIMGHost });
 
             }
             catch (Exception ex)
@@ -160,7 +177,7 @@ namespace Server.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine("ERR UserController - TestMail: " + ex.Message);
+                Console.WriteLine("ERR UserController - SendResetPass: " + ex.Message);
                 return StatusCode(500, new { message = "Server error. Try again!" });
             }
         }
@@ -190,12 +207,176 @@ namespace Server.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine("ERR UserController - TestMail: " + ex.Message);
+                Console.WriteLine("ERR UserController - ValidReset: " + ex.Message);
                 return StatusCode(500, new { message = "Server error. Try again!" });
             }
         }
 
-        // GET: api/Users
+      
+        [HttpGet("validate")]
+        public async Task<IActionResult> ValidLogin([FromQuery] string token)
+        {
+            try
+            {
+                if (String.IsNullOrEmpty(token)) return BadRequest(new { message = "Token is null" });
 
+                var pricipal = _tokenService.ValidateToken(token); // check token
+                if (pricipal == null) return BadRequest(new { message = "Token invalid or expired" });
+
+                var user = await _userService.ValidToken(pricipal); // reset password
+
+                if (user == null) return BadRequest(new { message = "Token data is invalid" });
+
+                
+                return Ok(new
+                {
+                    message = "Token is valid",
+                    data = user
+                });
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("ERR UserController - ValidReset: " + ex.Message);
+                return StatusCode(500, new { message = "Server error. Try again!" });
+            }
+        }
+
+
+        [HttpPut("update")]
+        [Authorize(Roles ="User")]
+
+        public async Task<IActionResult> UpdateAccount([FromBody] UpdateModel updateModel)
+        {
+            try
+            {
+                var userId = User.FindFirstValue("UserId");
+                var user = await _userService.UpdateAsync(userId, updateModel);
+                return Ok(new { message = "Update info success",data = user});
+
+            }
+            catch (Exception ex)
+            {
+                string mess = ex.Message;
+                Console.WriteLine("ERR UserController - UpdateAccount: " + ex.Message);
+                if(mess.StartsWith("Exists-"))
+                {
+                    var rmess = mess.Split("-")[1];
+                    return BadRequest(new {message = rmess});
+                }
+
+                return StatusCode(500, new { message = "Server error. Try again!" });
+            }
+        }
+
+        [HttpPut("upload")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> UploadFile(IFormFile file)
+        {
+            try
+            {
+                var userId = User.FindFirstValue("UserId");
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(new { message = "User not found in token" });
+                }
+
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest(new {message = "File is invalid" });
+                }
+
+                // Kiểm tra dung lượng file (< 10MB)
+                const long maxFileSize = 10 * 1024 * 1024; // 10MB
+                if (file.Length > maxFileSize)
+                {
+                    return BadRequest(new { message = "Image must less than 10mb" });
+                }
+
+                // Kiểm tra định dạng file (chỉ cho phép ảnh)
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+                if (string.IsNullOrEmpty(fileExtension) || !allowedExtensions.Contains(fileExtension))
+                {
+                    return BadRequest(new { message = "Only allow image has type: (.jpg, .jpeg, .png, .gif)." });
+                }
+
+                // Lưu file vào thư mục đích
+                var uploadsFolder = Path.Combine(_RootImgAccount, userId);
+                if (!Directory.Exists(uploadsFolder))
+                {
+                    Directory.CreateDirectory(uploadsFolder);
+                }
+
+                var filePath = Path.Combine(uploadsFolder, file.FileName);
+
+                // Lưu file tạm
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                // Xóa file tạm (nếu cần)
+                var tempFilePath = file.FileName; // File tạm của hệ thống.
+                if (System.IO.File.Exists(tempFilePath))
+                {
+                    System.IO.File.Delete(tempFilePath);
+                }
+
+                var publicUrl = Path.Combine(_ServerIMGHost, userId, file.FileName);
+                var userModel = await _userService.UpdateAvatarAsync(userId, uploadsFolder, file.FileName);
+
+                return Ok(new { message  = "Upload avatar success", data = userModel, url = publicUrl });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("ERR UserController - UpdateAccount: " + ex.Message);
+                
+                return StatusCode(500, new { message = "Server error. Try again!" });
+            }
+           
+        }
+
+
+        private async Task CopyDefaultImage(string userId)
+        {
+            // Đường dẫn nguồn (ảnh mặc định)
+            var sourcePath = Path.Combine( _RootImgAccount, "default.jpg");
+
+            // Đường dẫn đích (thư mục của user)
+            var destinationFolder = Path.Combine(_RootImgAccount, $"{userId}");
+            var destinationPath = Path.Combine(destinationFolder, "default.jpg");
+
+            try
+            {
+                // Kiểm tra file nguồn tồn tại
+                if (!System.IO.File.Exists(sourcePath))
+                {
+                    throw new FileNotFoundException("Not exists default image: 'default.jpg'", sourcePath);
+                }
+
+                // Tạo thư mục đích nếu chưa tồn tại
+                if (!Directory.Exists(destinationFolder))
+                {
+                    Directory.CreateDirectory(destinationFolder);
+                }
+
+                // Copy file vào thư mục đích
+                using (var sourceStream = new FileStream(sourcePath, FileMode.Open, FileAccess.Read))
+                using (var destinationStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write))
+                {
+                    await sourceStream.CopyToAsync(destinationStream);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Err when copy default image: {ex.Message}");
+                 // Ném lại lỗi nếu cần xử lý ở mức cao hơn
+            }
+        }
+
+        
     }
 }
