@@ -1,5 +1,6 @@
 ﻿
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Server.Configs;
 using Server.Data;
 using Server.Services;
@@ -56,6 +57,17 @@ namespace Server
             });
 
             var app = builder.Build();
+
+            // Enable serving static files
+            app.UseStaticFiles();
+
+            // Map the "public/account" folder to be publicly accessible
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(
+                Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/public/account")),
+                RequestPath = "/public/account"
+            });
 
 
             // Configure the HTTP request pipeline.
