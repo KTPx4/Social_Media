@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Server.Models.Community.Posts
 {
-    [Table("PostSave")]
+    [Table("PostSaves")]
     public class PostSave
     {
         [Key]

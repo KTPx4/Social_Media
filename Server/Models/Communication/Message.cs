@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Server.Models.Communication
 {
-    [Table("Message")]
+    [Table("Messages")]
     public class Message
     {
         public enum MessageType

@@ -10,7 +10,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Server.Models.Account
 {
 
-    [Table("User")]
+    [Table("Users")]
     public class User
     {
         public Guid Id { get; set; }

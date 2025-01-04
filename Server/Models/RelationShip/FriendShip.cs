@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Server.Models.RelationShip
 {
-    [Table("FriendShip")]
+    [Table("FriendShips")]
 
     public class FriendShip
     {

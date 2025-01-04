@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Server.Models.Community.Posts
 {
-    [Table("PostComment")]
+    [Table("PostComments")]
     public class PostComment
     {
         public enum CommentMediaType

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Server.Models.Communication
 {
-    [Table("ConvSetting")]
+    [Table("ConvSettings")]
     public class ConvSetting
     {
         public enum ConvPermission

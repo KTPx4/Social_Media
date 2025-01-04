@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Server.Models.Community.Posts
 {
-    [Table("PostMedia")]
+    [Table("PostMedias")]
     public class PostMedia
     {
         public enum MediaType

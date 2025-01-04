@@ -5,7 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Server.Models.Account
 {
-    [Table("Staff")]
+    [Table("Staffs")]
     public class Staff
     {
         public enum StaffRole

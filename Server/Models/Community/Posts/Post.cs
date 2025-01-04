@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Server.Models.Community.Posts
 {
-    [Table("Post")]
+    [Table("Posts")]
     public class Post
     {
         public enum PostStatus

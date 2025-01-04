@@ -8,7 +8,7 @@ using Server.Models.Community.PostUpdates;
 namespace Server.Models.Community.PostsUpdates
 {
     
-    [Table("PostUpdate")]
+    [Table("PostUpdates")]
     public class PostUpdate
     {
       
