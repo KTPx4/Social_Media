@@ -18,8 +18,9 @@ namespace Server.Models.Community.Posts
         public string MediaUrl { get; set; }
         public string Content { get; set; }
         public bool IsDeleted { get; set; }
-
+        public string ContentType { get; set; }
         public Post Post { get; set; }
 
+    
     }
 }

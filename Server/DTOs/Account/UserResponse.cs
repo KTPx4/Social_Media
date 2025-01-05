@@ -21,7 +21,8 @@ namespace Server.DTOs.Account
 
         public bool IsDeleted { get; set; } = false;
         public DateTime CreatedAt { get; set; }
-
+        public IList<string> UserRoles { get; set; } = new List<string>();
+       
         public UserResponse() { }
             
         public UserResponse(User user)
@@ -37,6 +38,7 @@ namespace Server.DTOs.Account
             this.ImageUrl = user.ImageUrl;
             this.IsDeleted = user.IsDeleted;
             this.CreatedAt = user.CreatedAt;
+
         }
     }
 }

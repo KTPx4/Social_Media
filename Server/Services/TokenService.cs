@@ -1,4 +1,5 @@
 ﻿using Microsoft.IdentityModel.Tokens;
+using Server.DTOs.Account;
 using Server.Models.Account;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -26,41 +27,26 @@ namespace Server.Services
             All = 0, Account = 1, Post = 2, Story = 3
         }
 
-        public string GenerateUserToken(Guid userId, string UserName)    
+        public string GenerateUserToken(UserResponse user)    
         {
-            return GenerateToken(userId, UserName, "User");
+            return GenerateToken(user.Id, user.UserName, user.UserRoles);
         }
+  
 
-        public string GenerateModToken(Guid userId, string UserName, ModPosition position)
+        private string GenerateToken(Guid userId, string userName, IList<string> roles)
         {
-            string Position = "";
-            switch(position)
-            {
-                case ModPosition.All:
-                    Position = "All";
-                    break;
-                case ModPosition.Account:
-                    Position = "Account";
-                    break;
-                case ModPosition.Post:  
-                    Position = "Post";  
-                    break;  
-                case ModPosition.Story: 
-                    Position = "Story";
-                    break;
-            }
-            return GenerateToken(userId, UserName, $"Mod-{Position}");
-        }
-
-        private string GenerateToken(Guid userId, string userName, string role)
-        {
-            var claims = new[]
+            var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userName),
-                new Claim(ClaimTypes.Role, role),
+                new Claim(ClaimTypes.Name, userName),
                 new Claim("UserId", userId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
+
+            foreach(var i in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, i));
+            }
 
             var keyBytes = Encoding.UTF8.GetBytes(_secretKey.PadRight(32));
             var key = new SymmetricSecurityKey(keyBytes);
@@ -77,6 +63,7 @@ namespace Server.Services
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
 
         public string GenerateResetToken(string userId, string password)
         {

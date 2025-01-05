@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
@@ -21,10 +22,11 @@ namespace Server.Controllers
     [ApiController]
      public class UsersController : ControllerBase
     {
-        private readonly APIDbContext _context;
+     
         private readonly UserService _userService;
         private readonly TokenService _tokenService;
         private readonly GmailSenderService _gmailSenderService;
+
         private readonly string _ClientHost;
         private readonly string _ClientResetUrl;
         
@@ -33,9 +35,9 @@ namespace Server.Controllers
         private readonly string _AccessImgHost;
         private readonly string _ServerIMGHost;
 
-        public UsersController(APIDbContext context, UserService userService, TokenService tokenService, GmailSenderService gmailSenderService, IConfiguration configuration)
+        public UsersController(  UserService userService, TokenService tokenService, GmailSenderService gmailSenderService, IConfiguration configuration)
         {
-            _context = context;
+           
             _userService = userService;
             _tokenService = tokenService;
             _gmailSenderService = gmailSenderService;
@@ -60,21 +62,24 @@ namespace Server.Controllers
             {
                 String token = "";                
 
-                var user = await _userService.ValidateLoginAsync(userLogin.UserName, userLogin.Password);
+                var user = await _userService.ValidateLoginAsyncV2(userLogin.UserName, userLogin.Password);
                
                 if (user == null)
                 {
                     return BadRequest(new {message = "Invalid username or password" });
                 }
 
-                token =  _tokenService.GenerateUserToken(user.Id, userLogin.UserName);
+                token =  _tokenService.GenerateUserToken(user);
                 
                 var rs = new 
                 { 
-                    data = token, 
+                    data = user,
+                    token = token, 
                     message = "Login success" 
                 };
                
+                await CheckAvt(user.Id.ToString(), user.ImageUrl);
+
                 return Ok(rs);
             }
             catch (Exception ex) 
@@ -89,15 +94,48 @@ namespace Server.Controllers
         {
             try
             {
-                
-                var user = await _userService.RegisterAsync(userRegister.UserName, userRegister.Password, userRegister.Email);
+
+                var user = await _userService.RegisterV2(userRegister.UserName, userRegister.Password, userRegister.Email);
 
                 if(user == null)
                 {
                     return BadRequest(new { message = "Username is exists" });
                 }
 
-                String token = _tokenService.GenerateUserToken(user.Id, user.UserName);
+                String token = _tokenService.GenerateUserToken(user);
+                var rs = new
+                {
+                    message = "Create account success",
+                    data = user,
+                    token = token
+                };
+
+                await CopyDefaultImage(user.Id.ToString()); // copy default img
+
+                return Ok(rs);
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("ERR UserController - Register: " + ex.Message);
+                return StatusCode(500, new { message = "Server error. Try again!" });
+            }
+        }
+       
+        [HttpPost("register-admin")]
+        public async Task<IActionResult> RegisterAdmin( [FromBody] RegisterAdminModel userRegister)
+        {
+            try
+            {
+
+                var user = await _userService.CreateAdmin(userRegister.UserName, userRegister.Password, userRegister.Email, userRegister.Role);
+
+                if (user == null)
+                {
+                    return BadRequest(new { message = "Username is exists" });
+                }
+
+                String token = _tokenService.GenerateUserToken(user);
                 var rs = new
                 {
                     message = "Create account success",
@@ -117,8 +155,9 @@ namespace Server.Controllers
             }
         }
 
-        [HttpGet("me")]
-        [Authorize(Roles = "User")]
+
+        [HttpGet("validate")]
+        [Authorize]
         public async Task<IActionResult> GetInfo()
         {
             try
@@ -133,8 +172,12 @@ namespace Server.Controllers
                 var user = await _userService.GetMyInfo(userId);
                 
                 if (user == null) return NotFound(new { message = "Your account not found or was deleted" });
+               
+                var ruser = new UserResponse(user);
                 
-                return Ok(new {message = "Get info success", data = user, imghost= _ServerIMGHost });
+                await CheckAvt(user.Id.ToString(), user.ImageUrl);
+
+                return Ok(new {message = "Get info success", data = ruser, imghost= _ServerIMGHost });
 
             }
             catch (Exception ex)
@@ -157,14 +200,14 @@ namespace Server.Controllers
                 }
 
                 var newPass = Generator.RandomString(8);
-                var token = _tokenService.GenerateResetToken(user.Id.ToString(), newPass);
 
-               
+                var token = await _userService.SendResetPassword(resetModel.UserName, newPass);
+
                 var placeholders = new Dictionary<string, string>
                 {
                     { "UserName", user.UserName },
                     { "NewPassword", newPass },
-                    { "ResetLink", $"{_ClientResetUrl}?token={token}" }
+                    { "ResetLink", $"{_ClientResetUrl}?username={resetModel.UserName}&token={token}" }
                 };
                 string email = user.Email;
                 await _gmailSenderService.SendEmail(email, "Internal - Reset Password", "PasswordResetTemplate.html", placeholders);
@@ -183,20 +226,17 @@ namespace Server.Controllers
         }
 
         [HttpGet("reset")]
-        public async Task<IActionResult> ValidReset([FromQuery] string token)
+        public async Task<IActionResult> ValidReset([FromQuery] string token, [FromQuery] string username)
         {
             try
             {
-                if (String.IsNullOrEmpty(token)) return BadRequest(new { message = "Token reset password is null" });
-
-                var pricipal = _tokenService.ValidateToken(token); // check token
-                if (pricipal == null) return BadRequest(new { message = "Token invalid or expired" });
+                if (String.IsNullOrEmpty(token) || String.IsNullOrEmpty(username)) return BadRequest(new { message = "Token or username is null" });
                 
-                var user = await _userService.ResetPassword(pricipal); // reset password
+                var user = await _userService.ValidResetPassword(username, token); // reset password
 
-                if (user == null) return BadRequest(new { message = "Token data is invalid" });
+                if (user == null) return BadRequest(new { message = "Token invalid or user not exists" });
                 
-                var loginToken = _tokenService.GenerateUserToken(user.Id, user.UserName); // new token login
+                var loginToken = _tokenService.GenerateUserToken(user); // new token login
 
                 return Ok(new {
                     message ="Reset password success", 
@@ -211,41 +251,10 @@ namespace Server.Controllers
                 return StatusCode(500, new { message = "Server error. Try again!" });
             }
         }
-
-      
-        [HttpGet("validate")]
-        public async Task<IActionResult> ValidLogin([FromQuery] string token)
-        {
-            try
-            {
-                if (String.IsNullOrEmpty(token)) return BadRequest(new { message = "Token is null" });
-
-                var pricipal = _tokenService.ValidateToken(token); // check token
-                if (pricipal == null) return BadRequest(new { message = "Token invalid or expired" });
-
-                var user = await _userService.ValidToken(pricipal); // reset password
-
-                if (user == null) return BadRequest(new { message = "Token data is invalid" });
-
-                
-                return Ok(new
-                {
-                    message = "Token is valid",
-                    data = user
-                });
-
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("ERR UserController - ValidReset: " + ex.Message);
-                return StatusCode(500, new { message = "Server error. Try again!" });
-            }
-        }
-
+        
 
         [HttpPut("update")]
-        [Authorize(Roles ="User")]
-
+        [Authorize]
         public async Task<IActionResult> UpdateAccount([FromBody] UpdateModel updateModel)
         {
             try
@@ -270,7 +279,7 @@ namespace Server.Controllers
         }
 
         [HttpPut("upload")]
-        [Authorize(Roles = "User")]
+        [Authorize]
         public async Task<IActionResult> UploadFile(IFormFile file)
         {
             try
@@ -339,18 +348,62 @@ namespace Server.Controllers
            
         }
 
+        [HttpPut("password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePassModel model)
+        {
+        
+            try
+            {
+                string userId = User.FindFirstValue("UserId");
+                var user = await _userService.ChangePass(userId, model);
+                //string token = 
+                if (user == null) return NotFound(new {message="User not exists or deleted"});
+
+                return Ok(new { message = "Change password success", data = user });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Changepass - Controller: " + ex.Message);
+                return StatusCode(400, new { message = ex.Message });
+            }
+        }
+
+
+        private async Task CheckAvt(string Id, string ImageUrl)
+        {
+            try
+            {
+                var destinationFolder = Path.Combine(_RootImgAccount, Id);
+
+                var destinationPath = Path.Combine(destinationFolder, ImageUrl);
+
+                // Kiểm tra file nguồn tồn tại
+                if (!System.IO.File.Exists(destinationPath))
+                {
+                    await CopyDefaultImage(Id);
+                }
+                 
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Err when CheckAvt: {ex.Message}");
+                // Ném lại lỗi nếu cần xử lý ở mức cao hơn
+            }
+        }
 
         private async Task CopyDefaultImage(string userId)
         {
-            // Đường dẫn nguồn (ảnh mặc định)
-            var sourcePath = Path.Combine( _RootImgAccount, "default.jpg");
-
-            // Đường dẫn đích (thư mục của user)
-            var destinationFolder = Path.Combine(_RootImgAccount, $"{userId}");
-            var destinationPath = Path.Combine(destinationFolder, "default.jpg");
 
             try
             {
+                // Đường dẫn nguồn (ảnh mặc định)
+                var sourcePath = Path.Combine( _RootImgAccount, "default.jpg");
+
+                // Đường dẫn đích (thư mục của user)
+                var destinationFolder = Path.Combine(_RootImgAccount, $"{userId}");
+                var destinationPath = Path.Combine(destinationFolder, "default.jpg");
+
                 // Kiểm tra file nguồn tồn tại
                 if (!System.IO.File.Exists(sourcePath))
                 {

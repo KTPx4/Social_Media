@@ -10,13 +10,14 @@ namespace Server.Models.Community.Posts
     {
         public enum PostStatus
         {
-            Public  =0 , Private = 1, Friend = 2
+            Public = 0 , Private = 1, Friend = 2
         }
 
         public enum PostType
         {
             Post = 0, Share = 1
         }
+
         [Key]
         public Guid Id { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -29,6 +30,8 @@ namespace Server.Models.Community.Posts
 
         public User Author { get; set; }
         public Post? PostShare { get; set; }
+
+
         public ICollection<PostUserTag> UserTags { get; set; }
         public ICollection<PostMedia> Medias { get; set; }
         public ICollection<PostLike> Likes { get; set; }

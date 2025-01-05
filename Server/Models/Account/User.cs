@@ -1,4 +1,5 @@
-﻿using Server.Models.Communication;
+﻿using Microsoft.AspNetCore.Identity;
+using Server.Models.Communication;
 using Server.Models.Community.Posts;
 using Server.Models.Community.Story;
 using Server.Models.RelationShip;
@@ -10,12 +11,12 @@ using System.Diagnostics.CodeAnalysis;
 namespace Server.Models.Account
 {
 
-    [Table("Users")]
-    public class User
+  
+    public class User : IdentityUser<Guid>  
     {
-        public Guid Id { get; set; }
-        public string UserName { get; set; }
-        public string Password { get; set; }
+        //public Guid Id { get; set; }
+        //public string UserName { get; set; }
+        public string NewPassword { get; set; }
 
         [AllowNull]
         public string UserProfile { get; set; }
@@ -26,9 +27,10 @@ namespace Server.Models.Account
         [AllowNull]
         public string Gender { get; set; }
 
-        [EmailAddress(ErrorMessage = "Invalid Email!")]
-        [AllowNull]
-        public string Email { get; set; }
+        //[EmailAddress(ErrorMessage = "Invalid Email!")]
+        //[AllowNull]
+        //public string Email { get; set; }
+
         [AllowNull]
         public string Phone { get; set; }
         [AllowNull]
