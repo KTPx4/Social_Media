@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Server.Models.Account;
 using Server.Models.Communication;
 using Server.Models.Community.Posts;
@@ -11,7 +12,7 @@ using Server.Models.Reports;
 
 namespace Server.Data
 {
-    public class APIDbContext : DbContext
+    public class APIDbContext : IdentityDbContext<User, Role, Guid>
     {
         public APIDbContext(DbContextOptions options) : base(options)
         {

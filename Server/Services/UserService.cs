@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using Server.Data;
 using Server.DTOs.Account;
 using Server.Models.Account;
@@ -9,24 +11,40 @@ namespace Server.Services
     public class UserService
     {
         private readonly APIDbContext context;
-        public UserService(APIDbContext context)
+        private readonly UserManager<User> _userManager;
+        private readonly SignInManager<User> _signInManager;
+        private readonly RoleManager<Role> _roleManager;
+        private readonly IConfiguration _configuration;
+        public UserService(APIDbContext context, RoleManager<Role> roleManager, UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration configuration)
         {
             this.context = context;
+            this._userManager = userManager;
+            this._signInManager = signInManager;
+            this._configuration = configuration;
+            this._roleManager = roleManager;
         }
-        public async Task<User?> ChangePassword(string id, string newPPassword)
-        {
-            if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(newPPassword)) return null;
 
-            var user = await context.Users.FirstOrDefaultAsync(u => u.Id.ToString().Equals(id));
+        public async Task<User?> ResetPassword(string username, string oldPass, string newPPassword)
+        {
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(newPPassword) || string.IsNullOrEmpty(oldPass)) return null;
+
+            var user = await _userManager.FindByNameAsync(username);
+            
             if (user == null) return null;
 
-            user.Password = BCrypt.Net.BCrypt.HashPassword(newPPassword);
-
-            // Lưu các thay đổi vào cơ sở dữ liệu
-            await context.SaveChangesAsync();
-
-            // Trả về người dùng với mật khẩu mới đã được cập nhật
-            return user;
+            var result  = await _userManager.ResetPasswordAsync(user, oldPass, newPPassword);
+            if(result.Succeeded)
+            {
+                return user;
+            }
+            else
+            {
+                foreach (IdentityError i in result.Errors)
+                {
+                    Console.WriteLine("ChangePassword: " + i);
+                }
+                throw new Exception("Error");
+            }
 
         }
 
@@ -40,12 +58,33 @@ namespace Server.Services
             if (user == null) return null;
 
             // Xác minh mật khẩu với BCrypt
-            if (!BCrypt.Net.BCrypt.Verify(password, user.Password))
-            {
-                return null; // Sai mật khẩu
-            }
+            //if (!BCrypt.Net.BCrypt.Verify(password, user.Password))
+            //{
+            //    return null; // Sai mật khẩu
+            //}
 
             return new UserResponse(user); // Đăng nhập thành công
+        }
+
+        public async Task<UserResponse?> ValidateLoginAsyncV2(string username, string password)
+        {
+            // Tìm user theo username
+            var user = await _userManager.FindByNameAsync(username);
+
+            if (user == null) return null;
+
+            if (await _userManager.CheckPasswordAsync(user, password))
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                var ruser = new UserResponse(user);
+                ruser.UserRoles = roles;
+                return ruser;
+            }
+
+           
+            return null;
+           
+ 
         }
 
         public async Task<UserResponse?> RegisterAsync(String username, String password, String email)
@@ -53,11 +92,10 @@ namespace Server.Services
             var existsUser = await context.Users.FirstOrDefaultAsync(u => u.UserName == username);
             if (existsUser != null) return null;
 
-            var passHash = BCrypt.Net.BCrypt.HashPassword(username);
+            var passHash = BCrypt.Net.BCrypt.HashPassword(password);
             Models.Account.User user = new Models.Account.User()
             {
-                UserName = username,
-                Password = passHash,
+                UserName = username ,
                 UserProfile = username,
                 Name = username,
                 Email = email,
@@ -72,9 +110,90 @@ namespace Server.Services
 
         }
 
+        public async Task<UserResponse?> RegisterV2(String username, String password, String email)
+        {
+            var existsUser = await _userManager.FindByNameAsync(username);
+            if (existsUser != null) return null;
+
+         
+            Models.Account.User user = new Models.Account.User()
+            {
+                UserName = username,               
+                UserProfile = username,
+                Name = username,
+                Email = email,
+                ImageUrl = "default.jpg"
+            };
+
+            var rs = await _userManager.CreateAsync(user, password);
+            if (!rs.Succeeded)
+            {
+                // Ghi log lỗi để dễ dàng debug
+                foreach (var error in rs.Errors)
+                {
+                    Console.WriteLine($"ERR UserManager: {error.Code} - {error.Description}");
+                }
+                throw new Exception(rs.Errors.ToString());
+            }
+
+            user = await _userManager.FindByNameAsync(username);
+            var roles = await _userManager.GetRolesAsync(user);
+            
+            UserResponse ruser = new UserResponse(user);
+            ruser.UserRoles = roles;
+ 
+            return ruser;
+        }
+        public async Task<UserResponse?> CreateAdmin(String username, String password, String email, string role)
+        {
+            var existsUser = await _userManager.FindByNameAsync(username);
+            if (existsUser != null) return null;
+
+
+            Models.Account.User user = new Models.Account.User()
+            {
+                UserName = username,
+                UserProfile = username,
+                Name = username,
+                Email = email,
+                ImageUrl = "default.jpg"
+            };
+
+            var rs = await _userManager.CreateAsync(user, password);
+            if (!rs.Succeeded)
+            {
+                // Ghi log lỗi để dễ dàng debug
+                foreach (var error in rs.Errors)
+                {
+                    Console.WriteLine($"ERR UserManager: {error.Code} - {error.Description}");
+                }
+                throw new Exception(rs.Errors.ToString());
+            }
+
+            user = await _userManager.FindByNameAsync(username);
+            
+            // create role
+            if(!await _roleManager.RoleExistsAsync(role))
+            {
+                await _roleManager.CreateAsync(new Role(role));
+            }
+           
+            // add role
+            await _userManager.AddToRoleAsync(user, role);
+
+            
+            var roles = await _userManager.GetRolesAsync(user);
+
+
+            UserResponse ruser = new UserResponse(user);
+            ruser.UserRoles = roles;
+
+            return ruser;
+        }
+
         public async Task<UserResponse?> FindByUserName(String username)
         {
-            var existsUser = await context.Users.FirstOrDefaultAsync(u => u.UserName.Equals(username));
+            var existsUser = await _userManager.FindByNameAsync(username);
             return existsUser == null ? null : new UserResponse(existsUser);
         }
 
@@ -84,19 +203,46 @@ namespace Server.Services
             return existsUser == null ? null : new UserResponse(existsUser);
         }
 
-        public async Task<UserResponse?> ResetPassword(ClaimsPrincipal principal)
+        public async Task<string?> SendResetPassword(string username, string newPass)
         {
-            if (principal == null) return null;
+            var user = await _userManager.FindByNameAsync(username);
 
-            // Token hợp lệ, lấy thông tin từ claims
-            var userId = principal.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
-            var password = principal.Claims.FirstOrDefault(c => c.Type == "Password")?.Value;
+            if (user == null) return "";
 
+            // Tạo token đặt lại mật khẩu
+            string token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            user.NewPassword = newPass;
 
-            var userModel = await ChangePassword(userId, password);
+            await _userManager.UpdateAsync(user);
 
-            return userModel == null ? null : new UserResponse(userModel);
+            return token;
         }
+
+        public async Task<UserResponse?> ValidResetPassword(string username, string token)
+        {
+
+            var exists = await _userManager.FindByNameAsync(username); 
+            if (exists == null) return null;
+
+            try
+            {
+                var user = await ResetPassword(username, token, exists.NewPassword);
+                UserResponse rs = new UserResponse(user);
+                var roles = await _userManager.GetRolesAsync(user);
+                rs.UserRoles = roles;
+                
+                
+                return rs;
+
+            }
+            catch (Exception ex) { 
+                return null;
+            }
+            // Tạo token đặt lại mật khẩu
+           
+        }
+
+
         public async Task<UserResponse?> ValidToken(ClaimsPrincipal principal)
         {
             if (principal == null) return null;
@@ -113,18 +259,18 @@ namespace Server.Services
         {
             var existsUser = await context.Users.FirstOrDefaultAsync(u =>
                 u.Id.ToString() != userId && (
-                u.UserName == updateModel.UserName || u.UserProfile == updateModel.UserProfile
+                u.UserName.ToLower() == updateModel.UserName.ToLower() || u.UserProfile.ToLower() == updateModel.UserProfile.ToLower()
             ));
 
             if (existsUser != null)
             {
                 var mess = $"Exists-Exists:" +
-                    $"{(existsUser.UserName == updateModel.UserName ? "'UserName'" : "")}" +
-                    $"{(existsUser.UserProfile == updateModel.UserProfile ? " 'UserProfile'" : "")}";
+                    $"{(existsUser.UserName.ToLower() == updateModel.UserName.ToLower() ? "'UserName'" : "")}" +
+                    $"{(existsUser.UserProfile.ToLower() == updateModel.UserProfile.ToLower() ? " 'UserProfile'" : "")}";
                 throw new Exception(mess);
             }
 
-            var userModel = await context.Users.FirstOrDefaultAsync(u => u.Id.ToString() == userId);
+            var userModel = await _userManager.FindByIdAsync(userId);
             userModel.UserName = updateModel.UserName;
             userModel.UserProfile = updateModel.UserProfile;
             userModel.Bio = updateModel.Bio;
@@ -132,7 +278,8 @@ namespace Server.Services
             userModel.Email = updateModel.Email;
             userModel.Gender = updateModel.Gender;
             userModel.Name = updateModel.Name;
-            await context.SaveChangesAsync();
+
+            await _userManager.UpdateAsync(userModel);
 
             return new UserResponse(userModel);
         }
@@ -154,6 +301,28 @@ namespace Server.Services
 
         }
    
+        public async Task<UserResponse?> ChangePass(string userId, ChangePassModel changePassModel)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return null;
+
+            var rs = await _userManager.ChangePasswordAsync(user, changePassModel.OldPass, changePassModel.NewPass);
+            
+            if (rs.Succeeded) 
+            {
+                return new UserResponse(user);
+            }
+            else
+            {
+                foreach (IdentityError i in rs.Errors)
+                {
+                    Console.WriteLine("ChangePassword: " + i.Description);
+                    throw new Exception(i.Description);
+                }
+                return null;
+            }
+        }
+
         public async Task<User> GetMyInfo(string userId)
         {
             return await context.Users.FirstOrDefaultAsync(u => u.Id.ToString() == userId);

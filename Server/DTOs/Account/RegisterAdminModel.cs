@@ -2,8 +2,10 @@
 
 namespace Server.DTOs.Account
 {
-    public class RegisterModel
+    public class RegisterAdminModel
     {
+        [Required]
+        public string Role { get; set; }
         [Required]
         public String UserName { get; set; }
         [Required]

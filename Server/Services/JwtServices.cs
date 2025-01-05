@@ -1,5 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using Server.Data;
+using Server.Models.Account;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -10,14 +13,41 @@ namespace Server.Services
     {
         public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
         {
+
             var jwtSettings = configuration.GetSection("JwtSettings");
             var secretKey = jwtSettings.GetValue<string>("SecretKey");
             var issuer = jwtSettings.GetValue<string>("Issuer");
             var audience = jwtSettings.GetValue<string>("Audience");
 
+            var serverSettings = configuration.GetSection("ServerSettings");
+            
+            var timeLife = long.Parse(serverSettings["TimelifeResetMinute"]);
+
             var keyBytes = Encoding.UTF8.GetBytes(secretKey.PadRight(32));
             var SecurityKey = new SymmetricSecurityKey(keyBytes);
 
+            // config asp.net identity
+            services.AddIdentity<User, Role>( opts =>
+            {
+                opts.Password.RequiredLength = 6;
+                opts.Password.RequireNonAlphanumeric = false;
+                opts.Password.RequireUppercase = false;
+                opts.Password.RequireDigit = false;
+                opts.Password.RequireLowercase = false;
+                
+                // Cho phép mật khẩu trùng lặp ký tự (nếu cần)
+                opts.Password.RequiredUniqueChars = 0;
+                
+            })  
+            .AddEntityFrameworkStores<APIDbContext>()
+            .AddDefaultTokenProviders();
+
+            services.Configure<DataProtectionTokenProviderOptions>(options =>
+            {
+                options.TokenLifespan = TimeSpan.FromMinutes(timeLife); // Token đặt lại mật khẩu hết hạn sau 5 phút
+            });
+
+            // jwt
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
