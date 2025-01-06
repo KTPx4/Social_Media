@@ -16,6 +16,8 @@ namespace Server.Configs
             services.AddScoped<UserService>();
 
             services.AddScoped<PostService>();
+            services.AddScoped<FileService>();
+
 
 
         }

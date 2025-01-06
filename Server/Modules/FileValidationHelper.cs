@@ -1,4 +1,5 @@
-﻿using Server.DTOs.Post;
+﻿using Server.DTOs.Posts;
+using Server.Models.Community.Posts;
 
 namespace Server.Modules
 {
@@ -82,7 +83,9 @@ namespace Server.Modules
                 fileInfoList.Add(new FileInfoDto
                 {
                     Name = file.FileName,
-                    Type = file.ContentType
+                    ContentType = file.ContentType,
+                    Type = IsImage(file.ContentType) ? PostMedia.MediaType.Image : PostMedia.MediaType.Video,
+                    File = file
                 });
             }
 
