@@ -25,7 +25,7 @@ namespace Server.Models.Community.Posts
         public string Content { get; set; }
         public Guid? PostShareId { get; set; }
         public bool IsHide { get; set; }
-        public PostStatus Satus { get; set; }
+        public PostStatus Status { get; set; }
         public PostType Type { get; set; }
 
         public User Author { get; set; }

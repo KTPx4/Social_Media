@@ -23,7 +23,7 @@ namespace Server.Models.Community.PostsUpdates
         public string Content { get; set; }
         public Guid? PostShareId { get; set; }
         public bool IsHide { get; set; }
-        public Post.PostStatus Satus { get; set; }
+        public Post.PostStatus Status { get; set; }
         public Post.PostType Type { get; set; }
 
         public Post OriginPost { get; set; }

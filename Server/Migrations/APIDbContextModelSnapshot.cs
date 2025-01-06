@@ -573,7 +573,7 @@ namespace Server.Migrations
                     b.Property<Guid?>("PostShareId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("Satus")
+                    b.Property<int>("Status")
                         .HasColumnType("int");
 
                     b.Property<int>("Type")
@@ -761,7 +761,7 @@ namespace Server.Migrations
                     b.Property<Guid?>("PostShareId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("Satus")
+                    b.Property<int>("Status")
                         .HasColumnType("int");
 
                     b.Property<int>("Type")
