@@ -1,0 +1,31 @@
+@startuml
+skinparam componentStyle rectangle
+
+component "Sidebar" {
+    component "div (min-h-screen)" {
+        component "div (#app-sidebar-2)" {
+            component "div (flex-column)" {
+                component "Header" as Header {
+                    component "Logo" as Logo
+                    component "Close Button" as CloseButton
+                }
+                component "Favorites Menu" as FavoritesMenu {
+                    component "Menu Item: Dashboard" as Dashboard
+                    component "Menu Item: Bookmarks" as Bookmarks
+                    component "Menu Group: Reports" as Reports {
+                        component "Submenu: Revenue" as Revenue {
+                            component "Submenu Item: View" as RevenueView
+                            component "Submenu Item: Search" as RevenueSearch
+                        }
+                        component "Submenu: Expenses" as Expenses
+                    }
+                    component "Menu Item: Team" as Team
+                    component "Menu Item: Messages" as Messages
+                    component "Menu Item: Calendar" as Calendar
+                    component "Menu Item: Settings" as Settings
+                }
+            }
+        }
+    }
+}
+@enduml
