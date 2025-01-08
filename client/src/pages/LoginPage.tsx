@@ -1,14 +1,26 @@
 import { InputText } from "primereact/inputtext";
 import { Button } from "primereact/button";
-import { Link } from "react-router-dom";
-import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Checkbox } from "primereact/checkbox";
 
 const LoginPage = () => {
+  const navigate = useNavigate();
   const [userInformation, setUserInformation] = useState({
     email: "",
     password: "",
   });
+
+  useEffect(() => {
+    function fetchToken() {
+      const sessionToken = sessionStorage.getItem("token");
+      const localToken = localStorage.getItem("token");
+      if (localToken || sessionToken) {
+        navigate("/home");
+      }
+    }
+    fetchToken();
+  }, [navigate]);
   const [rememberMe, setRememberMe] = useState(false);
   const [checked, setChecked] = useState(false);
   const [formErrors, setFormErrors] = useState({

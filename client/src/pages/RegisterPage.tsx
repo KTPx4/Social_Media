@@ -1,11 +1,12 @@
 import { InputText } from "primereact/inputtext";
 import "primeflex/primeflex.css";
 import { Button } from "primereact/button";
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 
 const RegisterPage = () => {
+  const navigate = useNavigate();
   const [userInformation, setUserInformation] = useState({
     username: "",
     email: "",
@@ -19,6 +20,16 @@ const RegisterPage = () => {
     confirmPassword: "",
   });
 
+  useEffect(() => {
+    function fetchToken() {
+      const sessionToken = sessionStorage.getItem("token");
+      const localToken = localStorage.getItem("token");
+      if (localToken || sessionToken) {
+        navigate("/home");
+      }
+    }
+    fetchToken();
+  }, [navigate]);
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const errors = {
