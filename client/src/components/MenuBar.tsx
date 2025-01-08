@@ -7,7 +7,7 @@ import { Button } from "primereact/button";
 import SidbarLayout from "./SideBarsLayout";
 import { Outlet } from "react-router-dom";
 import { StyleClass } from "primereact/styleclass";
-export default function TemplateDemo() {
+export default function MenuBar() {
   const [visibleLeft, setVisibleLeft] = useState(false);
   const itemRenderer = (item) => (
     <a className="flex align-items-center p-menuitem-link">

@@ -24,18 +24,19 @@ apiClient.interceptors.response.use(
   },
   (error) => {
     if (error.response) {
-      switch (error.response.status) {
-        case 400:
-          throw new Error("Username is exists");
-        case 401:
-          throw new Error("Unauthorized access - please log in.");
-        case 403:
-          throw new Error(
-            "Forbidden - you do not have permission to access this resource."
-          );
-        default:
-          throw error;
-      }
+      throw new Error(error.response.data.message);
+      // switch (error.response.status) {
+      //   case 400:
+      //     throw new Error("Username is exists");
+      //   case 401:
+      //     throw new Error("Unauthorized access - please log in.");
+      //   case 403:
+      //     throw new Error(
+      //       "Forbidden - you do not have permission to access this resource."
+      //     );
+      //   default:
+      //     throw error;
+      // }
     } else {
       throw error;
     }

@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 
 const RegisterPage = () => {
+  const { userId, setUserId } = useContext(userContext);
   const navigate = useNavigate();
   const [userInformation, setUserInformation] = useState({
     username: "",
@@ -57,32 +58,30 @@ const RegisterPage = () => {
     } else if (userInformation.password !== userInformation.confirmPassword) {
       errors.confirmPassword = "Passwords do not match";
     }
-
     const isValid = Object.values(errors).every((e) => e === "");
-    setFormErrors(errors); // Show errors if any
-
     if (isValid) {
       try {
         const { confirmPassword, ...userData } = userInformation; // Exclude confirmPassword
-        await apiClient.post(
-          "https://localhost:7000/api/user/register",
-          userData
-        );
+        const data = await apiClient.post("/user/register", userData);
+        sessionStorage.setItem("token", JSON.stringify(data.data.token));
+        setUserId(data.data.data.id);
+        navigate("/home");
         // You can add a success message or navigate to another page here
       } catch (error: unknown) {
         if (error instanceof Error) {
           errors.email = error.message;
-          setFormErrors(errors); // Show error message from API response
+          // setFormErrors(errors);
         } else {
           console.log("An unknown error occurred");
         }
       }
     }
+    setFormErrors(errors);
   }
 
   return (
     <form
-      className="h-screen flex flex-column align-items-center justify-content-center gap-7 p-4"
+      className="h-screen flex flex-column align-items-center justify-content-center  p-4"
       onSubmit={handleSubmit}
     >
       <h1 className="font-italic text-4xl mb-4">Interval</h1>
