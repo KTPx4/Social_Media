@@ -5,7 +5,7 @@ namespace Server.Modules
 {
     public static class FileValidationHelper
     {
-        private static readonly long MAXSIZE = 5 * 1024 * 1024;
+        private static readonly long MAXSIZE = 10 * 1024 * 1024;
         private static readonly HashSet<string> ImageMimeTypes = new()
         {
             "image/jpeg",

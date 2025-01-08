@@ -9,5 +9,6 @@ namespace Server.DTOs.Posts
         public string ContentType { get; set; }  // MIME type (ContentType)
         public IFormFile File { get; set; }
 
+
     }
 }

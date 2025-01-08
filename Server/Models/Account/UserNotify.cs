@@ -19,7 +19,9 @@ namespace Server.Models.Account
         public TypeNotify Type {  get; set; }
         public Guid TargetId { get; set; }
         public DateTime CreatedAt { get; set; }
-
+        public bool IsSeen { get; set; }
+        public string Content { get; set; }
+        public string ImageUrl { get; set; }
         public User User { get; set; }
     }
 }

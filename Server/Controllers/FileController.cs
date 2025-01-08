@@ -21,7 +21,7 @@ namespace Server.Controllers
             _environment = environment;
         }
 
-        [HttpGet]
+        [HttpGet("src")]
         public async Task<IActionResult> GetMedia([FromQuery] string token, [FromQuery] string t, [FromQuery] string id)
         {
             if(string.IsNullOrEmpty(token))
@@ -100,7 +100,7 @@ namespace Server.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, new {message = "Server error. Try again!"});
             }
 
-            return Ok(new { t, id });
+            
         }
     }
 }

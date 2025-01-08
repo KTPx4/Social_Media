@@ -93,6 +93,10 @@ namespace Server.Data
                     .OnDelete(DeleteBehavior.Cascade); // Cascade delete
 
                 e.Property(un => un.CreatedAt).HasDefaultValueSql("getutcdate()");
+                e.Property(un => un.IsSeen).HasDefaultValue(true);
+                e.Property(un => un.Content).IsRequired(false);
+                e.Property(un => un.ImageUrl).IsRequired(false);
+
             });
 
 

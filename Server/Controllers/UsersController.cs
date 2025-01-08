@@ -259,6 +259,11 @@ namespace Server.Controllers
         {
             try
             {
+                updateModel.UserProfile.Trim();
+                if(updateModel.UserProfile.Contains(" "))
+                {
+                    return BadRequest(new { message = "UserProfile invalid" });
+                }
                 var userId = User.FindFirstValue("UserId");
                 var user = await _userService.UpdateAsync(userId, updateModel);
                 return Ok(new { message = "Update info success",data = user});

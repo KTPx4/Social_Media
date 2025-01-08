@@ -19,5 +19,9 @@ namespace Server.DTOs.Posts
         
         [Required]
         public List<IFormFile> files { get; set; }
+
+        [AllowNull]
+        public List<string> tags { get; set; }
+
     }
 }
