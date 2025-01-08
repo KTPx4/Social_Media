@@ -14,14 +14,15 @@ namespace Server.DTOs.Posts
         public bool IsHide { get; set; }
         public PostStatus Status { get; set; }
         public PostType Type { get; set; }
-
+        public int SumLike { get; set; }
+        public int SumComment { get; set; }
         public List<MediaResponse> ListMedia { get; set; } = new List<MediaResponse>();
 
         public PostResponse()
         {
             
         }
-        public PostResponse(Post post)
+        public PostResponse(Post post, string host)
         {
             this.Id = post.Id;
             this.CreatedAt = post.CreatedAt;
@@ -31,20 +32,23 @@ namespace Server.DTOs.Posts
             this.IsHide = post.IsHide;
             this.Status = post.Status;
             this.Type = post.Type;
-
-            foreach(var m in post.Medias)
+            if(post.Medias != null)
             {
-                ListMedia.Add(new MediaResponse()
+
+                foreach (var m in post.Medias)
                 {
-                    Id = m.Id,
-                    Content = m.Content,
-                    ContentType = m.ContentType, 
-                    IsDeleted = m.IsDeleted,
-                    MediaUrl = "",
-                    PostId = m.PostId,
-                    Type = m.Type
-                });
-            }
+                    ListMedia.Add(new MediaResponse()
+                    {
+                        Id = m.Id,
+                        Content = m.Content,
+                        ContentType = m.ContentType, 
+                        IsDeleted = m.IsDeleted,
+                        MediaUrl = $"{host}/api/file/src?id={m.Id.ToString()}&token=",
+                        PostId = m.PostId,
+                        Type = m.Type
+                    });
+                }
+            }    
         }
     }
 }
