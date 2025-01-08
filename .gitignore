@@ -8,7 +8,8 @@ Server/appsettings.json
 Server/appsettings.Development.json
 Server/bin/
 Server/obj/
-
+node_modules  
+appsettings
 # .NET Core
 ## User-specific files
 .idea/
