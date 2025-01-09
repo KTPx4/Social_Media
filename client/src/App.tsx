@@ -33,10 +33,10 @@ function App() {
             <Route path="/home" element={<MenuBar />}>
               <Route index element={<MainPage />} />
 
-              <Route path="products" element={<LayoutProduct />}>
+              {/* <Route path="products" element={<LayoutProduct />}>
                 <Route index element={<ProductList />} />
                 <Route path="details/:id" />
-              </Route>
+              </Route> */}
             </Route>
           </Routes>
         </UserContextProvider>
