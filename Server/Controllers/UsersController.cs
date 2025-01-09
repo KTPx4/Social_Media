@@ -205,8 +205,7 @@ namespace Server.Controllers
 
                 var placeholders = new Dictionary<string, string>
                 {
-                    { "UserName", user.UserName },
-                    { "NewPassword", newPass },
+                    { "UserName", user.UserName } ,
                     { "ResetLink", $"{_ClientResetUrl}?username={resetModel.UserName}&token={token}" }
                 };
                 string email = user.Email;
@@ -226,13 +225,14 @@ namespace Server.Controllers
         }
 
         [HttpGet("reset")]
-        public async Task<IActionResult> ValidReset([FromQuery] string token, [FromQuery] string username)
+        public async Task<IActionResult> ValidReset([FromQuery] string token, [FromQuery] string username, [FromQuery] string NewPass)
         {
             try
             {
+                Console.WriteLine(token);
                 if (String.IsNullOrEmpty(token) || String.IsNullOrEmpty(username)) return BadRequest(new { message = "Token or username is null" });
-                
-                var user = await _userService.ValidResetPassword(username, token); // reset password
+                token = token.Replace(" ", "+");
+                var user = await _userService.ValidResetPassword(username, token, NewPass); // reset password
 
                 if (user == null) return BadRequest(new { message = "Token invalid or user not exists" });
                 

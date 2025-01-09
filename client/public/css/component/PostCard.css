@@ -1,0 +1,17 @@
+.post-header{
+    display: flex;
+    justify-content: space-between;
+}
+.post-header-profile{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+.p-link{
+    height:  6px;
+    width: 6px;
+}
+.p-highlight .p-link{
+    background-color: #6BA3BE;
+}

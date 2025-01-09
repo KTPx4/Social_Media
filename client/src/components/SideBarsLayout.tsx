@@ -23,13 +23,13 @@ export default function SidbarLayout({
 
   return (
     <div className="card">
-      <div className="flex gap-2 justify-content-center">
-        <Button
-          icon="pi pi-align-justify
-"
-          onClick={() => setVisibleLeft(true)}
-        />
-      </div>
+{/*      <div className="flex gap-2 justify-content-center">*/}
+{/*        <Button*/}
+{/*          icon="pi pi-align-justify*/}
+{/*"*/}
+{/*          onClick={() => setVisibleLeft(true)}*/}
+{/*        />*/}
+{/*      </div>*/}
 
       <Sidebar
         visible={visibleLeft}

@@ -5,3 +5,7 @@
 .h1 {
   font: 16px "Arizona", sans-serif;
 }
+body{
+  min-width: 350px;
+  min-height: 650px;
+}
