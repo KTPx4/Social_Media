@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Server.Data;
 using Server.Models.Account;
@@ -37,7 +38,10 @@ namespace Server.Services
                 
                 // Cho phép mật khẩu trùng lặp ký tự (nếu cần)
                 opts.Password.RequiredUniqueChars = 0;
-                
+                // Thời gian hết hạn token
+                opts.Tokens.PasswordResetTokenProvider = TokenOptions.DefaultProvider;
+             
+
             })  
             .AddEntityFrameworkStores<APIDbContext>()
             .AddDefaultTokenProviders();

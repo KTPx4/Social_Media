@@ -24,15 +24,16 @@ namespace Server.Services
             this._roleManager = roleManager;
         }
 
-        public async Task<User?> ResetPassword(string username, string oldPass, string newPPassword)
+        public async Task<User?> ResetPassword(string userName, string token, string newPPassword)
         {
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(newPPassword) || string.IsNullOrEmpty(oldPass)) return null;
+            if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(newPPassword) || string.IsNullOrEmpty(token)) return null;
 
-            var user = await _userManager.FindByNameAsync(username);
+            var user = await _userManager.FindByNameAsync(userName);
             
             if (user == null) return null;
 
-            var result  = await _userManager.ResetPasswordAsync(user, oldPass, newPPassword);
+            var result  = await _userManager.ResetPasswordAsync(user, token, newPPassword);
+           
             if(result.Succeeded)
             {
                 return user;
@@ -41,7 +42,7 @@ namespace Server.Services
             {
                 foreach (IdentityError i in result.Errors)
                 {
-                    Console.WriteLine("ChangePassword: " + i);
+                    Console.WriteLine("ChangePassword: " + i.Description);
                 }
                 throw new Exception("Error");
             }
@@ -207,26 +208,21 @@ namespace Server.Services
         {
             var user = await _userManager.FindByNameAsync(username);
 
-            if (user == null) return "";
+            if (user == null) return ""; 
 
-            // Tạo token đặt lại mật khẩu
             string token = await _userManager.GeneratePasswordResetTokenAsync(user);
-            user.NewPassword = newPass;
 
-            await _userManager.UpdateAsync(user);
-
+            Console.WriteLine(token);
             return token;
         }
 
-        public async Task<UserResponse?> ValidResetPassword(string username, string token)
+        public async Task<UserResponse?> ValidResetPassword(string username, string token, string newPass)
         {
 
-            var exists = await _userManager.FindByNameAsync(username); 
-            if (exists == null) return null;
-
+ 
             try
             {
-                var user = await ResetPassword(username, token, exists.NewPassword);
+                var user = await ResetPassword(username, token, newPass);
                 UserResponse rs = new UserResponse(user);
                 var roles = await _userManager.GetRolesAsync(user);
                 rs.UserRoles = roles;
@@ -235,7 +231,9 @@ namespace Server.Services
                 return rs;
 
             }
-            catch (Exception ex) { 
+            catch (Exception ex) {
+                var err = ex;
+                Console.WriteLine(ex.Message);
                 return null;
             }
             // Tạo token đặt lại mật khẩu

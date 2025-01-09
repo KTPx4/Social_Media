@@ -1,0 +1,39 @@
+/* Container Styling */
+.container {
+    background-color: transparent;
+    width: 100%; /* Chiều rộng toàn màn hình */
+    height: 89vh; /* Chiều cao toàn màn hình */
+    display: flex; /* Sử dụng Flexbox */
+}
+
+/* Left Content Styling */
+.left-content {
+    /*background-color: #f0f0f0;*/
+    padding: 20px;
+    box-sizing: border-box;
+    flex: 0 0 70%; /* Chiếm 80% chiều rộng */
+    overflow-y: auto;
+    border-right: 1px solid #DEDEDE;
+}
+
+/* Right Content Styling */
+.right-content {
+    /*background-color: #f0f0f0;*/
+
+    padding: 20px;
+    box-sizing: border-box;
+    flex: 0 0 30%; /* Chiếm 20% chiều rộng */
+}
+
+/* Ẩn phần bên phải trên màn hình nhỏ */
+@media screen and (max-width: 750px) {
+    .right-content {
+        display: none;
+    }
+    .left-content {
+        background-color: #f0f0f0;
+        padding: 20px;
+        box-sizing: border-box;
+        flex: 0 0 100%; /* Chiếm 80% chiều rộng */
+    }
+}

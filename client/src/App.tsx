@@ -15,7 +15,7 @@ import HeadlessDemo from "./components/Iconreference";
 import TemplateDemo from "./components/MenuBar";
 import RegisterPage from "./pages/RegisterPage";
 import MenuBar from "./components/MenuBar";
-import MainPage from "./pages/MainPage";
+import MainPage from "./pages/Home/MainPage.tsx";
 import UserContextProvider from "./store/UserContext";
 import NotFoundPage from "./pages/NotFoundPage";
 import EmailConfirmPage from "./pages/EmailConfirmPage";
