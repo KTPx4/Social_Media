@@ -1,12 +1,15 @@
-import React, {useContext, useState} from "react";
+import React, {useContext, useRef, useState} from "react";
 import { Avatar } from "primereact/avatar";
 import { Button } from "primereact/button";
+
+// @ts-ignore
 import { Galleria } from "primereact/galleria";
 import { InputText } from "primereact/inputtext";
 import {Helmet, HelmetProvider} from "react-helmet-async";
 import {IconField} from "primereact/iconfield";
 import {InputIcon} from "primereact/inputicon";
-import {ThemeContext} from "../../ThemeContext.tsx"; // Import cả font-weight mặc định của Roboto
+import {ThemeContext} from "../../ThemeContext.tsx";
+import {TieredMenu} from "primereact/tieredmenu"; // Import cả font-weight mặc định của Roboto
 
 interface PostCardProps {
     avatar: string;
@@ -27,6 +30,17 @@ const PostCard: React.FC<PostCardProps> = ({ avatar, username, caption, images }
     const textHintColor = currentTheme.getHint()
     const captionColor = currentTheme.getCaption()
 
+    const menu = useRef(null);
+    const items = [
+        {
+            label: 'Report',
+            icon: 'pi pi-exclamation-triangle',
+            command: () =>{
+
+            }
+        },
+
+    ];
 
     const toggleCaption = () => {
         setIsExpanded(!isExpanded);
@@ -42,6 +56,7 @@ const PostCard: React.FC<PostCardProps> = ({ avatar, username, caption, images }
         setCurrentIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length);
     };
 
+    // @ts-ignore
     return (
         <HelmetProvider>
             <Helmet>
@@ -58,8 +73,12 @@ const PostCard: React.FC<PostCardProps> = ({ avatar, username, caption, images }
                             <small className="p-text-secondary" style={{fontSize: 12, color: textHintColor}}>1d ago</small>
                         </div>
                     </div>
+                    <TieredMenu model={items} popup ref={menu} breakpoint="767px" />
                     <Button icon="pi pi-ellipsis-h" className="p-button-rounded p-button-text"
-                            style={{color: textColor}}/>
+                            style={{color: textColor}}
+                            // @ts-ignore
+                            onClick={(e) => menu.current.toggle(e)}
+                    />
                 </div>
 
                 {/* Caption */}
@@ -182,6 +201,7 @@ const PostCard: React.FC<PostCardProps> = ({ avatar, username, caption, images }
                         <Button icon="pi pi-heart" className="p-button-rounded p-button-text p-mr-2"/>
                         <Button icon="pi pi-comment" className="p-button-rounded p-button-text"/>
                         <Button icon="pi pi-send" className="p-button-rounded p-button-text"/>
+                        <Button icon="pi pi-bookmark" className="p-button-rounded p-button-text"/>
                     </div>
                     <IconField>
                         <InputIcon className="pi pi-check" onClick={()=>{}}/>

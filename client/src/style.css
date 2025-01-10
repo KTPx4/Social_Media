@@ -8,6 +8,7 @@
 body{
   min-width: 350px;
   min-height: 650px;
+  margin: 0 !important;
 }
 
 

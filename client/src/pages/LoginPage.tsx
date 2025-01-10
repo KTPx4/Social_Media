@@ -8,6 +8,7 @@ import apiClient from "../utils/apiClient";
 import { userContext } from "../store/UserContext";
 
 const LoginPage = () => {
+  // @ts-ignore
   const { userId, setUserId } = useContext(userContext);
   const navigate = useNavigate();
   const [visible, setVisible] = useState(false);
@@ -78,7 +79,7 @@ const LoginPage = () => {
         onSubmit={handleSubmit}
         className="h-screen flex flex-column align-items-center justify-content-center  p-4"
       >
-        <h1 className="font-italic text-4xl mb-4">Interval</h1>
+        <h1 className="font-italic text-4xl mb-4">Internal</h1>
         <div className="flex flex-column justify-content-center align-items-center  w-full max-w-xs">
           <InputText
             type="text"
