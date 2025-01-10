@@ -17,12 +17,16 @@ import RegisterPage from "./pages/RegisterPage";
 import MenuBar from "./components/MenuBar";
 import MainPage from "./pages/Home/MainPage.tsx";
 import UserContextProvider from "./store/UserContext";
-import {ThemeProvider} from "./ThemeContext.tsx";
+
+import { ThemeProvider } from "./ThemeContext.tsx";
+import NotFoundPage from "./pages/NotFoundPage";
+import EmailConfirmPage from "./pages/EmailConfirmPage";
+import ProfilePage from "./pages/Profile/ProfilePage.tsx";
 
 axios.defaults.baseURL = "https://localhost:7212/api/";
 function App() {
   return (
-    <ThemeProvider  >
+    <ThemeProvider>
       <BrowserRouter>
         <UserContextProvider>
           <Routes>
@@ -36,6 +40,7 @@ function App() {
                 <Route path="details/:id" />
               </Route> */}
             </Route>
+            <Route path="/profile" element={<ProfilePage />}></Route>
           </Routes>
         </UserContextProvider>
       </BrowserRouter>
