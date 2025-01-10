@@ -7,6 +7,7 @@ import "./style.css";
 import Home from "./pages/Home";
 import axios from "axios";
 import ProductList from "./pages/Products/ProductList";
+import Layout from "./components/Layout";
 import LayoutProduct from "./components/LayoutProduct";
 import LoginPage from "./pages/LoginPage";
 import PositionDemo from "./components/SideBarsLayout";
@@ -17,7 +18,6 @@ import MenuBar from "./components/MenuBar";
 import MainPage from "./pages/Home/MainPage.tsx";
 import UserContextProvider from "./store/UserContext";
 import {ThemeProvider} from "./ThemeContext.tsx";
-import Layout from "./components/layoutPage/Layout.tsx"
 
 axios.defaults.baseURL = "https://localhost:7212/api/";
 function App() {
@@ -28,7 +28,7 @@ function App() {
           <Routes>
             <Route path="/" element={<LoginPage />}></Route>
             <Route path="/register" element={<RegisterPage />}></Route>
-            <Route path="/home" element={<Layout />}>
+            <Route path="/home" element={<MenuBar />}>
               <Route index element={<MainPage />} />
 
               <Route path="products" element={<LayoutProduct />}>
