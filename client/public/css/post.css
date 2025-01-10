@@ -31,7 +31,6 @@
         display: none;
     }
     .left-content {
-        background-color: #f0f0f0;
         padding: 20px;
         box-sizing: border-box;
         flex: 0 0 100%; /* Chiếm 80% chiều rộng */
