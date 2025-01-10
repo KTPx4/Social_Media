@@ -1,9 +1,10 @@
 import { InputText } from "primereact/inputtext";
 import "primeflex/primeflex.css";
 import { Button } from "primereact/button";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
+import { userContext } from "../store/UserContext";
 
 const RegisterPage = () => {
   const { userId, setUserId } = useContext(userContext);
@@ -50,8 +51,11 @@ const RegisterPage = () => {
     }
     if (!userInformation.password) {
       errors.password = "This field can not be empty";
-    } else if (userInformation.password.length < 6) {
-      errors.password = "Password must be at least 6 characters long";
+    } else if (
+      userInformation.password.length < 6 ||
+      userInformation.password.length > 30
+    ) {
+      errors.password = "Password must be between  6 to 30  characters long";
     }
     if (!userInformation.confirmPassword) {
       errors.confirmPassword = "This field can not be empty";
@@ -102,7 +106,7 @@ const RegisterPage = () => {
         <InputText
           type="email"
           className="p-inputtext-lg w-3"
-          placeholder="text"
+          placeholder="Email"
           onChange={(e) => {
             setUserInformation({
               ...userInformation,

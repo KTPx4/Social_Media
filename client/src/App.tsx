@@ -17,7 +17,10 @@ import RegisterPage from "./pages/RegisterPage";
 import MenuBar from "./components/MenuBar";
 import MainPage from "./pages/Home/MainPage.tsx";
 import UserContextProvider from "./store/UserContext";
+
 import {ThemeProvider} from "./ThemeContext.tsx";
+import NotFoundPage from "./pages/NotFoundPage";
+import EmailConfirmPage from "./pages/EmailConfirmPage";
 
 axios.defaults.baseURL = "https://localhost:7212/api/";
 function App() {
@@ -26,6 +29,8 @@ function App() {
       <BrowserRouter>
         <UserContextProvider>
           <Routes>
+            <Route path="/account/reset*" element={<EmailConfirmPage />} />{" "}
+            <Route path="*" element={<NotFoundPage />} /> {/* Wildcard route */}
             <Route path="/" element={<LoginPage />}></Route>
             <Route path="/register" element={<RegisterPage />}></Route>
             <Route path="/home" element={<MenuBar />}>
