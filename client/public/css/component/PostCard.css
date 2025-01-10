@@ -15,3 +15,12 @@
 .p-highlight .p-link{
     background-color: #6BA3BE;
 }
+.input-comment:focus{
+    box-shadow: none;
+    border: none;
+    border-bottom: 1px solid #6BA3BE;
+}
+button:focus{
+    box-shadow: none;
+
+}

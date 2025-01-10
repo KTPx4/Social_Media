@@ -9,3 +9,13 @@ body{
   min-width: 350px;
   min-height: 650px;
 }
+
+
+::-webkit-scrollbar {
+  width: 3px; /* Chiều rộng thanh cuộn */
+}
+::-webkit-scrollbar-thumb {
+  background: #a6a4a4; /* Màu của phần cuộn */
+  border-radius: 10px; /* Bo góc thanh cuộn */
+}
+
