@@ -28,7 +28,7 @@ const  Layout: React.FC = () => {
             <div className="app-navbar" >
                 <div className="navbar-header" style={{height: "80%", color: textColor}}>
 
-                    <p className="font-italic text-4xl mb-4" style={{fontFamily: "Arizonia, serif", fontSize: "40px !important"}}>Internal</p>
+                    <p className="font-italic text-4xl mb-4" style={{marginLeft: 15,fontFamily: "Arizonia, serif", fontSize: "40px !important" , color: textColor}}>Internal</p>
 
                     {/*<span className="instagram-logo">Insternal</span>*/}
                    <div style={{
