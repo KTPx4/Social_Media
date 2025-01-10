@@ -46,6 +46,11 @@ const LoginPage = () => {
     }
     if (!userInformation.password) {
       errors.password = "This field can not be empty";
+    } else if (
+      userInformation.password.length < 6 ||
+      userInformation.password.length > 30
+    ) {
+      errors.password = "Password must be between  6 to 30  characters long";
     }
     const isValid = Object.values(errors).every((e) => e === "");
     if (isValid) {
