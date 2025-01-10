@@ -11,7 +11,7 @@
     /*background-color: #f0f0f0;*/
     padding: 20px;
     box-sizing: border-box;
-    flex: 0 0 70%; /* Chiếm 80% chiều rộng */
+    flex: 0 0 65%; /* Chiếm 80% chiều rộng */
     overflow-y: auto;
     border-right: 1px solid #DEDEDE;
 }
@@ -20,13 +20,13 @@
 .right-content {
     /*background-color: #f0f0f0;*/
 
-    padding: 20px;
+    padding: 40px 10px;
     box-sizing: border-box;
-    flex: 0 0 30%; /* Chiếm 20% chiều rộng */
+    flex: 0 0 35%; /* Chiếm 20% chiều rộng */
 }
 
 /* Ẩn phần bên phải trên màn hình nhỏ */
-@media screen and (max-width: 750px) {
+@media screen and (max-width: 1330px) {
     .right-content {
         display: none;
     }

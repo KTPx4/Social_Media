@@ -1,0 +1,80 @@
+.app-navbar {
+
+
+    height: 100vh;
+    width: 250px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.navbar-header {
+    font-family: "Billabong", cursive;
+    font-size: 28px;
+
+}
+
+.instagram-logo {
+    /*color: #fff;*/
+}
+
+.navbar-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Khoảng cách giữa các mục */
+}
+
+.navbar-item {
+    justify-content: flex-start; /* Canh biểu tượng và label bên trái */
+    /*color: #fff;*/
+    border: none;
+    background: none;
+    font-size: 16px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Khoảng cách giữa icon và text */
+    padding: 10px;
+}
+
+.navbar-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.profile-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%; /* Làm tròn hình ảnh */
+}
+
+.red-badge {
+    background-color: #ff0000; /* Badge màu đỏ */
+    font-size: 10px;
+    height: 16px;
+    width: 16px;
+    line-height: 16px;
+    text-align: center;
+    border-radius: 50%;
+}
+.navbar-menu .p-button-label, .navbar-header .p-button-label {
+    text-align: start;
+}
+
+@media (min-width: 768px) {
+    .horizontal-navbar {
+        display: none !important;;
+    }
+}
+
+@media screen and (max-width: 750px) {
+    .app-navbar {
+        display: none;
+    }
+
+    .horizontal-navbar {
+        display: flex !important;
+    }
+}
