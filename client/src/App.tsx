@@ -34,13 +34,13 @@ function App() {
             <Route path="/register" element={<RegisterPage />}></Route>
             <Route path="/home" element={<Layout />}>
               <Route index element={<MainPage />} />
-
+              <Route path="profile" element={<ProfilePage />}></Route>
               {/* <Route path="products" element={<LayoutProduct />}>
                 <Route index element={<ProductList />} />
                 <Route path="details/:id" />
               </Route> */}
             </Route>
-            <Route path="/profile" element={<ProfilePage />}></Route>
+            <Route path="*" element={<NotFoundPage />}></Route>
           </Routes>
         </UserContextProvider>
       </BrowserRouter>
