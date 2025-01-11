@@ -24,6 +24,7 @@ import EmailConfirmPage from "./pages/EmailConfirmPage";
 import ProfilePage from "./pages/Profile/ProfilePage.tsx";
 import PostDetail from "./pages/Post/PostDetail.tsx";
 import UserRouter from "./routes/UserRouter.tsx";
+import EditProfilePage from "./pages/Profile/EditProfilePage.tsx";
 
 axios.defaults.baseURL = "https://localhost:7212/api/";
 function App() {

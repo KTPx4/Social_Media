@@ -2,7 +2,7 @@ import { Button } from "primereact/button";
 import { Dialog } from "primereact/dialog";
 import { InputText } from "primereact/inputtext";
 import { useState } from "react";
-import apiClient from "../utils/apiClient";
+import apiClient from "../../utils/apiClient";
 
 interface DialogBoxProps {
   setIsVisible: (visible: boolean) => void;
@@ -20,7 +20,7 @@ const DialogBox = ({ visible, setIsVisible }: DialogBoxProps) => {
     if (!fliedError) {
       try {
         await apiClient.post("/user/reset", { username: fieldValue });
-        
+
         setIsVisible(false);
       } catch (err) {
         if (err instanceof Error) {
