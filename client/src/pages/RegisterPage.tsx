@@ -67,7 +67,7 @@ const RegisterPage = () => {
       try {
         const { confirmPassword, ...userData } = userInformation; // Exclude confirmPassword
         const data = await apiClient.post("/user/register", userData);
-        sessionStorage.setItem("token", JSON.stringify(data.data.token));
+        sessionStorage.setItem("token", data.data.token);
         setUserId(data.data.data.id);
         navigate("/home");
         // You can add a success message or navigate to another page here
