@@ -57,9 +57,9 @@ const LoginPage = () => {
       try {
         const data = await apiClient.post("/user/login", userInformation);
         if (rememberMe) {
-          localStorage.setItem("token", JSON.stringify(data.data.token));
+          localStorage.setItem("token", data.data.token);
         } else {
-          sessionStorage.setItem("token", JSON.stringify(data.data.token));
+          sessionStorage.setItem("token", data.data.token);
         }
         setUserId(data.data.data.id);
         // You can add a success message or navigate to another page here
