@@ -1,16 +1,27 @@
-import React, {useContext} from "react";
+import React, {useContext, useState} from "react";
 import { Button } from "primereact/button";
 import "./Layout.css";
 import {Outlet} from "react-router-dom";
 import {ThemeContext} from "../../ThemeContext.tsx";
-
+import CreatePostModal from "../post/CreatePostModal.tsx";
 const  Layout: React.FC = () => {
+    // @ts-ignore
+    const [isModalVisible, setModalVisible] = useState  (false);
+    const [isOpenCreate, setIsOpenCreate] = useState(false);
+    // Hàm để hiển thị và ẩn modal
+    // @ts-ignore
+    const showModal = () => setModalVisible(true);
+    // @ts-ignore
+    const hideModal = () => setModalVisible(false);
+
     // theme
     const themeContext = useContext(ThemeContext);
     // @ts-ignore
     const { currentTheme, changeTheme } = themeContext;
     const textColor = currentTheme.getText()
+    // @ts-ignore
     const textHintColor = currentTheme.getHint()
+    // @ts-ignore
     const captionColor = currentTheme.getCaption()
     const backgroundColor = currentTheme.getBackground()
     return (
@@ -24,6 +35,7 @@ const  Layout: React.FC = () => {
                 flexDirection: "row",
             }}
         >
+            <CreatePostModal visible={isOpenCreate} setVisible={setIsOpenCreate}/>
             {/* Nav-bar dọc */}
             <div className="app-navbar" >
                 <div className="navbar-header" style={{height: "80%", color: textColor}}>
@@ -42,7 +54,7 @@ const  Layout: React.FC = () => {
                        <Button icon="pi pi-search" label="Search" className="navbar-item" style={{ color: textColor}}/>
                        {/*<Button icon="pi pi-compass" label="Explore" className="navbar-item"/>*/}
                        {/*<Button icon="pi pi-video" label="Reels" className="navbar-item"/>*/}
-                       <Button icon="pi pi-plus" label="Create" className="navbar-item" style={{ color: textColor}}/>
+                       <Button onClick={()=> setIsOpenCreate(true)} icon="pi pi-plus" label="Create" className="navbar-item" style={{ color: textColor}}/>
 
                        <Button
                            icon="pi pi-bell"
@@ -89,12 +101,13 @@ const  Layout: React.FC = () => {
                     display: "none",
                     justifyContent: "space-evenly",
                     alignItems: "center",
+                    zIndex: 999
                       // Ẩn hiện dựa trên media query
                 }}
             >
                 <Button icon="pi pi-home" rounded text className="horizontal-navbar-item" />
                 <Button icon="pi pi-search" rounded text className="horizontal-navbar-item" />
-                <Button icon="pi pi-plus" rounded text className="horizontal-navbar-item" />
+                <Button onClick={()=> setIsOpenCreate(true)} icon="pi pi-plus" rounded text className="horizontal-navbar-item" />
                 <Button icon="pi pi-bell" rounded text className="horizontal-navbar-item" />
                 <Button icon="pi pi-comments" rounded text className="horizontal-navbar-item" />
                 <Button icon="pi pi-cog" rounded text className="horizontal-navbar-item" />

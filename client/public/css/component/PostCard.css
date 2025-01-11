@@ -8,10 +8,11 @@
     justify-content: center;
     align-items: center;
 }
-.p-link{
-    height:  6px;
-    width: 6px;
-}
+/*.p-link{*/
+/*    height:  6px;*/
+/*    width: 6px;*/
+/*}*/
+
 .p-highlight .p-link{
     background-color: #6BA3BE;
 }

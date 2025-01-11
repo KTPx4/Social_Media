@@ -18,8 +18,11 @@ const InfoContent : React.FC<UserInfo> = ({User}) =>{
     const textHintColor = currentTheme.getHint()
     const captionColor = currentTheme.getCaption()
 
+    // @ts-ignore
     const [isFriend, setFriend] = useState(true);
+    // @ts-ignore
     const [isBlock, setBlock] = useState(true);
+    // @ts-ignore
     const [isFollow, setFollow] = useState(false);
 
     const menu = useRef(null);
@@ -48,9 +51,17 @@ const InfoContent : React.FC<UserInfo> = ({User}) =>{
         },
 
     ];
-
+    if(User == null) return (<></>)
     return(
         <>
+            <Button  style={{
+                color: textColor,
+                margin: "0 0 10px 5px"
+            }}
+                 text
+                     icon={"pi pi-times"}
+            />
+
             <div style={{
                 display: "flex",
                 flexDirection: "row"
@@ -61,11 +72,13 @@ const InfoContent : React.FC<UserInfo> = ({User}) =>{
                     style={{ width: 70, height: 70 , minWidth:  70, marginRight: 10}}
 
                 />
+
                 <div style={{
                     width: "100%",
                     display: "flex",
                     flexDirection: "column",
                 }}>
+                    {/*user profile*/}
                     <p
                         style={{
                             color: textColor,
@@ -76,6 +89,7 @@ const InfoContent : React.FC<UserInfo> = ({User}) =>{
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                         }}>px4k3.pt</p>
+                    {/*name*/}
                     <p style={{
                         color: captionColor,
                         fontSize: 15,
@@ -107,22 +121,22 @@ const InfoContent : React.FC<UserInfo> = ({User}) =>{
                     {/*bio*/}
                     <p style={{color: textHintColor}}>this is bio of user this is bio of userthis is bio of userthis is bio of userthis is bio of userthis is bio of userthis is bio of userthis is bio of userthis is bio of user</p>
 
-                {/*button*/}
-                <div style={{
-                    marginTop:5,
-                    display: "flex",
-                    justifyContent: "space-evenly",
+                    {/*button*/}
+                    <div style={{
+                        marginTop:5,
+                        display: "flex",
+                        justifyContent: "space-evenly",
 
-                }}>
-                    <TieredMenu model={items} popup ref={menu} breakpoint="767px" />
-                    <Button label="Follow" severity="secondary"  style={{ borderRadius: 10, fontSize: "12px !important", height: "30px", padding: "20px" }} size={"small"}/>
-                    <Button label="Message" severity="secondary" style={{borderRadius: 10, height: "30px", padding: "20px"}} />
-                    <Button icon={`pi  ${!isFriend ? "pi-user-plus" : "pi-user-minus"}`} label="" severity="info" style={{borderRadius: 10, height: "30px", padding: "20px"}} />
-                    <Button
-                        // @ts-ignore
-                        onClick={(e) => menu.current.toggle(e)}
-                        icon="pi pi-ellipsis-h" rounded text label="" severity="info" style={{borderRadius: 10, color: textColor, height: "30px", padding: "20px"}} />
-                </div>
+                    }}>
+                        <TieredMenu model={items} popup ref={menu} breakpoint="767px" />
+                        <Button label="Follow" severity="secondary"  style={{ borderRadius: 10, fontSize: "12px !important", height: "30px", padding: "20px" }} size={"small"}/>
+                        <Button label="Message" severity="secondary" style={{borderRadius: 10, height: "30px", padding: "20px"}} />
+                        <Button icon={`pi  ${!isFriend ? "pi-user-plus" : "pi-user-minus"}`} label="" severity="info" style={{borderRadius: 10, height: "30px", padding: "20px"}} />
+                        <Button
+                            // @ts-ignore
+                            onClick={(e) => menu.current.toggle(e)}
+                            icon="pi pi-ellipsis-h" rounded text label="" severity="info" style={{borderRadius: 10, color: textColor, height: "30px", padding: "20px"}} />
+                    </div>
                 </div>
             </div>
         </>
