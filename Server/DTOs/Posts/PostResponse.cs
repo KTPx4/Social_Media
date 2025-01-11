@@ -9,6 +9,8 @@ namespace Server.DTOs.Posts
         public Guid Id { get; set; }
         public DateTime CreatedAt { get; set; }
         public Guid AuthorId { get; set; }
+        public string AuthorProfile { get; set; }
+        public string AuthorImg {  get; set; }
         public string Content { get; set; }
         public Guid? PostShareId { get; set; }
         public bool IsHide { get; set; }
@@ -32,6 +34,13 @@ namespace Server.DTOs.Posts
             this.IsHide = post.IsHide;
             this.Status = post.Status;
             this.Type = post.Type;
+            
+            if(post.Author != null)
+            {
+                this.AuthorImg = $"{host}/public/account/{post.Author.Id.ToString()}/{post.Author.ImageUrl}";
+                this.AuthorProfile = post.Author.UserProfile;
+            }
+
             if(post.Medias != null)
             {
 

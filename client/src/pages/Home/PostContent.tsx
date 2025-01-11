@@ -1,7 +1,9 @@
+// @ts-ignore
 import PostCard from "../../components/post/PostCard.tsx";
 
 import {Avatar} from "primereact/avatar";
 
+// @ts-ignore
 const post = {
     avatar: "https://via.placeholder.com/150",
     username: "px4k3.pxt",
@@ -10,6 +12,7 @@ const post = {
         "https://via.placeholder.com/500x300",
         "https://via.placeholder.com/500x400",
     ],
+    isHideComment: false
 };
 
 const PostContent = () =>{
@@ -98,9 +101,9 @@ const PostContent = () =>{
                 </div>
 
                 {/*list post */}
-                <PostCard {...post} />
-                <PostCard {...post} />
-                <PostCard {...post} />
+                {/*<PostCard {...post} />*/}
+                {/*<PostCard {...post} />*/}
+                {/*<PostCard {...post} />*/}
             </div>
         </>
     )

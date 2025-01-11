@@ -10,16 +10,20 @@ import {IconField} from "primereact/iconfield";
 import {InputIcon} from "primereact/inputicon";
 import {ThemeContext} from "../../ThemeContext.tsx";
 import {TieredMenu} from "primereact/tieredmenu"; // Import cả font-weight mặc định của Roboto
-
+import convertToHoChiMinhTime from "../../utils/Convertor.tsx"
 interface PostCardProps {
     avatar: string;
     username: string;
     caption: string;
-    images: string[];
+    medias: any;
+    createdAt: string;
+    isHideComment?: boolean;
+    authorId: string;
+    userId: string;
 }
 
 
-const PostCard: React.FC<PostCardProps> = ({ avatar, username, caption, images }) => {
+const PostCard: React.FC<PostCardProps> = ({userId,  authorId, avatar, username, caption, medias , createdAt,isHideComment= false }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
     // theme
@@ -29,18 +33,45 @@ const PostCard: React.FC<PostCardProps> = ({ avatar, username, caption, images }
     const textColor = currentTheme.getText()
     const textHintColor = currentTheme.getHint()
     const captionColor = currentTheme.getCaption()
+    var token = localStorage.getItem("token");
+    const listMedia = medias.map((media: { mediaUrl: any; contentType: any; }) =>  {
+        return {mediaUrl: media.mediaUrl + token, contentType: media.contentType}
+    })
+    // @ts-ignore
+
+    const isOwn = authorId === userId
 
     const menu = useRef(null);
-    const items = [
-        {
+    var items = [
+        !isOwn ? {
             label: 'Report',
             icon: 'pi pi-exclamation-triangle',
             command: () =>{
 
             }
-        },
+        } : {
+            label: 'Edit',
+            icon: 'pi pi-pen-to-square',
+            command: () =>{
 
+            }
+        },
     ];
+    console.log("ok1", authorId )
+    console.log("ok2", userId )
+
+    if(authorId === userId)
+    {
+        console.log("ok")
+        items = [...items, {
+            label: 'Delete',
+            icon: 'pi pi-trash',
+            command: () =>{
+
+            }
+        }]
+    }
+    createdAt = convertToHoChiMinhTime(createdAt)
 
     const toggleCaption = () => {
         setIsExpanded(!isExpanded);
@@ -49,20 +80,73 @@ const PostCard: React.FC<PostCardProps> = ({ avatar, username, caption, images }
     const [currentIndex, setCurrentIndex] = useState(0);
 
     const nextImage = () => {
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % listMedia.length);
     };
 
     const prevImage = () => {
-        setCurrentIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length);
+        setCurrentIndex((prevIndex) => (prevIndex - 1 + listMedia.length) % listMedia.length);
     };
-
     // @ts-ignore
+    var InputComponent = <></>
+    var ButtonComment= <></>
+
+    if(!isHideComment)
+    {
+        ButtonComment = (<>
+            <Button icon="pi pi-comment" className="p-button-rounded p-button-text"/>
+        </>)
+        InputComponent =
+            (
+                <IconField>
+                    <InputText placeholder="Add a comment..." className="input-comment p-inputtext-sm p-mr-2 border-none border-bottom-1"
+                                             style={{backgroundColor: "transparent", width: "100%", color: textHintColor}}/>
+                    <InputIcon className="pi pi-check" onClick={()=>{}}/>
+                </IconField>
+            )
+    }
+    var mediaShow = <></>
+    console.log("Media: ", listMedia)
+    if(listMedia[currentIndex].contentType.startsWith("image"))
+    {
+        mediaShow= (
+            <img
+                src={listMedia[currentIndex].mediaUrl}
+                alt={`Post Image ${currentIndex + 1}`}
+                style={{
+                    width: "100%",
+                    height: "auto",
+                    objectFit: "cover",
+                    display: "block",
+                }}
+            />
+        )
+    }
+    else {
+        mediaShow =(
+            <video
+                style={{width: "100%", objectFit: "cover"}}
+                controls
+                autoPlay
+                muted
+                key={Date.now()}
+            >
+                <source src={listMedia[currentIndex].mediaUrl} type={"video/mp4"}/>
+            </video>
+        )
+    }
     return (
         <HelmetProvider>
             <Helmet>
                 <link rel="stylesheet" href="/css/component/PostCard.css"/>
             </Helmet>
-            <div className="p-card p-mb-3 p-shadow-4" style={{backgroundColor: "transparent",boxShadow: "none",width: "100%", maxWidth: "500px", padding: 10, marginTop: 10}}>
+            <div className="p-card p-mb-3 p-shadow-4" style={{
+                backgroundColor: "transparent",
+                boxShadow: "none",
+                width: "100%",
+                maxWidth: "500px",
+                padding: 10,
+                marginTop: 10
+            }}>
                 {/* Header */}
                 <div className="post-header mx-2 my-3">
                     <div className="post-header-profile">
@@ -70,7 +154,7 @@ const PostCard: React.FC<PostCardProps> = ({ avatar, username, caption, images }
                         <div style={{marginLeft: 5}}>
                             <small className="p-m-0 font-bold" style={{color: textColor}}>{username}</small>
                             <br></br>
-                            <small className="p-text-secondary" style={{fontSize: 12, color: textHintColor}}>1d ago</small>
+                            <small className="p-text-secondary" style={{fontSize: 12, color: textHintColor}}>{createdAt}</small>
                         </div>
                     </div>
                     <TieredMenu model={items} popup ref={menu} breakpoint="767px" />
@@ -115,16 +199,8 @@ const PostCard: React.FC<PostCardProps> = ({ avatar, username, caption, images }
                 {/*Image*/}
                 <div style={{position: "relative", width: "100%", maxWidth: "500px"}}>
                     {/* Image */}
-                    <img
-                        src={images[currentIndex]}
-                        alt={`Post Image ${currentIndex + 1}`}
-                        style={{
-                            width: "100%",
-                            height: "auto",
-                            objectFit: "cover",
-                            display: "block",
-                        }}
-                    />
+                    {mediaShow}
+
 
                     {/* Previous Button */}
                     <button
@@ -178,7 +254,8 @@ const PostCard: React.FC<PostCardProps> = ({ avatar, username, caption, images }
                             gap: "0.5rem",
                         }}
                     >
-                        {images.map((_, index) => (
+                        {/*@ts-ignore*/}
+                        {listMedia.map((_, index) => (
                             <span
                                 key={index}
                                 onClick={() => setCurrentIndex(index)}
@@ -199,16 +276,12 @@ const PostCard: React.FC<PostCardProps> = ({ avatar, username, caption, images }
                 <div className="p-d-flex p-ai-center p-jc-between p-p-3">
                     <div>
                         <Button icon="pi pi-heart" className="p-button-rounded p-button-text p-mr-2"/>
-                        <Button icon="pi pi-comment" className="p-button-rounded p-button-text"/>
+                        {ButtonComment}
                         <Button icon="pi pi-send" className="p-button-rounded p-button-text"/>
                         <Button icon="pi pi-bookmark" className="p-button-rounded p-button-text"/>
                     </div>
-                    <IconField>
-                        <InputIcon className="pi pi-check" onClick={()=>{}}/>
+                            {InputComponent}
 
-                        <InputText placeholder="Add a comment..." className="input-comment p-inputtext-sm p-mr-2 border-none border-bottom-1"
-                                   style={{backgroundColor: "transparent", width: "100%", color: textHintColor}}/>
-                    </IconField>
                 </div>
             </div>
         </HelmetProvider>
