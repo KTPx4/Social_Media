@@ -31,7 +31,7 @@ const MainPage = () => {
 
               {/* Phần bên phải chiếm 20% */}
               <div className="right-content">
-                  <InfoContent />
+                  <InfoContent User={null}/>
               </div>
           </div>
       </HelmetProvider>
