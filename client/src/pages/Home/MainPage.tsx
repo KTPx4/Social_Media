@@ -1,15 +1,15 @@
 import { useContext } from "react";
-import { userContext } from "../../store/UserContext.tsx";
 import "primeflex/primeflex.css";
 
 import {Helmet, HelmetProvider} from "react-helmet-async";
-import PostContent from "./PostContent.tsx";
 import InfoContent from "./InfoContent.tsx";
 import {ThemeContext} from "../../ThemeContext.tsx";
+import useStore from "../../store/useStore.tsx";
 
 const MainPage = () => {
-  // @ts-ignore
-    const { userId, setUserId } = useContext(userContext);
+
+    // @ts-ignore
+    const {userId, setId} = useStore()
 
     // theme
     const themeContext = useContext(ThemeContext);
@@ -26,7 +26,8 @@ const MainPage = () => {
           <div className="container" style={{backgroundColor: backgroundColor, height: "100vh"}}>
           {/* Phần bên trái chiếm 80% */}
               <div className="left-content flex-column justify-content-start align-items-center">
-                  <PostContent />
+                  {/*<PostContent />*/}
+                  <h1 style={{color: "white"}}>id ={userId}</h1>
               </div>
 
               {/* Phần bên phải chiếm 20% */}

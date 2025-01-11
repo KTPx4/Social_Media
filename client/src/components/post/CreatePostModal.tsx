@@ -13,7 +13,7 @@ interface CreatePostModalProps {
     visible: boolean;
     setVisible: (visible: boolean) => void;
 }
-
+const maxFiles = 5;
 const CreatePostModal: React.FC<CreatePostModalProps> = ({ visible, setVisible }) => {
     // theme
     const themeContext = useContext(ThemeContext);
@@ -38,8 +38,34 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ visible, setVisible }
     const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             const files = Array.from(e.target.files);
-            setSelectedFiles(files);
-            setActiveStep(2); // Chuyển sang bước preview
+            if (selectedFiles.length + files.length > maxFiles) {
+                toast.current?.show({
+                    severity: 'warn',
+                    summary: 'Too Many Files',
+                    detail: `You can only upload up to ${maxFiles} files.`,
+                    life: 3000,
+                });
+                return;
+            }
+            const allowedFormats = ['image/jpg', 'image/jpeg', 'image/png', 'video/mp4', 'video/webp'];
+            const maxSize = 10 * 1024 * 1024; // 10MB
+
+            const validFiles = files.filter((file) => {
+                if (!allowedFormats.includes(file.type)) {
+                    toast.current?.show({ severity: 'warn', summary: 'Invalid Format', detail: `Unsupported file format: ${file.type}`, life: 3000 });
+                    return false;
+                }
+                if (file.size > maxSize) {
+                    toast.current?.show({ severity: 'warn', summary: 'File Too Large', detail: `${file.name} exceeds the 10MB limit`, life: 3000 });
+                    return false;
+                }
+                return true;
+            });
+
+            if (validFiles.length > 0) {
+                setSelectedFiles( [  ...validFiles]);
+                setActiveStep(2); // Chuyển sang bước preview
+            }
         }
     };
 
@@ -101,9 +127,39 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ visible, setVisible }
         }
     };
 
+
     const itemTemplate = (item: File) => {
-        return <img src={URL.createObjectURL(item)} alt={item.name} style={{ width: "100%" }} />;
+        if (item.type.startsWith("image/")) {
+            return <img src={URL.createObjectURL(item)} alt={item.name} style={{ width: "100%" }} />;
+        }
+        if (item.type.startsWith("video/")) {
+            return (
+                <video controls style={{ width: "100%" }} key={item.name}>
+                    <source src={URL.createObjectURL(item)} type={item.type} />
+                    Your browser does not support the video tag.
+                </video>
+            );
+        }
+        return null;
     };
+    const thumbnailTemplate = (item: File) => {
+        if (item.type.startsWith("image/")) {
+            return <img src={URL.createObjectURL(item)} alt={item.name} style={{ width: "100%" }} />;
+        }
+        if (item.type.startsWith("video/")) {
+            return (
+                <video
+                    style={{ width: "100%", objectFit: "cover" }}
+                    muted
+                    key={item.name}
+                >
+                    <source src={URL.createObjectURL(item)} type={item.type} />
+                </video>
+            );
+        }
+        return null;
+    };
+
 
     return (
         <>
@@ -121,7 +177,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ visible, setVisible }
                         <div className="drag-area">
                             <input
                                 type="file"
-                                accept="image/*"
+                                accept="image/jpg,image/jpeg,image/png,video/mp4,video/webp"
                                 multiple
                                 onChange={onFileSelect}
                                 className="file-input"
@@ -142,9 +198,12 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ visible, setVisible }
                             <Galleria
                                 value={selectedFiles}
                                 item={itemTemplate}
-                                style={{maxWidth: "400px"}}
-                                showThumbnails={false}
-                                showIndicators
+                                thumbnail={thumbnailTemplate} // Thêm thumbnailTemplate để hiển thị video đúng ở indicators
+                                style={{ maxWidth: "400px" }}
+                                showThumbnails={true} // Nếu muốn hiện thumbnails
+                                showIndicators={true} // Đảm bảo indicators được bật
+                                indicatorsPosition="bottom" // Vị trí indicators (nếu cần)
+                                circular // Cho phép chuyển vòng lặp giữa các mục
                             />
                             <div className="step-actions" style={{
                                 display: "flex",

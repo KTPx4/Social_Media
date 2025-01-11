@@ -6,11 +6,12 @@ import { Checkbox } from "primereact/checkbox";
 import DialogBox from "../components/DialogBox";
 import apiClient from "../utils/apiClient";
 import { userContext } from "../store/UserContext";
-
+import useAuth from "../hooks/useAuth.tsx";
+import { Navigate } from "react-router-dom";
 const LoginPage = () => {
   // @ts-ignore
-  const { userId, setUserId } = useContext(userContext);
-  const navigate = useNavigate();
+  // const { userId, setUserId } = useContext(userContext);
+  // const navigate = useNavigate();
   const [visible, setVisible] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [userInformation, setUserInformation] = useState({
@@ -21,17 +22,24 @@ const LoginPage = () => {
     username: "",
     password: "",
   });
+  const token = localStorage.getItem('token') || sessionStorage.getItem("token") || "";
+  const { isAuthenticated } = useAuth(token);
+
+  if (isAuthenticated) {
+    return <Navigate to="/home" />;
+  }
+/*
   useEffect(() => {
     function fetchToken() {
       const sessionToken = sessionStorage.getItem("token");
       const localToken = localStorage.getItem("token");
       if (localToken || sessionToken) {
-        navigate("/home");
+        // navigate("/home");
       }
     }
     fetchToken();
   }, [navigate]);
-
+*/
   // const [ingredients, setIngredients] = useState<string[]>([]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -61,6 +69,7 @@ const LoginPage = () => {
         } else {
           sessionStorage.setItem("token", data.data.token);
         }
+        console.log("Set id: ",data.data.data.id)
         setUserId(data.data.data.id);
         // You can add a success message or navigate to another page here
         navigate("/home");
