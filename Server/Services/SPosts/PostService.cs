@@ -195,9 +195,11 @@ namespace Server.Services.SPosts
 
             var post = await _context.Posts
                 .Where(p => p.Id.ToString() == postId)
+                .Include (p=>p.Author)
                 .Include(p => p.Medias)
                  .Select(p => new PostResponse(p, _ServerHost))
-                 .FirstOrDefaultAsync();
+                 .FirstOrDefaultAsync();                                                                            
+            
             if (post == null) throw new Exception("Post-Post not exists");
             if(post.Status != Post.PostStatus.Public && post.AuthorId.ToString() != userId)
             {

@@ -67,6 +67,9 @@
     .horizontal-navbar {
         display: none !important;;
     }
+    .body-main-content{
+        height: 100%  !important;
+    }
 }
 
 @media screen and (max-width: 750px) {
@@ -76,5 +79,9 @@
 
     .horizontal-navbar {
         display: flex !important;
+    }
+    .body-main-content{
+        height: 95vh !important;
+        padding-bottom: 20px;
     }
 }

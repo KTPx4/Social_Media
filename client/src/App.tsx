@@ -22,6 +22,7 @@ import { ThemeProvider } from "./ThemeContext.tsx";
 import NotFoundPage from "./pages/NotFoundPage";
 import EmailConfirmPage from "./pages/EmailConfirmPage";
 import ProfilePage from "./pages/Profile/ProfilePage.tsx";
+import PostDetail from "./pages/Post/PostDetail.tsx";
 
 axios.defaults.baseURL = "https://localhost:7212/api/";
 function App() {
@@ -39,6 +40,9 @@ function App() {
                 <Route index element={<ProductList />} />
                 <Route path="details/:id" />
               </Route> */}
+            </Route>
+            <Route path="/post/:id" element={<Layout />}>
+              <Route index element={<PostDetail />} />
             </Route>
             <Route path="*" element={<NotFoundPage />}></Route>
           </Routes>

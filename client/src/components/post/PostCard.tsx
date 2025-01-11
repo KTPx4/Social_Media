@@ -10,16 +10,18 @@ import {IconField} from "primereact/iconfield";
 import {InputIcon} from "primereact/inputicon";
 import {ThemeContext} from "../../ThemeContext.tsx";
 import {TieredMenu} from "primereact/tieredmenu"; // Import cả font-weight mặc định của Roboto
-
+import convertToHoChiMinhTime from "../../utils/Convertor.tsx"
 interface PostCardProps {
     avatar: string;
     username: string;
     caption: string;
     images: string[];
+    createdAt: string;
+    isHideComment?: boolean;
 }
 
 
-const PostCard: React.FC<PostCardProps> = ({ avatar, username, caption, images }) => {
+const PostCard: React.FC<PostCardProps> = ({ avatar, username, caption, images , createdAt,isHideComment= false }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
     // theme
@@ -41,6 +43,7 @@ const PostCard: React.FC<PostCardProps> = ({ avatar, username, caption, images }
         },
 
     ];
+    createdAt = convertToHoChiMinhTime(createdAt)
 
     const toggleCaption = () => {
         setIsExpanded(!isExpanded);
@@ -55,8 +58,20 @@ const PostCard: React.FC<PostCardProps> = ({ avatar, username, caption, images }
     const prevImage = () => {
         setCurrentIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length);
     };
-
     // @ts-ignore
+    var InputComponent = <></>
+    if(!isHideComment)
+    {
+        InputComponent =
+            (
+                <IconField>
+                    <InputText placeholder="Add a comment..." className="input-comment p-inputtext-sm p-mr-2 border-none border-bottom-1"
+                                             style={{backgroundColor: "transparent", width: "100%", color: textHintColor}}/>
+                    <InputIcon className="pi pi-check" onClick={()=>{}}/>
+                </IconField>
+            )
+    }
+
     return (
         <HelmetProvider>
             <Helmet>
@@ -70,7 +85,7 @@ const PostCard: React.FC<PostCardProps> = ({ avatar, username, caption, images }
                         <div style={{marginLeft: 5}}>
                             <small className="p-m-0 font-bold" style={{color: textColor}}>{username}</small>
                             <br></br>
-                            <small className="p-text-secondary" style={{fontSize: 12, color: textHintColor}}>1d ago</small>
+                            <small className="p-text-secondary" style={{fontSize: 12, color: textHintColor}}>{createdAt}</small>
                         </div>
                     </div>
                     <TieredMenu model={items} popup ref={menu} breakpoint="767px" />
@@ -203,12 +218,8 @@ const PostCard: React.FC<PostCardProps> = ({ avatar, username, caption, images }
                         <Button icon="pi pi-send" className="p-button-rounded p-button-text"/>
                         <Button icon="pi pi-bookmark" className="p-button-rounded p-button-text"/>
                     </div>
-                    <IconField>
-                        <InputIcon className="pi pi-check" onClick={()=>{}}/>
+                            {InputComponent}
 
-                        <InputText placeholder="Add a comment..." className="input-comment p-inputtext-sm p-mr-2 border-none border-bottom-1"
-                                   style={{backgroundColor: "transparent", width: "100%", color: textHintColor}}/>
-                    </IconField>
                 </div>
             </div>
         </HelmetProvider>

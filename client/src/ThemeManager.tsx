@@ -5,6 +5,7 @@ interface Theme {
     textColor: string;
     hintColor: string;
     Caption: string;
+    Border: string;
 }
 
 const themes: Record<string, Theme> = {
@@ -14,7 +15,7 @@ const themes: Record<string, Theme> = {
         textColor: '#000000',
         hintColor: '#9b9b9b',
         Caption: '#4b5563',
-
+        Border: '#DEDEDE',
     },
     theme_dark: {
         key: 'theme_dark',
@@ -22,6 +23,7 @@ const themes: Record<string, Theme> = {
         textColor: '#ffffff',
         hintColor: '#cfcfcf',
         Caption: '#dfdfdf',
+        Border: '#5a5a5a',
     },
 };
 
@@ -38,6 +40,7 @@ const themeManager = {
     getText: (): string => getCurrentTheme().textColor,
     getHint: (): string => getCurrentTheme().hintColor,
     getCaption: (): string => getCurrentTheme().Caption,
+    getBorder: ():string => getCurrentTheme().Border,
     setTheme: (newTheme: string): void => {
         if (themes[newTheme]) {
             localStorage.setItem('app_theme', newTheme);

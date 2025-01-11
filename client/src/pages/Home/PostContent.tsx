@@ -10,6 +10,7 @@ const post = {
         "https://via.placeholder.com/500x300",
         "https://via.placeholder.com/500x400",
     ],
+    isHideComment: false
 };
 
 const PostContent = () =>{
