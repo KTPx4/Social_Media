@@ -46,7 +46,7 @@ const DialogBox = ({ visible, setIsVisible }: DialogBoxProps) => {
       <Dialog
         header="Recover password"
         visible={visible}
-        style={{ width: "50vw" }}
+        style={{ width: "50vw", background: "white" }}
         onHide={() => {
           if (!visible) return;
           setIsVisible(false);
