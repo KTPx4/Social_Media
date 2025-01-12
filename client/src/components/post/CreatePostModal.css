@@ -27,7 +27,7 @@
     height: auto;
     object-fit: cover;
 }
-.p-dialog-header , .p-dialog-content{
+.create-post-dialog .p-dialog-header , .create-post-dialog .p-dialog-content{
     background: transparent;
 }
 .p-dialog-title{

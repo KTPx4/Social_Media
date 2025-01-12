@@ -114,7 +114,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ visible, setVisible }
 
                 setTimeout(()=>{
                     window.location.href = `/post/${postId}`
-                }, 2000)
+                }, 500)
             }
             else{
                 showError(mess)

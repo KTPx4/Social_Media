@@ -70,9 +70,9 @@ const LoginPage = () => {
           sessionStorage.setItem("token", data.data.token);
         }
         console.log("Set id: ",data.data.data.id)
-        setUserId(data.data.data.id);
+        // setUserId(data.data.data.id);
         // You can add a success message or navigate to another page here
-        navigate("/home");
+        window.location.href = "/home";
       } catch (error: unknown) {
         if (error instanceof Error) {
           errors.username = error.message;

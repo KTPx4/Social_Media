@@ -23,7 +23,7 @@ const themes: Record<string, Theme> = {
         textColor: '#ffffff',
         hintColor: '#cfcfcf',
         Caption: '#dfdfdf',
-        Border: '#5a5a5a',
+        Border: '#1d1d1d',
     },
 };
 

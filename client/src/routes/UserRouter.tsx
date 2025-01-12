@@ -16,11 +16,14 @@ const UserRouter: React.FC<UserRouterProps> = ({ children }) => {
     if (loading) {
         return (
             <div className="w-100 d-flex justify-content-center align-items-center">
+                loading....
                 {/*<Spinner className="d-flex justify-content-center" animation="border" variant="info" />*/}
             </div>
         );
     }
+    else{
 
+    }
     // Render component chính hoặc điều hướng
     return isAuthenticated ? <>{children}</> : <Navigate to="/" />;
 };

@@ -173,7 +173,7 @@ namespace Server.Controllers
                 
                 if (user == null) return NotFound(new { message = "Your account not found or was deleted" });
                
-                var ruser = new UserResponse(user);
+                var ruser = new UserResponse(user, _ServerIMGHost);
                 
                 await CheckAvt(user.Id.ToString(), user.ImageUrl);
 
