@@ -11,7 +11,7 @@ import { Navigate } from "react-router-dom";
 const LoginPage = () => {
   // @ts-ignore
   // const { userId, setUserId } = useContext(userContext);
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
   const [visible, setVisible] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [userInformation, setUserInformation] = useState({
@@ -22,13 +22,14 @@ const LoginPage = () => {
     username: "",
     password: "",
   });
-  const token = localStorage.getItem('token') || sessionStorage.getItem("token") || "";
+  const token =
+    localStorage.getItem("token") || sessionStorage.getItem("token") || "";
   const { isAuthenticated } = useAuth(token);
 
   if (isAuthenticated) {
     return <Navigate to="/home" />;
   }
-/*
+  /*
   useEffect(() => {
     function fetchToken() {
       const sessionToken = sessionStorage.getItem("token");

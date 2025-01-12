@@ -4,17 +4,21 @@ import { Avatar } from "primereact/avatar";
 
 import { Button } from "primereact/button";
 
-import { useNavigate } from "react-router-dom";
+import { data, useNavigate } from "react-router-dom";
 
 import { Menubar } from "primereact/menubar";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import EditProfileModal from "../../components/profile/EditProfileModal";
+import useStore from "../../store/useStore";
 
 const ProfilePage = () => {
-  //  const location = useLocation();
-
-  //  const queryParams = new URLSearchParams(location.search);
-
+  const { myAccount } = useStore();
+  const userData = JSON.parse(JSON.stringify(myAccount)); // deep copy of myAccount
+  Object.keys(userData).forEach((key) => {
+    if (!userData[key]) {
+      userData[key] = "";
+    }
+  });
   const navigate = useNavigate(); //  const username = queryParams.get("username"); //  const token = queryParams.get("token"); //  const [passwordError, setPasswordError] = useState(""); //  const [NewPass, setPassword] = useState(""); //  async function handleResetPassword() { //   let error = ""; //   if (!NewPass) { //    error = "This field can not be empty"; //   } else if (NewPass.length < 6 || NewPass.length > 30) { //    error = "Password must be between  6 to 30  characters long"; //   } //   if (!error) { //    try { //     await apiClient.get("/user/reset", { //      params: { username, token, NewPass }, //     }); //     navigate("/"); //    } catch (err) { //     if (err instanceof Error) { //      error = err.message; //     } //    } //   } //   setPasswordError(error); //  }
   const [visible, setVisible] = useState(false);
   const items = [
@@ -98,7 +102,7 @@ const ProfilePage = () => {
         </div>
         <div className="h-auto w-full flex-column pl-8 pb-4 pt-4 w-11">
           <div className="flex gap-4">
-            <p>phucnguyenhoang3839</p>
+            <p>Username: {userData.userName}</p>
             <div className="flex gap-2">
               <Button
                 label="Edit profile"
@@ -118,7 +122,11 @@ const ProfilePage = () => {
           <div className="flex justify-content-between w-4">
             <p>3 post</p> <p>3 followers</p> <p>3 following</p>
           </div>
-          <p>Phuc Nguyen</p> <a>sdfsdfdsf</a> <p>hello every one </p>
+          <p>Name: {userData.name}</p>
+          <p>
+            Email: <a href={`mailto:${userData.email}`}>{userData.email}</a>
+          </p>
+          <p>{userData.bio}</p>
         </div>
       </div>
       <div
