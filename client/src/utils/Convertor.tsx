@@ -25,15 +25,15 @@ const convertToHoChiMinhTime = (dateString: string): string => {
     const diffInYears = diffInMonths / 12;
 
     if (diffInMinutes < 60) {
-        return `${Math.floor(diffInMinutes)} minute ago`;
+        return `${Math.floor(diffInMinutes)} minute`;
     } else if (diffInHours < 24) {
-        return `${Math.floor(diffInHours)} hour ago`;
+        return `${Math.floor(diffInHours)} hour`;
     } else if (diffInDays < 30) {
-        return `${Math.floor(diffInDays)} day ago`;
+        return `${Math.floor(diffInDays)} day`;
     } else if (diffInMonths < 12) {
-        return `${Math.floor(diffInMonths)} month ago`;
+        return `${Math.floor(diffInMonths)} month`;
     } else {
-        return `${Math.floor(diffInYears)} year ago`;
+        return `${Math.floor(diffInYears)} year`;
     }
 };
 

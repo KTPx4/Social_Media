@@ -19,6 +19,8 @@ namespace Server.DTOs.Posts
         public int SumLike { get; set; }
         public int SumComment { get; set; }
         public bool isLike { get; set; } = false;
+        public bool isSave { get; set; } = false;
+
         public List<MediaResponse> ListMedia { get; set; } = new List<MediaResponse>();
 
         public PostResponse()
