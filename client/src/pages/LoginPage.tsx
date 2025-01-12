@@ -3,7 +3,7 @@ import { Button } from "primereact/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
 import { Checkbox } from "primereact/checkbox";
-import DialogBox from "../components/DialogBox";
+import DialogBox from "../components/login/DialogBox";
 import apiClient from "../utils/apiClient";
 import { userContext } from "../store/UserContext";
 import useAuth from "../hooks/useAuth.tsx";
