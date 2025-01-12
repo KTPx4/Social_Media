@@ -11,7 +11,7 @@ import { Navigate } from "react-router-dom";
 const LoginPage = () => {
   // @ts-ignore
   // const { userId, setUserId } = useContext(userContext);
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
   const [visible, setVisible] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [userInformation, setUserInformation] = useState({
@@ -22,13 +22,14 @@ const LoginPage = () => {
     username: "",
     password: "",
   });
-  const token = localStorage.getItem('token') || sessionStorage.getItem("token") || "";
+  const token =
+    localStorage.getItem("token") || sessionStorage.getItem("token") || "";
   const { isAuthenticated } = useAuth(token);
 
   if (isAuthenticated) {
     return <Navigate to="/home" />;
   }
-/*
+  /*
   useEffect(() => {
     function fetchToken() {
       const sessionToken = sessionStorage.getItem("token");
@@ -69,8 +70,8 @@ const LoginPage = () => {
         } else {
           sessionStorage.setItem("token", data.data.token);
         }
-        console.log("Set id: ",data.data.data.id)
-        setUserId(data.data.data.id);
+        console.log("Set id: ", data.data.data.id);
+        // setUserId(data.data.data.id);
         // You can add a success message or navigate to another page here
         navigate("/home");
       } catch (error: unknown) {
