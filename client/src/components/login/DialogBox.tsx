@@ -2,7 +2,7 @@ import { Button } from "primereact/button";
 import { Dialog } from "primereact/dialog";
 import { InputText } from "primereact/inputtext";
 import { useState } from "react";
-import apiClient from "../utils/apiClient";
+import apiClient from "../../utils/apiClient";
 
 interface DialogBoxProps {
   setIsVisible: (visible: boolean) => void;
@@ -20,7 +20,7 @@ const DialogBox = ({ visible, setIsVisible }: DialogBoxProps) => {
     if (!fliedError) {
       try {
         await apiClient.post("/user/reset", { username: fieldValue });
-        
+
         setIsVisible(false);
       } catch (err) {
         if (err instanceof Error) {
@@ -46,7 +46,7 @@ const DialogBox = ({ visible, setIsVisible }: DialogBoxProps) => {
       <Dialog
         header="Recover password"
         visible={visible}
-        style={{ width: "50vw" }}
+        style={{ width: "50vw", background: "white" }}
         onHide={() => {
           if (!visible) return;
           setIsVisible(false);

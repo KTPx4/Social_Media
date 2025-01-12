@@ -30,7 +30,7 @@ function App() {
   return (
     <ThemeProvider>
       <BrowserRouter>
-        {/*<UserContextProvider>*/}
+        <UserContextProvider>
           <Routes>
             <Route path="/" element={<LoginPage />}></Route>
             <Route path="/register" element={<RegisterPage />}></Route>
@@ -47,7 +47,7 @@ function App() {
             </Route>
             <Route path="*" element={<NotFoundPage />}></Route>
           </Routes>
-        {/*</UserContextProvider>*/}
+        </UserContextProvider>
       </BrowserRouter>
     </ThemeProvider>
   );
