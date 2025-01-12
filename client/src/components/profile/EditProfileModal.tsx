@@ -102,7 +102,7 @@ const EditProfileModal: React.FC<ProfileModalProps> = ({
           customUpload
           //   uploadHandler={customBase64Uploader}
           onSelect={onFileSelected}
-          onClear={onFileClear}
+          onBeforeDrop={onFileClear}
         />
         {/* <FileUpload
           style={{
