@@ -27,6 +27,7 @@ const PostCard: React.FC<PostCardProps> = ({Post, isHideComment= false}) => {
     var {id ,authorId,  createdAt, authorProfile, authorImg, content, listMedia} = Post
     var postId = id,  username = authorProfile, avatar = authorImg, caption = content, medias = listMedia
     const [isLike, setIsLike] = useState<boolean>(Post.isLike);
+    const [isSave, setIsSave] = useState<boolean>(Post.isSave);
     const [countLike, setCountLike]= useState<number>(Post.sumLike)
     const [countComment, setCountComment]= useState<number>(Post.sumComment)
 
@@ -86,7 +87,7 @@ const PostCard: React.FC<PostCardProps> = ({Post, isHideComment= false}) => {
             }
         }]
     }
-    createdAt = convertToHoChiMinhTime(createdAt)
+    createdAt = convertToHoChiMinhTime(createdAt) + " ago"
 
 ///////////////delete post
     const deletePost = () =>{
@@ -161,13 +162,45 @@ const PostCard: React.FC<PostCardProps> = ({Post, isHideComment= false}) => {
         }
         actionToPost()
     }, [isLike, isWaitRequest]);
+
 //////////////// save
+    useEffect(() => {
+        if(!isWaitRequest) return;
+        const actionToPost = async()=>{
+            var rs = null
+            try{
+                if(isSave)
+                {
+                    rs = await apiClient.post(`/post/${Post.id}/save`)
+                }else{
+                    rs = await apiClient.post(`/post/${Post.id}/unsave`)
+                }
+                setIsWaitRequest(false);
+                var statusCode = rs.status
+                if( statusCode === 200 || statusCode === 204)
+                {
+                    // toast.current?.show({ severity: 'success', summary: `${isLike ? "Like" : "Unlike"} post`, detail: `You has been like post`, life: 3000 });
+                }
+            }
+            catch (e)
+            {
+                setIsWaitRequest(false);
+                setIsSave(!isSave)
+                toast.current?.show({ severity: 'error', summary: `${isLike ? "Save" : "UnSave"} post`, detail: 'Error when action post', life: 3000 });
+                console.log("error when send action post" , e)
+            }
+
+        }
+        actionToPost()
+    }, [isSave, isWaitRequest]);
     const savePost = async() =>{
         if(isWaitRequest)
         {
             return;
         }
         setIsWaitRequest(true)
+        // setCountLike(countLike + (isLike ? -1 : + 1) ) // before click like button
+        setIsSave(!isSave)
     }
 ////////////////send
     const sendPostToMess = async()=>{
@@ -268,7 +301,7 @@ const PostCard: React.FC<PostCardProps> = ({Post, isHideComment= false}) => {
             return (
                 <div
                     style={{
-                        width: "360px",
+                        width: "480px",
                         height: "200px",
                         backgroundColor: "grey",
                         maxWidth: 500,
@@ -434,7 +467,7 @@ const PostCard: React.FC<PostCardProps> = ({Post, isHideComment= false}) => {
                         <Button onClick={actionPost} icon={`pi ${isLike ?  "pi-heart-fill" : "pi-heart" } `} className="p-button-rounded p-button-text p-mr-2"/>
                         {ButtonComment}
                         <Button onClick={sendPostToMess} icon="pi pi-send" className="p-button-rounded p-button-text"/>
-                        <Button onClick={savePost} icon="pi pi-bookmark" className="p-button-rounded p-button-text"/>
+                        <Button onClick={savePost} icon={`pi ${isSave ? "pi-bookmark-fill" : "pi-bookmark"}`} className="p-button-rounded p-button-text"/>
                     </div>
                             {InputComponent}
 

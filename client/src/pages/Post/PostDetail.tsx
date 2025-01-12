@@ -11,6 +11,7 @@ import {Card} from "primereact/card";
 // @ts-ignore
 import './PostDetail.css';
 import postCard from "../../components/post/PostCard.tsx";
+import CommentComponent from "../../components/post/CommentComponent.tsx";
 
 interface Media {
     id: string;
@@ -57,6 +58,42 @@ const PostDetail: React.FC = () => {
     const backgroundColor = currentTheme.getBackground()
     const textHintColor = currentTheme.getHint()
     const keyTheme = currentTheme.getKey()
+    const [listComment , setListComment] = useState([])
+    const [page, setPage] = useState(1)
+    const [isCanLoadComment, setIsCanLoadComment] = useState(true)
+    const [isWaitLoadComment, setIsWaitLoadComment] = useState(false)
+    const [replyCommentId, setReplyCommentId] = useState("");
+    const [isWaitComment, setIsWaitComment] = useState(false);
+    const [inputComment, setInputComment] = useState("")
+
+// load list comment
+    const loadListComment = async (p: number)=>{
+        if(!isCanLoadComment) return
+
+        try{
+            var rs = await  apiClient.get(`/post/${id}/comment?page=${p}`)
+            console.log(rs)
+            setIsWaitLoadComment(false)
+            var statusCode = rs.status
+            if(statusCode == 200)
+            {
+                var listComment = rs.data.data
+                if( !listComment || listComment === null || listComment.length === 0)
+                {
+                    setIsCanLoadComment(false)
+                    return
+                }
+                // @ts-ignore
+
+                setListComment((prev) => [...prev, ...listComment])
+            }
+        }
+        catch (e)
+        {
+            setIsWaitLoadComment(false)
+            console.log(e)
+        }
+    }
     useEffect(() => {
         const fetchPost = async () => {
             try {
@@ -70,6 +107,7 @@ const PostDetail: React.FC = () => {
                 setIsLoading(false)
                 if(status === 200)
                 {
+
                     setPost(response.data.data);
                     setFiles(response.data.data.listMedia);
                 }
@@ -89,6 +127,11 @@ const PostDetail: React.FC = () => {
         fetchPost();
     }, [id]);
 
+    useEffect(() => {
+
+        loadListComment(page);
+
+    }, [page]);
     const handleComment = () => {
         console.log('Commented:', comment);
         setComment('');
@@ -97,6 +140,41 @@ const PostDetail: React.FC = () => {
         // Điều hướng về trang chính (ví dụ sử dụng react-router-dom)
         window.location.href = '/home';
     };
+
+    const PostComment = async( ) =>{
+        if(isWaitComment) return;
+
+        setIsWaitComment(true);
+        console.log(inputComment)
+        console.log(replyCommentId)
+
+        var data = {
+
+            Content: inputComment
+        }
+
+        try{
+            var rs = await apiClient.post(`/post/${id}/comment`, data)
+            console.log(rs)
+            setIsWaitComment(false);
+
+            var statusCode = rs.status
+            if( statusCode === 200 || statusCode === 201)
+            {
+                var rsComment = rs.data.data
+                // @ts-ignore
+                setListComment((prev) => [rsComment, ...prev])
+            }
+        }catch (e)
+        {
+            setIsWaitComment(false);
+            console.log(e)
+        }
+        setInputComment("")
+    }
+
+
+
     if (isLoading) return <div>Loading...</div>;
     if(!post) return (
         <div
@@ -144,11 +222,38 @@ const PostDetail: React.FC = () => {
 
                 <div className="comment-list"
                      style={{height: "100%", overflow: "auto", backgroundColor: backgroundColor, minHeight: 500}}>
-                    {/*list comment*/}
+                    {listComment.map((comment) =>{
+                        // @ts-ignore
+                        return (<CommentComponent key={comment.id} comment={comment} postId={id}/>)
+                    })}
+                     {/*list comment*/}
+                    {isCanLoadComment && (
+                        <div style={{marginTop: 2}}>
+                            <p onClick={()=> {
+                                if(isWaitLoadComment)
+                                {
+                                    return
+                                }
+                                setIsWaitLoadComment(true)
+                                setPage(page+1)
+                            }}
+                               style={{fontSize: 12, fontStyle: "italic", cursor: "pointer"}}>...Load orther
+                                comment...</p>
+                        </div>
+                    )}
                 </div>
 
                 <div className="comment-input" style={{marginBottom: 40, minWidth: 300, maxWidth: 700}}>
-                    <InputText placeholder="Add a comment..." className="input-comment p-inputtext-sm p-mr-2 border-none border-bottom-1"
+                    <InputText
+                        disabled={isWaitComment}
+                        value={inputComment}
+                        onChange={(e)=> setInputComment(e.target.value)}
+                        onKeyDown={(e)=>{
+                            if(e.key === "Enter") {
+                                PostComment()
+                            }
+                        }}
+                        placeholder="Add a comment..." className="input-comment p-inputtext-sm p-mr-2 border-none border-bottom-1"
                                style={{backgroundColor: "transparent", width: "100%", color: textHintColor}}/>
                     <Button text label="Post" onClick={handleComment} />
                 </div>

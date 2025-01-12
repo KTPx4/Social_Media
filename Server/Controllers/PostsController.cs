@@ -180,7 +180,59 @@ namespace Server.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
             }
         }
-        
+        // save post
+        [HttpPost("{id}/save")]
+        [Authorize]
+        public async Task<IActionResult> SavePost(string id)
+        {
+            try
+            {
+                var userId = User.FindFirstValue("UserId");
+
+                var rsPost = await _postService.SavePost(userId, id);
+
+                return NoContent();
+
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                if (message.StartsWith("Post-"))
+                {
+                    return BadRequest(new { message = message.Split("-")[1] });
+                }
+                Console.WriteLine("Like post: " + ex.Message);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
+            }
+        }
+        // unlike post
+        [HttpPost("{id}/unsave")]
+        [Authorize]
+        public async Task<IActionResult> UnSavePost(string id)
+        {
+            try
+            {
+                var userId = User.FindFirstValue("UserId");
+
+                var rsPost = await _postService.UnSavePost(userId, id);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                if (message.StartsWith("Post-"))
+                {
+                    return BadRequest(new { message = message.Split("-")[1] });
+                }
+                Console.WriteLine("Unlike post: " + ex.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
+            }
+        }
+
+
+
         // like post
         [HttpPost("{id}/like")]
         [Authorize]
