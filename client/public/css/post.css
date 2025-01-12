@@ -13,7 +13,6 @@
     box-sizing: border-box;
     flex: 0 0 65%; /* Chiếm 80% chiều rộng */
     overflow-y: auto;
-    border-right: 1px solid #DEDEDE;
 }
 
 /* Right Content Styling */

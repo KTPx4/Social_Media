@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import {useContext, useEffect} from "react";
 import "primeflex/primeflex.css";
 
 import {Helmet, HelmetProvider} from "react-helmet-async";
@@ -9,14 +9,17 @@ import useStore from "../../store/useStore.tsx";
 const MainPage = () => {
 
     // @ts-ignore
-    const {userId, setId} = useStore()
+    const {userId, setId , myAccount} = useStore()
+    useEffect(() => {
+        console.log(myAccount)
 
+    }, []);
     // theme
     const themeContext = useContext(ThemeContext);
     // @ts-ignore
     const { currentTheme, changeTheme } = themeContext;
     const  backgroundColor = currentTheme.getBackground();
-
+    const borderColor = currentTheme.getBorder()
   return (
       <HelmetProvider>
           <Helmet>
@@ -25,7 +28,9 @@ const MainPage = () => {
           </Helmet>
           <div className="container" style={{backgroundColor: backgroundColor, height: "100vh"}}>
           {/* Phần bên trái chiếm 80% */}
-              <div className="left-content flex-column justify-content-start align-items-center">
+              <div className="left-content flex-column justify-content-start align-items-center" style={{
+                  borderRight: `1px solid ${borderColor}`
+              }}>
                   {/*<PostContent />*/}
                   <h1 style={{color: "white"}}>id ={userId}</h1>
               </div>

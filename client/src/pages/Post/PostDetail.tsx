@@ -3,11 +3,14 @@ import { useParams } from 'react-router-dom';
 
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
-import './PostDetail.css';
 import apiClient from "../../utils/apiClient.tsx";
 import PostCard from "../../components/post/PostCard.tsx";
 import {ThemeContext} from "../../ThemeContext.tsx";
 import useStore from "../../store/useStore.tsx";
+import {Card} from "primereact/card";
+// @ts-ignore
+import './PostDetail.css';
+import postCard from "../../components/post/PostCard.tsx";
 
 interface Media {
     id: string;
@@ -53,16 +56,17 @@ const PostDetail: React.FC = () => {
     const borderColor = currentTheme.getBorder()
     const backgroundColor = currentTheme.getBackground()
     const textHintColor = currentTheme.getHint()
-
+    const keyTheme = currentTheme.getKey()
     useEffect(() => {
         const fetchPost = async () => {
             try {
                 const response = await apiClient.get(`/post/${id}`);
-                console.log(response)
+                // console.log(response)
                 // if (data.message === 'Get success') {
                 //     setPost(data.data);
                 // }
                 var status = response.status
+                console.log(response)
                 setIsLoading(false)
                 if(status === 200)
                 {
@@ -72,9 +76,14 @@ const PostDetail: React.FC = () => {
                 else{
                     setPost(null);
                 }
+
             } catch (error) {
                 console.error('Error fetching post:', error);
+                // @ts-ignore
+                setIsLoading(false)
+                setPost(null);
             }
+
         };
 
         fetchPost();
@@ -84,23 +93,57 @@ const PostDetail: React.FC = () => {
         console.log('Commented:', comment);
         setComment('');
     };
-
+    const goToHome = () => {
+        // Điều hướng về trang chính (ví dụ sử dụng react-router-dom)
+        window.location.href = '/home';
+    };
     if (isLoading) return <div>Loading...</div>;
-    if(!post) return <div>Can not access this post</div>;
+    if(!post) return (
+        <div
+            style={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100vh',
+                width: "100%",
+                textAlign: 'center',
+                backgroundColor: backgroundColor,
+            }}
+        >
+            <Card style={{maxWidth: '400px', padding: '1rem', backgroundColor: keyTheme === "theme_dark" ? "black" : "white"}}>
+                <img
+                    src="/public/person.png"
+                    alt="Error Icon"
+                    style={{width: '150px', marginBottom: '1rem'}}
+                />
+                <h3 style={{color: textColor}}>This post is currently unavailable.</h3>
+                {/*<p style={{color: '#6c757d'}}>*/}
+                {/*    The content you are trying to view is not accessible right now.*/}
+                {/*</p>*/}
+                <Button label="Go to Home" icon="pi pi-home" onClick={goToHome}/>
+            </Card>
+        </div>
+    );
 
 
     return (
         <div className="post-detail" style={{width: "100%", maxHeight: 700}}>
             <div className="post-detail-content" style={{borderRight: `1px solid ${borderColor} !important`}}>
                 {/*// @ts-ignore*/}
-                <PostCard userId={userId} authorId={post.authorId} isHideComment={true} createdAt={post.createdAt} medias={files} username={post.authorProfile} avatar={post.authorImg} caption={post.content}/>
+                {/*<PostCard postId={post.id} userId={userId} authorId={post.authorId} isHideComment={true}*/}
+                {/*          createdAt={post.createdAt} medias={files} username={post.authorProfile}*/}
+                {/*          avatar={post.authorImg} caption={post.content}/>*/}
+                <PostCard Post={post} isHideComment={true}/>
+
             </div>
 
             {/*<Divider layout="vertical" className="divider" />*/}
 
             <div className="post-detail-comments">
 
-                <div className="comment-list" style={{height: "100%", overflow: "auto", backgroundColor: backgroundColor, minHeight: 500}}>
+                <div className="comment-list"
+                     style={{height: "100%", overflow: "auto", backgroundColor: backgroundColor, minHeight: 500}}>
                     {/*list comment*/}
                 </div>
 

@@ -40,5 +40,20 @@ namespace Server.DTOs.Account
             this.CreatedAt = user.CreatedAt;
 
         }
+        public UserResponse(User user, string host)
+        {
+            this.Id = user.Id;
+            this.UserName = user.UserName;
+            this.UserProfile = user.UserProfile;
+            this.Bio = user.Bio;
+            this.Name = user.Name;
+            this.Gender = user.Gender;
+            this.Email = user.Email;
+            this.Phone = user.Phone;
+            this.ImageUrl = $"{host}/{user.Id.ToString()}/{user.ImageUrl}";
+            this.IsDeleted = user.IsDeleted;
+            this.CreatedAt = user.CreatedAt;
+
+        }
     }
 }

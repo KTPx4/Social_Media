@@ -24,33 +24,24 @@ import EmailConfirmPage from "./pages/EmailConfirmPage";
 import ProfilePage from "./pages/Profile/ProfilePage.tsx";
 import PostDetail from "./pages/Post/PostDetail.tsx";
 import UserRouter from "./routes/UserRouter.tsx";
-import EditProfilePage from "./pages/Profile/EditProfilePage.tsx";
 
 axios.defaults.baseURL = "https://localhost:7212/api/";
 function App() {
   return (
     <ThemeProvider>
-      {" "}
       <BrowserRouter>
-        {" "}
         <UserContextProvider>
-          {" "}
           <Routes>
             <Route path="/" element={<LoginPage />}></Route>
             <Route path="/register" element={<RegisterPage />}></Route>
             <Route path="/home" element={<UserRouter><Layout /></UserRouter>}>
               <Route index element={<MainPage />} />
               <Route path="profile" element={<ProfilePage />}></Route>
-              <Route path="editProfile" element={<EditProfilePage />}></Route>{" "}
               {/* <Route path="products" element={<LayoutProduct />}>
-
-        <Route index element={<ProductList />} />
-
-        <Route path="details/:id" />
-
-       </Route> */}{" "}
+                <Route index element={<ProductList />} />
+                <Route path="details/:id" />
+              </Route> */}
             </Route>
-            <Route path="*" element={<NotFoundPage />}></Route>{" "}
             <Route path="/post/:id" element={<UserRouter><Layout /></UserRouter>}>
               <Route index element={<PostDetail />} />
             </Route>

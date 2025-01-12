@@ -210,7 +210,14 @@ namespace Server.Services.SPosts
                     if (relation == null || !relation.IsFriend || relation.Status != FriendStatus.Normal) throw new Exception("Post-Can not access this post");
                 }
             }
-
+            var Like = await _context.PostLikes
+                .Where(l => l.PostId.ToString() == postId && l.UserId.ToString() == userId)
+                .FirstOrDefaultAsync();
+            var isLike = Like != null;
+            post.isLike = isLike;
+            post.SumLike = await _context.PostLikes.CountAsync(l => l.PostId.ToString() == postId);
+            post.SumComment = await _context.PostComments.CountAsync(c => c.PostId.ToString() == postId);
+        
             return post;
         }
 

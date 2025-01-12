@@ -18,36 +18,44 @@ const useAuth = (token: string): UseAuthReturn => {
     const { userId, setId, myAccount, setMyAccount } = useStore();
 
     useEffect(() => {
+        let isMounted = true; // Đảm bảo chỉ thực hiện nếu component còn mounted
         const verifyToken = async () => {
-            // Logic nếu token không tồn tại
             if (!token) {
-                setIsAuthenticated(false);
-                setLoading(false);
+                if (isMounted) {
+                    setIsAuthenticated(false);
+                    setLoading(false);
+                }
                 return;
             }
 
             try {
+                console.log("1times")
                 const url = `${SERVER}/user/validate`;
                 const res = await axios.get(url, {
                     headers: { authorization: `Bearer ${token}` },
                 });
-                console.log("result validate: ", res)
-                if (res.status === 200) {
-                    const data = res.data.data;
-                    setMyAccount(data);
-                    setId(data.id);
-                    setIsAuthenticated(true);
-                } else {
-                    setIsAuthenticated(false);
+                if (isMounted) {
+                    if (res.status === 200) {
+                        const data = res.data.data;
+                        setMyAccount(data);
+                        setId(data.id);
+                        setIsAuthenticated(true);
+                    } else {
+                        setIsAuthenticated(false);
+                    }
                 }
             } catch (err) {
-                setIsAuthenticated(false);
+                if (isMounted) setIsAuthenticated(false);
             } finally {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }
         };
 
         verifyToken();
+
+        return () => {
+            isMounted = false; // Cleanup khi component bị unmount
+        };
     }, [token, setId, setMyAccount]);
 
 
