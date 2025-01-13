@@ -37,17 +37,24 @@ namespace Server.DTOs.Posts
             this.IsHide = post.IsHide;
             this.Status = post.Status;
             this.Type = post.Type;
+
+            var medias = post.Medias;
+            var author = post.Author;
             
-            if(post.Author != null)
+            this.SumLike = post.Likes?.Count ?? 0;
+            this.SumComment = post.Comments?.Count ?? 0;
+
+
+            if(author != null)
             {
-                this.AuthorImg = $"{host}/public/account/{post.Author.Id.ToString()}/{post.Author.ImageUrl}";
+                this.AuthorImg = $"{host}/public/account/{author.Id.ToString()}/{author.ImageUrl}";
                 this.AuthorProfile = post.Author.UserProfile;
             }
 
-            if(post.Medias != null)
+            if(medias != null)
             {
 
-                foreach (var m in post.Medias)
+                foreach (var m in medias)
                 {
                     ListMedia.Add(new MediaResponse()
                     {
@@ -61,6 +68,16 @@ namespace Server.DTOs.Posts
                     });
                 }
             }    
+        }
+
+        public static List<PostResponse> GetPostResponses(ICollection<Post> posts, string host) 
+        {
+            var list = new List<PostResponse>();
+            foreach (var post in posts) 
+            {
+                list.Add(new PostResponse(post, host));
+            }
+            return list;
         }
     }
 }

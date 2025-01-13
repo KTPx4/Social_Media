@@ -1,9 +1,14 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Google.Apis.Gmail.v1.Data;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using Server.Data;
 using Server.DTOs.Account;
+using Server.DTOs.Posts;
 using Server.Models.Account;
+using Server.Models.Community.Posts;
+using Server.Models.RelationShip;
 using System.Security.Claims;
 
 namespace Server.Services
@@ -15,6 +20,12 @@ namespace Server.Services
         private readonly SignInManager<User> _signInManager;
         private readonly RoleManager<Role> _roleManager;
         private readonly IConfiguration _configuration;
+
+        private readonly string _AccessImgAccount;
+        private readonly string _ServerHost;
+        private readonly string _PublicUrl;
+        private readonly int LIMIT_PAGE_POST = 5;
+
         public UserService(APIDbContext context, RoleManager<Role> roleManager, UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration configuration)
         {
             this.context = context;
@@ -22,8 +33,156 @@ namespace Server.Services
             this._signInManager = signInManager;
             this._configuration = configuration;
             this._roleManager = roleManager;
+
+            var serverSettings = _configuration.GetSection("ServerSettings");
+            _ServerHost = serverSettings["HostName"];
+            _AccessImgAccount = serverSettings["AccessImgHost"];
+            _PublicUrl = $"{_ServerHost}/{_AccessImgAccount}";
         }
 
+        public async Task<List<PostResponse>> GetPostsByProfile(string userId, string userProfile, int page)
+        {
+            if (page < 1) page = 1;
+
+            var myAccount = _userManager.FindByIdAsync(userId);
+            if (myAccount == null) throw new Exception("Account-Your account not exists");
+            
+            var profile = await context.Users
+             .Where(u => u.UserProfile.ToLower().Trim() == userProfile.ToLower().Trim())
+             .FirstOrDefaultAsync();
+           
+            if(profile == null) throw new Exception("Account-Account not exists or user profile has been changed");
+            
+            var relation = await context.FriendShips
+               .Where(f => f.UserId.ToString() == userId && f.FriendId == profile.Id)
+               .FirstOrDefaultAsync();
+
+            if (relation != null && relation.Status != FriendShip.FriendStatus.Normal)
+            {
+                throw new Exception("Account-You not allow to view this profile");
+            }
+
+            var listPost = await context.Posts
+                .Where(p => p.AuthorId == profile.Id)
+                .OrderByDescending(p => p.CreatedAt) // Sắp xếp bài viết theo ngày đăng mới nhất
+                .Skip((page - 1) * LIMIT_PAGE_POST)
+                .Take(LIMIT_PAGE_POST)
+                .Include(p => p.Medias)
+                .Select(post => new PostResponse
+                {
+                        Id = post.Id,
+                        CreatedAt = post.CreatedAt,
+                        AuthorId = post.AuthorId,
+                        Content = post.Content,
+                        PostShareId = post.PostShareId,
+                        IsHide = post.IsHide,
+                        Status = post.Status,
+                        Type = post.Type,
+                        AuthorImg = $"{_ServerHost}/public/account/{post.Author.Id.ToString()}/{post.Author.ImageUrl}",
+                        AuthorProfile = post.Author.UserProfile,
+                        SumComment = post.Comments.Count,
+                        SumLike = post.Likes.Count,
+                        ListMedia = post.Medias
+                                .Select( m => new MediaResponse()
+                                {
+                                    Id = m.Id,
+                                    Content = m.Content,
+                                    ContentType = m.ContentType,
+                                    IsDeleted = m.IsDeleted,
+                                    MediaUrl = $"{_ServerHost}/api/file/src?id={m.Id.ToString()}&token=",
+                                    PostId = m.PostId,
+                                    Type = m.Type
+                                })
+                                .ToList()
+                })
+                .ToListAsync();
+
+            foreach (var post in listPost)
+            {
+                var Like = await context.PostLikes
+                    .Where(l => l.PostId.ToString() == post.Id.ToString() && l.UserId.ToString() == userId)
+                    .FirstOrDefaultAsync();
+
+                var Save = await context.PostSaves
+                    .Where(l => l.PostId.ToString() == post.Id.ToString() && l.UserId.ToString() == userId)
+                    .FirstOrDefaultAsync();
+
+                var isLike = Like != null;
+                var isSave = Save != null;
+                post.isLike = isLike;
+                post.isSave = isSave;
+               
+            }
+
+            return listPost;
+        }
+        public async Task<UserResponse> FindByUserProfile(string userId, string userProfile)
+        {
+            var myAccount = _userManager.FindByIdAsync(userId);
+            if (myAccount == null) throw new Exception("Account-Your account not exists");
+
+            var profile = await context.Users
+             .Where(u => u.UserProfile.ToLower().Trim() == userProfile.ToLower().Trim())
+             .Select(u => new UserResponse
+             {
+                 Id = u.Id,
+                 UserName = u.UserName,
+                 UserProfile = u.UserProfile,
+                 Bio = u.Bio,
+                 Name = u.Name,
+                 Gender = u.Gender,
+                 Email = u.Email,
+                 Phone = u.Phone,
+                 ImageUrl = $"{_PublicUrl}/{u.Id}/{u.ImageUrl}",
+                 IsDeleted = u.IsDeleted,
+                 CreatedAt = u.CreatedAt ,  
+
+                 // Đếm Followers, Followings và Posts
+                 CountFollowers = u.Followers.Count(),
+                 CountFollowings = u.Following.Count(),
+                 CountPosts = u.MyPosts.Count(),
+
+                 // Lấy 5 bài viết mới nhất
+                 Posts = u.MyPosts
+                     .OrderByDescending(p => p.CreatedAt) // Sắp xếp bài viết theo ngày đăng mới nhất
+                     .Take(LIMIT_PAGE_POST)
+                     .Select(p => new PostResponse(p , _ServerHost))
+                     .ToList()
+             })
+             .FirstOrDefaultAsync();
+
+
+            if (profile == null) return null;
+
+            var relation = await context.FriendShips
+                .Where(f => f.UserId.ToString() == userId && f.FriendId == profile.Id)
+                .FirstOrDefaultAsync();
+
+            if(relation != null && relation.Status != FriendShip.FriendStatus.Normal)
+            {
+                throw new Exception("Account-You not allow to view this profile");
+            }
+
+            foreach (var post in profile.Posts)
+            {
+                var Like = await context.PostLikes
+                    .Where(l => l.PostId.ToString() == post.Id.ToString() && l.UserId.ToString() == userId)
+                    .FirstOrDefaultAsync();
+
+                var Save = await context.PostSaves
+                    .Where(l => l.PostId.ToString() == post.Id.ToString() && l.UserId.ToString() == userId)
+                    .FirstOrDefaultAsync();
+
+                var isLike = Like != null;
+                var isSave = Save != null;
+                post.isLike = isLike;
+                post.isSave = isSave;
+                post.SumLike = await context.PostLikes.CountAsync(l => l.PostId == post.Id);
+                post.SumComment = await context.PostComments.CountAsync(c => c.PostId == post.Id);
+            }
+
+            return profile;
+        }
         public async Task<User?> ResetPassword(string userName, string token, string newPPassword)
         {
             if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(newPPassword) || string.IsNullOrEmpty(token)) return null;
