@@ -1,7 +1,7 @@
 import React, { useContext, useState } from "react";
 import { Button } from "primereact/button";
 import "./Layout.css";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { ThemeContext } from "../../ThemeContext.tsx";
 import CreatePostModal from "../post/CreatePostModal.tsx";
 import useStore from "../../store/useStore.tsx";
@@ -9,6 +9,7 @@ const Layout: React.FC = () => {
   const { myAccount } = useStore();
 
   // @ts-ignore
+  const navigate = useNavigate();
   const [isModalVisible, setModalVisible] = useState(false);
   const [isOpenCreate, setIsOpenCreate] = useState(false);
   // Hàm để hiển thị và ẩn modal
@@ -132,6 +133,9 @@ const Layout: React.FC = () => {
                   className="profile-icon"
                 />
               }
+              onClick={() => {
+                navigate("profile");
+              }}
               style={{ color: textColor }}
             />
             {/*<Button icon="pi pi-comments" label="Threads" className="navbar-item"/>*/}
