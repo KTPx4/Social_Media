@@ -96,7 +96,7 @@ const PostCard: React.FC<PostCardProps> = ({Post, isHideComment= false}) => {
     }
     const confirmDelete = () => {
         confirmDialog({
-            message: 'Do you want to delete this record?',
+            message: 'Do you want to delete this post?',
             header: 'Delete Confirmation',
             icon: 'pi pi-info-circle',
             defaultFocus: 'reject',

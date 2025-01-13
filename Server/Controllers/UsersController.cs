@@ -15,6 +15,7 @@ using Server.DTOs.Account;
 using Server.Models.Account;
 using Server.Modules;
 using Server.Services;
+using Server.Services.SPosts;
 
 namespace Server.Controllers
 {
@@ -53,6 +54,55 @@ namespace Server.Controllers
 
             _ServerIMGHost = Path.Combine(_ServerHost, _AccessImgHost);
 
+        }
+        [HttpGet("profile/{profile}")]
+        [Authorize]
+        public async Task<IActionResult> GetByProfile(string profile)
+        {
+            var userId = User.FindFirstValue("UserId");
+            try
+            {
+                var rs = await _userService.FindByUserProfile(userId, profile);
+                
+                if(rs == null) return NotFound(new {message = "Account not exists or user profile has been changed" });
+
+                return Ok(new { message = "Get success", data = rs });
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                if (message.StartsWith("Account-"))
+                {
+                    return BadRequest(new { message = message.Split("-")[1] });
+                }
+                Console.WriteLine("Get by profile: " + ex.Message);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
+            }
+        }
+
+        [HttpGet("profile/{profile}/posts")]
+        [Authorize]
+        public async Task<IActionResult> GetByProfile(string profile, [FromQuery] int page = 1)
+        {
+            var userId = User.FindFirstValue("UserId");
+            try
+            {
+                var rs = await _userService.GetPostsByProfile(userId, profile, page);
+
+                return Ok(new { message = "Get success", data = rs });
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                if (message.StartsWith("Account-"))
+                {
+                    return BadRequest(new { message = message.Split("-")[1] });
+                }
+                Console.WriteLine("Get by profile: " + ex.Message);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
+            }
         }
 
         [HttpPost("login")]
@@ -173,7 +223,7 @@ namespace Server.Controllers
                 
                 if (user == null) return NotFound(new { message = "Your account not found or was deleted" });
                
-                var ruser = new UserResponse(user, _ServerIMGHost);
+                var ruser = new UserResponse(user, _ServerHost, _ServerIMGHost);
                 
                 await CheckAvt(user.Id.ToString(), user.ImageUrl);
 
