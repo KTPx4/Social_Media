@@ -94,11 +94,17 @@ const ProfilePage = () => {
         visible={visible}
       ></EditProfileModal>
       <div className="flex w-full h-auto">
-        <div className="w-full h-full flex justify-content-center align-items-center w-4">
-          <img
-            src="https://fastly.picsum.photos/id/808/536/354.jpg?hmac=Wj27FehH0gnLQFDE1TwjgdDrLIByp-1dOSh9UznzPyw"
-            className="border-circle w-17rem h-17rem  m-2 bg-primary font-bold flex align-items-center justify-content-center"
-          ></img>
+        <div className="w-4 h-full flex justify-content-center align-items-center ">
+          <Avatar
+            shape="circle"
+            image={myAccount?.imageUrl}
+            style={{
+              width: "40vh",
+              height: "40vh",
+              marginRight: "auto",
+              marginLeft: "auto",
+            }}
+          />
         </div>
         <div className="h-auto w-full flex-column pl-8 pb-4 pt-4 w-11">
           <div className="flex gap-4">

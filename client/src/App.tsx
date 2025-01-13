@@ -34,15 +34,30 @@ function App() {
           <Routes>
             <Route path="/" element={<LoginPage />}></Route>
             <Route path="/register" element={<RegisterPage />}></Route>
-            <Route path="/home" element={<UserRouter><Layout /></UserRouter>}>
+            <Route
+              path="/home"
+              element={
+                <UserRouter>
+                  <Layout />
+                </UserRouter>
+              }
+            >
               <Route index element={<MainPage />} />
-              <Route path="profile" element={<ProfilePage />}></Route>
+              <Route path="profile/:id" element={<ProfilePage />}></Route>
+
               {/* <Route path="products" element={<LayoutProduct />}>
                 <Route index element={<ProductList />} />
                 <Route path="details/:id" />
               </Route> */}
             </Route>
-            <Route path="/post/:id" element={<UserRouter><Layout /></UserRouter>}>
+            <Route
+              path="/post/:id"
+              element={
+                <UserRouter>
+                  <Layout />
+                </UserRouter>
+              }
+            >
               <Route index element={<PostDetail />} />
             </Route>
             <Route path="*" element={<NotFoundPage />}></Route>
