@@ -43,7 +43,7 @@ function App() {
               }
             >
               <Route index element={<MainPage />} />
-              <Route path="profile/:id" element={<ProfilePage />}></Route>
+              <Route path="profile" element={<ProfilePage />}></Route>
 
               {/* <Route path="products" element={<LayoutProduct />}>
                 <Route index element={<ProductList />} />
