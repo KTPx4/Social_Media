@@ -24,6 +24,7 @@ import EmailConfirmPage from "./pages/EmailConfirmPage";
 import ProfilePage from "./pages/Profile/ProfilePage.tsx";
 import PostDetail from "./pages/Post/PostDetail.tsx";
 import UserRouter from "./routes/UserRouter.tsx";
+import UserProfilePage from "./pages/Profile/UserProfilePage.tsx";
 
 axios.defaults.baseURL = "https://localhost:7212/api/";
 function App() {
@@ -42,6 +43,10 @@ function App() {
                 </UserRouter>
               }
             >
+              <Route
+                path="profile/:userProfileString"
+                element={<UserProfilePage />}
+              ></Route>
               <Route index element={<MainPage />} />
               <Route path="profile" element={<ProfilePage />}></Route>
 
