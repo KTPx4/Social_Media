@@ -262,7 +262,7 @@ const EditProfileModal: React.FC<ProfileModalProps> = ({
         <Button
           type="submit"
           className="p-button-secondary w-3 mt-2"
-          label="Login"
+          label="Edit"
         />
       </form>
     </Dialog>
