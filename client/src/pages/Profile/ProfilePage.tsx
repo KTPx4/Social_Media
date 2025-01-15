@@ -10,6 +10,7 @@ import { Menubar } from "primereact/menubar";
 import { useContext, useState } from "react";
 import EditProfileModal from "../../components/profile/EditProfileModal";
 import useStore from "../../store/useStore";
+import ProfilePostsGrid from "../../components/profile/ProfilePostsGrid";
 
 const ProfilePage = () => {
   const { myAccount } = useStore();
@@ -20,6 +21,7 @@ const ProfilePage = () => {
       label: "POSTS",
 
       icon: "pi pi-table",
+      command: () => {},
     },
 
     {
@@ -85,6 +87,7 @@ const ProfilePage = () => {
       <div className="w-full h-auto ">
         <Menubar model={items} />
       </div>
+      <ProfilePostsGrid userProfile={myAccount?.userProfile}></ProfilePostsGrid>
     </div>
   );
 };

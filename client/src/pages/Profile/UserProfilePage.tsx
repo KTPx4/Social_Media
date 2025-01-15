@@ -13,6 +13,7 @@ import useStore from "../../store/useStore";
 import apiClient from "../../utils/apiClient";
 import ResourcesErrorCard from "../../components/ResourcesErrorCard";
 import { ThemeContext } from "../../ThemeContext";
+import ProfilePostsGrid from "../../components/profile/ProfilePostsGrid";
 
 const UserProfilePage = () => {
   const themeContext = useContext(ThemeContext);
@@ -129,6 +130,9 @@ const UserProfilePage = () => {
 
       <div className="w-full h-auto ">
         <Menubar model={items} />
+        <ProfilePostsGrid
+          userProfile={userProfile?.data.userProfile}
+        ></ProfilePostsGrid>
       </div>
     </div>
   );
