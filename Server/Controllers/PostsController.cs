@@ -134,6 +134,57 @@ namespace Server.Controllers
             }
         }
 
+        [HttpPut("{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdatePost(string id,[FromForm] UpdatePostModel updatePostModel)
+        {
+            var userId = User.FindFirstValue("UserId");
+            try
+            {
+                if (updatePostModel.files != null && updatePostModel.files.Count > 0) 
+                {
+                    FileValidationHelper.IsValidListMedia(updatePostModel.files);
+                }
+            }
+            catch (Exception ex)
+            {
+                var mess = ex.Message;
+                if (mess.StartsWith("File-"))
+                {
+                    var rmess = mess.Split("File-")[1];
+                    return BadRequest(new { message = rmess });
+                }
+
+                Console.WriteLine(mess);
+                return StatusCode(500, new { message = "Server error. Try again!" });
+            }
+
+            try
+            {
+                var listFileInfo = FileValidationHelper.GetFilesInfo(updatePostModel.files);
+                var rs = await _postService.UpdatePost(userId, id, updatePostModel, listFileInfo);
+
+                return Ok(new
+                {
+                    message = "Update post success",
+                    data = rs
+                });
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                if (message.StartsWith("Post-"))
+                {
+                    return BadRequest(new { message = message.Split("-")[1] });
+                }
+                Console.WriteLine("Update post: " + ex.Message);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
+            }
+           
+            
+        }
+
         [HttpDelete("{id}")]
         [Authorize]
         public async Task<IActionResult> DeletePost(string id)
@@ -152,6 +203,30 @@ namespace Server.Controllers
                     return BadRequest(new { message = message.Split("-")[1] });
                 }
                 Console.WriteLine("Delete post: " + ex.Message);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
+            }
+        }
+
+        // get like post
+        [HttpGet("{id}/history")]
+        [Authorize]
+        public async Task<IActionResult> GetHistory(string id)
+        {
+            try
+            {
+                var userId = User.FindFirstValue("UserId");
+                var rs = await _postService.GetHistory(userId, id);
+                return Ok(new { message = "Get success", data = rs });
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                if (message.StartsWith("Post-"))
+                {
+                    return BadRequest(new { message = message.Split("-")[1] });
+                }
+                Console.WriteLine("Like post: " + ex.Message);
 
                 return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
             }

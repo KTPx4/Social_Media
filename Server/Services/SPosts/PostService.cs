@@ -5,6 +5,8 @@ using Server.DTOs.Account;
 using Server.DTOs.Posts;
 using Server.Models.Account;
 using Server.Models.Community.Posts;
+using Server.Models.Community.PostsUpdates;
+using Server.Models.Community.PostUpdates;
 using System.Drawing.Printing;
 using static Server.Models.Account.UserNotify;
 using static Server.Models.RelationShip.FriendShip;
@@ -26,7 +28,7 @@ namespace Server.Services.SPosts
         private readonly string _ServerHost;
         private readonly int LIMIT_SIZE = 10;
 
-        private readonly int LIMIT_COMMENT_SIZE = 20;
+        private readonly int LIMIT_COMMENT_SIZE = 10;
 
         public PostService(APIDbContext context, IConfiguration configuration, UserManager<User> userManager)
         {
@@ -160,6 +162,180 @@ namespace Server.Services.SPosts
             return new PostResponse(post, _ServerHost);
         }
 
+        public async Task<PostResponse> UpdatePost(string userId, string postId, UpdatePostModel updateModel, List<FileInfoDto> fileInfos)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null) throw new Exception("Post-Your account not exists");
+                var post = await _context.Posts
+                    .Where(p => p.Id.ToString().Equals(postId))
+                     .Include(p => p.Author)
+                    .Include(p => p.Updates)
+                    .Include(p => p.Medias)
+                    .FirstOrDefaultAsync();
+
+                if (post == null) throw new Exception("Post-Post not exists");
+                if (post.AuthorId.ToString() != userId) throw new Exception("Post-You not allow to access");
+
+
+                var uploadsFolder = Path.Combine(_RootImgPost, postId.ToString());
+                if (!Directory.Exists(uploadsFolder))
+                {
+                    Directory.CreateDirectory(uploadsFolder);
+                }
+
+                var postUpdate = new PostUpdate()
+                {
+                    PostId = post.Id,
+                    AuthorId = post.AuthorId,
+                    Content = post.Content,
+                    PostShareId = post.PostShareId,
+                    IsHide = post.IsHide,
+                    Status = post.Status,
+                    Type = post.Type,
+                };
+                await _context.PostUpdates.AddAsync(postUpdate);
+                await _context.SaveChangesAsync();
+
+                post.Content = updateModel.Content;
+                post.Status = updateModel.Status;
+
+                // create history for old version
+                var rootPath = $"{_RootImgPost}/{postId}";
+                var listMediaOld = new List<PostMediaUpdate>();
+
+                //foreach(var m in updateModel.Medias)
+                //{
+                //    Console.WriteLine("[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[id: " + m);
+
+                //}
+
+                foreach (var m in post.Medias)
+                {
+                    //Console.WriteLine("----------------------------- mediaid:" + m.Id.ToString() +"-isContain: " + updateModel.Medias.Contains(m.Id.ToString()));
+                    var updateMedia = new PostMediaUpdate()
+                    {
+                        MediaId = m.Id,
+                        PostUpdateId = postUpdate.Id,
+                        Type = m.Type,
+                        MediaUrl = m.MediaUrl,
+                        Content = m.Content,
+                        ContentType = m.ContentType,
+                        IsDeleted = m.IsDeleted,
+                    };
+                    //delete media not has in list
+                    if (!updateModel.Medias.Contains(m.Id.ToString()))
+                    {
+                        m.IsDeleted = true;
+                        updateMedia.IsDeleted = true;
+                        var filePath = $"{rootPath}/{m.MediaUrl}";
+
+                        if (System.IO.File.Exists(filePath))
+                        {
+                            System.IO.File.Delete(filePath);
+                        }
+
+                        post.Medias.Remove(m);
+                    }
+
+                    listMediaOld.Add(updateMedia);
+
+                }
+                await _context.PostMediaUpdates.AddRangeAsync(listMediaOld);
+                await _context.SaveChangesAsync();
+
+
+                // add new media
+                var listMediaModel = new List<PostMedia>();
+
+                for (int i = 0; i < fileInfos.Count; i++)
+                {
+                    var fileInfo = fileInfos[i];
+                    var newMedia = new PostMedia()
+                    {
+                        PostId = post.Id,
+                        Type = fileInfo.Type,
+                        MediaUrl = fileInfo.Name,
+                        ContentType = fileInfo.ContentType,
+                    };
+                    // Add model
+                    listMediaModel.Add(newMedia);
+
+                    // copy file to folder
+                    try
+                    {
+                        // destination folder
+                        var filePath = Path.Combine(uploadsFolder, fileInfo.Name);
+
+                        //// Lưu file tạm
+                        using (var stream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await fileInfo.File.CopyToAsync(stream);
+                        }
+
+                        //// Xóa file tạm (nếu cần)
+                        var tempFilePath = fileInfo.File.FileName; // File tạm của hệ thống.
+                        if (System.IO.File.Exists(tempFilePath))
+                        {
+                            System.IO.File.Delete(tempFilePath);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Copy media to folder post id '{postId.ToString()}': {ex.ToString()}");
+                    }
+                }
+
+                await _context.AddRangeAsync(listMediaModel);
+                _context.Posts.Update(post);
+                await _context.SaveChangesAsync();
+            
+
+                return new PostResponse(post, _ServerHost);
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+            
+        }
+
+        public async Task<List<PostUpdateResponse>> GetHistory(string userId, string postId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) throw new Exception("Post-User not exists");
+
+            var post = await _context.Posts
+                .Where(p => p.Id.ToString() == postId)
+                .FirstOrDefaultAsync();
+
+            if (post == null) throw new Exception("Post-Post not exists");
+
+            if (post.Status != Post.PostStatus.Public && post.AuthorId.ToString() != userId)
+            {
+                if (post.Status == Post.PostStatus.Private) throw new Exception("Post-Can not access this post");
+                else
+                {
+                    var relation = await _context.FriendShips.FirstOrDefaultAsync(r => r.UserId.ToString() == userId);
+                    if (relation == null || !relation.IsFriend || relation.Status != FriendStatus.Normal) throw new Exception("Post-Can not access this post");
+                }
+            }
+
+
+            var postUpdates = await _context.PostUpdates
+               .Where(p => p.PostId.ToString() == postId)
+               .OrderBy(p => p.CreatedAt)
+               .Include(p => p.Author)
+               .Include(p => p.Medias)
+               .Include(p => p.OriginPost)
+               .Select(p => new PostUpdateResponse(p, _ServerHost))
+               .ToListAsync();
+
+
+            return postUpdates;
+        }
+
         public async Task<List<PostResponse>> GetAllMyPost(string userId, int page)
         {
             var user= await _userManager.FindByIdAsync(userId);
@@ -170,6 +346,7 @@ namespace Server.Services.SPosts
                 var listPost = await _context.Posts
                     .Where(p => p.AuthorId.ToString() == userId)
                     .Include(p=>p.Medias)
+                    .Include(p => p.Updates)
                     .OrderByDescending(p => p.CreatedAt)
                     .Skip( (page-1)*LIMIT_SIZE )
                     .Take(LIMIT_SIZE)
@@ -211,11 +388,13 @@ namespace Server.Services.SPosts
             var post = await _context.Posts
                 .Where(p => p.Id.ToString() == postId)
                 .Include (p=>p.Author)
+                .Include(p => p.Updates)
                 .Include(p => p.Medias)
-                 .Select(p => new PostResponse(p, _ServerHost))
-                 .FirstOrDefaultAsync();                                                                            
+                .Select(p => new PostResponse(p, _ServerHost))
+                .FirstOrDefaultAsync();                                                                            
             
             if (post == null) throw new Exception("Post-Post not exists");
+            
             if(post.Status != Post.PostStatus.Public && post.AuthorId.ToString() != userId)
             {
                 if (post.Status == Post.PostStatus.Private) throw new Exception("Post-Can not access this post");
@@ -225,6 +404,7 @@ namespace Server.Services.SPosts
                     if (relation == null || !relation.IsFriend || relation.Status != FriendStatus.Normal) throw new Exception("Post-Can not access this post");
                 }
             }
+
             var Like = await _context.PostLikes
                 .Where(l => l.PostId.ToString() == postId && l.UserId.ToString() == userId)
                 .FirstOrDefaultAsync();
@@ -329,63 +509,76 @@ namespace Server.Services.SPosts
 
         public async Task<CommentResponse> CommentPost(string userId, string postId, CommentModel commentModel)
         {
-            var user = await _userManager.FindByIdAsync(userId);
-            var post = await GetById(userId, postId);
-            string replyid = commentModel.ReplyCommentId;
-            
-            var newComment = new PostComment()
+            try
             {
-                PostId = post.Id,
-                UserId = new Guid(userId),
-                Content = commentModel.Content
-            };
-            
-            if(!string.IsNullOrEmpty(replyid))
-            {
-                var replyComment = await _context.PostComments.FirstOrDefaultAsync(c => c.Id.ToString() == replyid);
-                
-                if (replyComment == null) throw new Exception("Post-Comment not exists");
-                
-                newComment.ReplyCommentId = replyComment.Id;
-                
-                if(replyComment.RootCommentId != null) // if this comment has root -> this comment in reply comment
-                {
-                    newComment.RootCommentId = replyComment.RootCommentId;
-                }
-                else newComment.RootCommentId = replyComment.Id; // if this comment not have root -> this comment is root
+                var user = await _userManager.FindByIdAsync(userId);
+                var post = await GetById(userId, postId);
+                string replyid = commentModel.ReplyCommentId;
 
-                newComment.Content = $"@{replyComment.User.UserProfile} {newComment.Content}";
-
-                // create notify to user has get reply
-                if(replyComment.UserId.ToString()!= userId)
+                var newComment = new PostComment()
                 {
-                    var notify = new UserNotify()
+                    PostId = post.Id,
+                    UserId = new Guid(userId),
+                    Content = commentModel.Content
+                };
+
+                PostComment replyComment = null;
+
+                if (!string.IsNullOrEmpty(replyid))
+                {
+                    replyComment = await _context.PostComments
+                        .Include(c => c.User)
+                        .FirstOrDefaultAsync(c => c.Id.ToString() == replyid);
+
+                    if (replyComment == null) throw new Exception("Post-Comment not exists");
+
+                    newComment.ReplyCommentId = replyComment.Id;
+
+                    if (replyComment.RootCommentId != null) // if this comment has root -> this comment in reply comment
                     {
-                        TargetId = newComment.Id,
-                        UserId = replyComment.UserId,
-                        Type = TypeNotify.Comment,
-                        ImageUrl = user.ImageUrl
-                    };
-                    await _context.UserNotifies.AddAsync(notify);
-                }    
+                        newComment.RootCommentId = replyComment.RootCommentId;
+                    }
+                    else newComment.RootCommentId = replyComment.Id; // if this comment not have root -> this comment is root
+
+                    //newComment.Content = $"@{replyComment.User.UserProfile} {newComment.Content}";
+                    newComment.Content = $"{newComment.Content}";
+
+                    // create notify to user has get reply
+                    if (replyComment.UserId.ToString() != userId)
+                    {
+                        var notify = new UserNotify()
+                        {
+                            TargetId = newComment.Id,
+                            UserId = replyComment.UserId,
+                            Type = TypeNotify.Comment,
+                            ImageUrl = user.ImageUrl
+                        };
+                        await _context.UserNotifies.AddAsync(notify);
+                    }
 
 
-                //........
-                // send socket refresh notify
-                // .......
+                    //........
+                    // send socket refresh notify
+                    // .......
 
+                }
+                else // new comment in post
+                { }
+
+                await _context.PostComments.AddAsync(newComment);
+                await _context.SaveChangesAsync();
+                
+                var rs = new CommentResponse(newComment);
+                rs.UserProfile = user.UserProfile;
+                rs.ImageUrl = $"{_ServerHost}/{_AccessImgAccount}/{user.Id.ToString()}/{user.ImageUrl}";
+                rs.ReplyUserProfile = !string.IsNullOrEmpty(replyid)?  replyComment.User.UserProfile : "";
+                return rs;
             }
-            else // new comment in post
-            {}
-
-            await _context.PostComments.AddAsync(newComment);
-            await _context.SaveChangesAsync();
-           
-            var rs = new CommentResponse(newComment);
-            rs.UserProfile = user.UserProfile;
-            rs.ImageUrl = $"{_ServerHost}/{_AccessImgAccount}/{user.Id.ToString()}/{user.ImageUrl}";
-
-            return rs;
+            catch(Exception e)
+            {
+                throw e;
+            }
+          
         }
 
         public async Task<List<CommentResponse>> GetCommentPost(string userId, string postId, int page)
@@ -399,6 +592,7 @@ namespace Server.Services.SPosts
                 .Skip((page - 1) * LIMIT_COMMENT_SIZE)
                 .Take(LIMIT_COMMENT_SIZE)
                 .Include(c => c.User)
+                .Include(c => c.ReplyComment)
                 .ToListAsync();
 
             var rootIds = rootComments.Select(c => c.Id).ToList();
@@ -435,6 +629,7 @@ namespace Server.Services.SPosts
                     ImageUrl = $"{_ServerHost}/{_AccessImgAccount}/{c.UserId}/{c.User.ImageUrl}",
                     ReplyCommentId = c.ReplyCommentId,
                     RootCommentId = c.RootCommentId,
+                    ReplyUserProfile = c.ReplyComment?.User.UserProfile ?? "",
                     Content = c.Content,
                     CreatedAt = c.CreatedAt,
                     IsLike = Like != null,
@@ -458,6 +653,8 @@ namespace Server.Services.SPosts
                 .Skip((page - 1) * LIMIT_COMMENT_SIZE)
                 .Take(LIMIT_COMMENT_SIZE)
                 .Include(c => c.User)
+                .Include(c => c.ReplyComment)
+                .Include(c => c.ReplyComment.User)
                 .ToListAsync();
 
             var rootIds = listComment.Select(c => c.Id).ToList();
@@ -478,7 +675,8 @@ namespace Server.Services.SPosts
                 var Like = await _context.CommentReactions
                     .Where(l => l.UserId.ToString() == c.UserId.ToString() && l.CommentId.ToString() == c.Id.ToString())
                     .FirstOrDefaultAsync();
-
+                //Console.WriteLine("user==========================: " + ;
+                var profile = c.ReplyComment?.User.UserProfile;
                 // Thêm phản hồi vào danh sách
                 commentResponses.Add(new CommentResponse
                 {
@@ -489,6 +687,7 @@ namespace Server.Services.SPosts
                     ImageUrl = $"{_ServerHost}/{_AccessImgAccount}/{c.UserId}/{c.User.ImageUrl}",
                     ReplyCommentId = c.ReplyCommentId,
                     RootCommentId = c.RootCommentId,
+                    ReplyUserProfile = profile,
                     Content = c.Content,
                     CreatedAt = c.CreatedAt,
                     IsLike = Like != null,

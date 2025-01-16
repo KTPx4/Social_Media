@@ -13,6 +13,7 @@ body{
 
 a{
   color: magenta;
+  text-decoration: none;
 }
 ::-webkit-scrollbar {
   width: 3px; /* Chiều rộng thanh cuộn */

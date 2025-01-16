@@ -29,7 +29,7 @@ const useAuth = (token: string): UseAuthReturn => {
             }
 
             try {
-                console.log("1times")
+                // console.log("1times")
                 const url = `${SERVER}/user/validate`;
                 const res = await axios.get(url, {
                     headers: { authorization: `Bearer ${token}` },

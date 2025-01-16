@@ -1,6 +1,22 @@
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
+const toHCMTime  = (date: string) =>{
+    if (!date) return "Unknown time";
+
+    const dateUTC = parseISO(date); // Chuyển đổi chuỗi thành đối tượng Date
+    const dateHCM = new Date(dateUTC.getTime() + 7 * 60 * 60 * 1000); // Chuyển đổi sang giờ HCM (GMT+7)
+
+    const month = String(dateHCM.getMonth() + 1).padStart(2, '0'); // Tháng (0-based index)
+    const day = String(dateHCM.getDate()).padStart(2, '0'); // Ngày
+    const year = dateHCM.getFullYear(); // Năm
+    const hours = String(dateHCM.getHours()).padStart(2, '0'); // Giờ
+    const minutes = String(dateHCM.getMinutes()).padStart(2, '0'); // Phút
+
+    return `${month}/${day}/${year} ${hours}:${minutes}`; // Định dạng mm/dd/yyyy hh:mm
+}
+
+// Convert to Ho Chi Minh time (GMT+7)
 const convertToHoChiMinhTime = (dateString: string): string => {
     // Parse the input date string
     if (!dateString) return "unknow time"
@@ -9,11 +25,11 @@ const convertToHoChiMinhTime = (dateString: string): string => {
     // Convert to Ho Chi Minh time (GMT+7)
     const dateHCM = new Date(dateUTC.getTime() + 7 * 60 * 60 * 1000);
 
-    // Format the distance to now using Vietnamese locale
-    const distanceToNow = formatDistanceToNow(dateHCM, {
-        locale: vi,
-        addSuffix: true,
-    });
+    // // Format the distance to now using Vietnamese locale
+    // const distanceToNow = formatDistanceToNow(dateHCM, {
+    //     locale: vi,
+    //     addSuffix: true,
+    // });
 
     // Customize the output format
     const now = new Date();
@@ -36,9 +52,7 @@ const convertToHoChiMinhTime = (dateString: string): string => {
         return `${Math.floor(diffInYears)} year`;
     }
 };
-
-export default convertToHoChiMinhTime;
-
+export {toHCMTime, convertToHoChiMinhTime}
 // Example usage
 // const inputDate = '2023-01-11T03:57:16.1Z'; // UTC format
 // const hoChiMinhTime = convertToHoChiMinhTime(inputDate);

@@ -1,0 +1,12 @@
+.comment {
+    opacity: 1;
+}
+
+.comment.fade-out {
+    opacity: 0;
+}
+.post-header-profile:hover {
+    .btn-comment-more{
+        display: unset !important;
+    }
+}

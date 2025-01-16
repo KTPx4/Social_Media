@@ -26,6 +26,7 @@ namespace Server.Models.Community.PostsUpdates
         public Post.PostStatus Status { get; set; }
         public Post.PostType Type { get; set; }
 
+        //
         public Post OriginPost { get; set; }
         public User Author { get; set; }
         public Post? PostShare { get; set; }

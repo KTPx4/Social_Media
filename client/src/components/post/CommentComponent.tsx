@@ -3,13 +3,16 @@ import apiClient from "../../utils/apiClient.tsx";
 import {Avatar} from "primereact/avatar";
 import {ThemeContext} from "../../ThemeContext.tsx";
 import {Button} from "primereact/button";
-import convertToHoChiMinhTime from "../../utils/Convertor.tsx";
 import {InputText} from "primereact/inputtext";
 import {FloatLabel} from "primereact/floatlabel";
 import useStore from "../../store/useStore.tsx";
 import {TieredMenu} from "primereact/tieredmenu";
 
-
+import './Comment.css';
+import {ProgressSpinner} from "primereact/progressspinner";
+import {Tooltip} from "primereact/tooltip";
+import {convertToHoChiMinhTime, toHCMTime} from "../../utils/Convertor.tsx";
+import {IconField} from "primereact/iconfield";
 
 type CommentComponent = {
     id: string;
@@ -24,6 +27,7 @@ type CommentComponent = {
     createdAt: string;
     countReply: number;
     countLike: number;
+    replyUserProfile: string;
 };
 
 type CommentProps = {
@@ -31,11 +35,12 @@ type CommentProps = {
     postId: string;
     isChild: boolean;
     ClickComment: any;
+    DeleteComment: any;
 };
 
 const LIMIT_LOAD_COMMENT = 20
 
-const CommentComponent: React.FC<CommentProps> = ({ comment, postId, isChild = false, ClickComment }) => {
+const CommentComponent: React.FC<CommentProps> = ({ comment, postId, isChild = false, ClickComment, DeleteComment }) => {
     const {userId} = useStore()
 
     const isOwn = comment.userId === userId
@@ -51,6 +56,11 @@ const CommentComponent: React.FC<CommentProps> = ({ comment, postId, isChild = f
     const [inputComment, setInputComment] = useState("")
     const [isLike, setIsLike] = useState(comment.isLike)
     const [countLike , setCountLike] = useState(comment.countLike)
+    const  [isDeleted, setIsDeleted] = useState(false);
+    const [waitLoadComment, setWailoadComment] = useState(false);
+
+    const inputRef = useRef<HTMLInputElement>(null); // Tham chiếu đến input
+
     // theme
     const themeContext = useContext(ThemeContext);
     // @ts-ignore
@@ -66,14 +76,34 @@ const CommentComponent: React.FC<CommentProps> = ({ comment, postId, isChild = f
             label: 'Delete',
             icon: 'pi pi-trash',
             command: () =>{
-                deletePost()
+                clickDeletePost()
             }
         },
     ];
-    const deletePost = () =>{
 
+    const clickDeletePost = async () =>{
+        // if call from chill -> CallBackDelFromRoot
+        // if call from root -> PostDetails will detele this comment and child will delete
+        await DeleteComment(comment.id, (cmtId)=>{
+            setIsDeleted(true);
+        })
     }
+    const CallBackDelFromRoot = (commentId: string, callBack) => {
 
+        DeleteComment(commentId, (delCommentId: string) =>{
+
+            if(delCommentId === comment.id)
+            {
+                setIsDeleted(true);
+                // setListChildComment([])
+            }else{
+                callBack(delCommentId)
+                setTimeout(()=>{
+                    setListChildComment( listChildComment.filter((child: any) => child.id !== delCommentId))
+                }, 1000)
+            }
+        })
+    }
     const PostComment = async( ) =>{
         if(isWaitComment) return;
 
@@ -140,8 +170,18 @@ const CommentComponent: React.FC<CommentProps> = ({ comment, postId, isChild = f
         }
     }
 
+    useEffect(() => {
+        if(isShowComment)
+        {
+            handleCommentClick();
+        }
+    }, [isShowComment]);
+
     const CommentClick = async() =>{
         setIsShowComment(true)
+
+        handleCommentClick();
+
         if(ClickComment == null) { // click from root
             setUserReply(comment.userProfile)
             setReplyCommentId(comment.id)
@@ -151,14 +191,18 @@ const CommentComponent: React.FC<CommentProps> = ({ comment, postId, isChild = f
             ClickComment(comment, isChild, "comment")
         }
     }
-
+    const handleCommentClick = () => {
+        inputRef.current?.focus(); // Trỏ đến ô input
+    };
     // @ts-ignore
     const CallBackCommentFromRoot = async(childComment, isChild, type) =>{
         // get click from child - reply
         console.log("Click comment: ", childComment)
+
         setIsShowComment(true)
         setUserReply(childComment.userProfile)
         setReplyCommentId(childComment.id)
+        handleCommentClick();
 
         if(type.toLowerCase() === "like")
         {
@@ -170,10 +214,14 @@ const CommentComponent: React.FC<CommentProps> = ({ comment, postId, isChild = f
             console.log("update: ",rs)
             setListChildComment(rs)
         }
+        else{
+        }
 
     }
 
     const loadChildComment = async () =>{
+        if(waitLoadComment) return
+
         var nextPage = pageChild + 1
         var sumPage= Math.ceil(comment.countReply / LIMIT_LOAD_COMMENT);
         if(nextPage > sumPage)
@@ -181,11 +229,12 @@ const CommentComponent: React.FC<CommentProps> = ({ comment, postId, isChild = f
             setCanLoadReply(false)
             return
         }
-
+        setWailoadComment(true)
         setPageChild(nextPage)
         try{
             var rs = await apiClient.get(`/post/${postId}/comment/${comment.id}?page=${nextPage}`)
-            console.log(rs)
+            console.log("Child: ", rs)
+            setWailoadComment(false)
             var statusCode = rs.status
             if(statusCode == 200)
             {
@@ -207,6 +256,7 @@ const CommentComponent: React.FC<CommentProps> = ({ comment, postId, isChild = f
         }
         catch (e)
         {
+            setWailoadComment(false)
             console.log(e)
         }
     }
@@ -234,158 +284,209 @@ const CommentComponent: React.FC<CommentProps> = ({ comment, postId, isChild = f
     return (
         <>
 
-            <div className="comment" style={{
-                marginTop: 10,
+            <div
+                className={`comment ${ isDeleted ? "fade-out" : ""}`}
+                style={{
+                marginTop: 15,
                 display: "flex",
                 flexDirection: "row",
-                justifyContent: "start"
+                justifyContent: "start",
+                transition: "opacity 1s"
             }}>
 
                 <div className="root-comment">
-                    <div className="post-header-profile" style={{display: "flex", flexDirection: "row", alignItems: "flex-start"}}>
+                    <div   className="post-header-profile" style={{display: "flex", flexDirection: "row", alignItems: "flex-start", justifyContent: "flex-start"}}>
                         <Avatar image={comment.imageUrl} size={"large"} shape="circle" className="p-mr-2"/>
                         <div style={{marginLeft: 5, display: "flex", flexDirection: "column"}}>
                             <div style={{
-                                minWidth: 50,
+                                minWidth: 10,
                                 display: "flex",
                                 flexDirection: "column",
 
                             }}>
+                                {/*name - content*/}
                                 <div
                                  style={{
-                                     backgroundColor:  cardColor,
-                                     padding: "10px 15px",
-                                     borderRadius: 25,
-                                     width: "fit-content"
+                                     display: "flex",
+                                     flexDirection: "row",
                                  }}>
 
-                                    <small className="p-m-0 font-bold"
-                                           style={{
-                                               maxWidth: "200px",
-                                               color: textColor,
-                                               fontSize: 16,
-                                               wordWrap: "break-word",
-                                               overflowWrap: "break-word",
-                                               display: "block" // Đảm bảo xuống hàng nếu cần
-                                           }}
-                                    >{comment.userProfile}</small>
+                                    <div style={{
+                                        backgroundColor:  cardColor,
+                                        padding: "7px 15px",
+                                        borderRadius: 17,
+                                        width: "fit-content"
+                                    }}>
+                                        <small className="p-m-0 font-medium"
+                                               style={{
+                                                   marginBottom: 5,
+                                                   maxWidth: "200px",
+                                                   color: textColor,
+                                                   fontSize: 13,
+                                                   wordWrap: "break-word",
+                                                   overflowWrap: "break-word",
+                                                   display: "block" // Đảm bảo xuống hàng nếu cần
+                                               }}
+                                        >
+                                            <a style={{fontSize: 13, textDecoration: "none", color: textColor}}
+                                               href={"/account/" + comment.userProfile}>  {comment.userProfile}</a>
 
-                                    <small className="p-text-secondary"
-                                           style={{
-                                               maxWidth: "230px",
-                                               minWidth: "140px",
-                                               fontSize: 13,
-                                               color: captionColor,
-                                               wordWrap: "break-word",
-                                               overflowWrap: "break-word",
-                                               display: "block" // Đảm bảo xuống hàng nếu cần
-                                           }}
-                                    >{commentCaption}</small>
+                                            {comment.replyUserProfile && (
+                                                <>
+                                                    {" "}
+                                                    <span
+                                                        style={{height: 13, width: 13, fontSize: 12, color: textColor}}
+                                                        className="pi pi-caret-right"/>
+                                                    <a style={{fontSize: 13, textDecoration: "none", color: textColor}}
+                                                       href={"/account/" + comment.replyUserProfile}>{comment.replyUserProfile}</a>
+                                                </>
+                                            )}
+                                        </small>
+
+
+                                        <small className="p-text-secondary"
+                                               style={{
+                                                   maxWidth: "230px",
+                                                   minWidth: "5px",
+                                                   fontSize: 13,
+                                                   color: captionColor,
+                                                   wordWrap: "break-word",
+                                                   overflowWrap: "break-word",
+                                                   display: "block" // Đảm bảo xuống hàng nếu cần
+                                               }}
+                                        >{commentCaption}</small>
+
+                                    </div>
+
+                                    {/*edit*/}
+                                    {isOwn && (
+                                        <div>
+                                            <TieredMenu model={items} popup ref={menu} breakpoint="767px"/>
+                                            <Button  icon="pi pi-ellipsis-v" className="btn-comment-more p-button-rounded p-button-text"
+                                                    style={{color: textColor, display: "none"}}
+                                                // @ts-ignore
+                                                    onClick={(e) => menu.current.toggle(e)}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
-                            <div style={{
-                                marginLeft: 10,
-                                marginTop: 5,
-                                display: "flex",
-                                flexDirection: "row",
-                                alignItems: "center",
-                                justifyContent: "start",
-                                maxWidth: isChild ? 200 : 140
-                            }}>
+                                {/*action*/}
                                 <div style={{
+                                    marginLeft: 10,
+                                    marginTop: 8,
                                     display: "flex",
                                     flexDirection: "row",
-                                    alignItems: "center"
+                                    alignItems: "center",
+                                    justifyContent: "start",
+                                    maxWidth: isChild ? 200 : 170
                                 }}>
-                                    <p style={{
+                                    <div style={{
+                                        display: "flex",
+                                        flexDirection: "row",
+                                        alignItems: "center"
+                                    }}>
+                                    {/*<Tooltip target=".comment-created" />*/}
+
+                                    <p
+                                        className="comment-created"
+                                        title={toHCMTime(comment.createdAt)}
+                                        // data-pr-position="right"
+                                        // data-pr-at="right+5 top"
+                                        // data-pr-my="left center-2"
+                                        style={{
                                         fontSize: 11,
                                         color: textHintColor,
                                         padding: 0,
                                         margin: 0
                                     }}>{convertToHoChiMinhTime(comment.createdAt)}</p>
+
+
                                     <Button onClick={LikeClick} text style={{
                                         marginLeft: 8,
                                         maxWidth: 25,
                                         padding: 0,
-                                        margin: 0,
+                                        margin: "0 0 0 5px",
                                         height: "fit-content"
                                     }}
+                                            title={isLike ? "Unlike" : "Like"}
                                             icon={`pi ${isLike ? "pi-heart-fill" : "pi-heart"} `}
                                             className="p-button-rounded p-button-text p-mr-2"/>
 
-                                    <Button onClick={CommentClick} text style={{maxWidth: 25, padding: 0, margin: 0, height: "fit-content"}}
+                                    <Button title={"Reply"} onClick={CommentClick} text style={{maxWidth: 25, padding: 0, margin: 0, height: "fit-content"}}
                                             icon="pi pi-comment"
                                             className="p-button-rounded p-button-text"/>
                                 </div>
                                 <div>
                                     <p style={{
                                         fontSize: 11,
-                                        marginLeft: 5,
                                         color: textHintColor,
                                         padding: 0,
-                                        margin: 0
+                                        margin: "0 0 0 7px",
+
                                     }}>{countLike} likes</p>
                                 </div>
                             </div>
 
                             </div>
 
-                            <div style={{marginTop: 2}} className="child-comment">
-                                {listChildComment.map((child) => {
-                                    return (
-                                        // @ts-ignore
-                                        <CommentComponent comment={child} postId={postId} isChild={true} key={`${child.id}-${child.isLike}`} ClickComment={CallBackCommentFromRoot}/>
-                                    )
-                                })}
-                            </div>
-                            {isWaitComment && (
-                                <>
 
-                                </>
-                            )}
-                            {!isChild && isShowComment &&  (
-                                <div className="input-reply" style={{marginTop: marginTopInput,  borderRadius: 10}}>
-                                    <FloatLabel>
-                                        <InputText
-                                                        disabled={isWaitComment}
-                                                        onFocus={() => setMarginTopInput(25)} // Thêm margin-top khi nhấp vào
-                                                        onBlur={() => setMarginTopInput(0)}  // Đặt lại margin-top khi rời khỏi
-                                                        id="userprofile"
-                                                        onKeyDown={(e)=>{
-                                                            if(e.key === "Enter") {
-                                                                PostComment()
-                                                                console.log("Enter comment")
-                                                            }
-                                                        }}
-                                                        value={inputComment}
-                                                        onChange={(e)=> setInputComment(e.target.value)}
-                                                        placeholder="Add a comment..."
-                                                       className="input-comment p-inputtext-sm p-mr-2 border-none border-bottom-1"
-                                                       style={{
-                                                           backgroundColor: "transparent",
-                                                           width: "100%",
-                                                           color: textHintColor
-                                                       }}/>
-                                        <label htmlFor="userprofile">{userReply}</label>
-                                    </FloatLabel>
-
-                                </div>
-                            )}
-                            {canLoadReply && (
-                                <div style={{marginTop: 2}}>
-                                    <p onClick={loadChildComment}
-                                       style={{fontSize: 12, fontStyle: "italic", cursor: "pointer"}}>...Load orther
-                                        comment...</p>
-                                </div>
-                            )}
                         </div>
-                        {isOwn && (
-                            <div>
-                                <TieredMenu model={items} popup ref={menu} breakpoint="767px" />
-                                <Button  icon="pi pi-ellipsis-v" className="p-button-rounded p-button-text"
-                                        style={{color: textColor}}
+
+                    </div>
+                    <div style={{
+                        marginLeft: 30
+                    }}>
+                        <div style={{marginTop: 2}} className="child-comment">
+                            {listChildComment.map((child) => {
+                                return (
                                     // @ts-ignore
-                                        onClick={(e) => menu.current.toggle(e)}
-                                />
+                                    <CommentComponent comment={child} postId={postId} isChild={true} key={`${child.id}-${child.isLike}`} ClickComment={CallBackCommentFromRoot} DeleteComment={CallBackDelFromRoot}/>
+                                )
+                            })}
+                        </div>
+                        {isWaitComment && (
+                            <>
+
+                            </>
+                        )}
+                        {!isChild && isShowComment &&  (
+                            <div className="input-reply" style={{marginTop: marginTopInput,  borderRadius: 10}}>
+                                <FloatLabel>
+                                    <InputText
+                                        ref={inputRef}
+                                        autoComplete="off"
+                                        disabled={isWaitComment}
+                                        onFocus={() => setMarginTopInput(25)} // Thêm margin-top khi nhấp vào
+                                        onBlur={() => setMarginTopInput(0)}  // Đặt lại margin-top khi rời khỏi
+                                        id="userprofile"
+                                        onKeyDown={(e)=>{
+                                            if(e.key === "Enter") {
+                                                PostComment()
+                                                console.log("Enter comment")
+                                            }
+                                        }}
+                                        value={inputComment}
+                                        onChange={(e)=> setInputComment(e.target.value)}
+                                        placeholder="Add a comment..."
+                                        className="input-comment p-inputtext-sm p-mr-2 border-none border-bottom-1"
+                                        style={{
+                                            backgroundColor: "transparent",
+                                            width: "100%",
+                                            color: textHintColor
+                                        }}/>
+                                    <label htmlFor="userprofile">{userReply}</label>
+                                </FloatLabel>
+
+                            </div>
+                        )}
+                        {waitLoadComment && (
+                            <ProgressSpinner   style={{marginLeft: 25, width: '30px', height: '30px'}} strokeWidth="5"  animationDuration=".5s" />
+                        )}
+                        {canLoadReply && !waitLoadComment && (
+                            <div style={{marginTop: 2, marginLeft: 20}}>
+                                <p onClick={loadChildComment}
+                                   style={{fontSize: 11, fontStyle: "italic", cursor: "pointer"}}>load orther
+                                    reply...</p>
                             </div>
                         )}
                     </div>
