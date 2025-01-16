@@ -46,7 +46,11 @@ const EditProfileModal: React.FC<ProfileModalProps> = ({
 
   const onFileSelected = async (event) => {
     const file = event.files[0];
-    setSelectedFiles(file);
+    const cleanedFile = new File([file], file.name, {
+      type: file.type,
+      lastModified: file.lastModified,
+    });
+    setSelectedFiles(cleanedFile);
   };
   const onFileClear = async () => {
     setSelectedFiles(undefined);
@@ -92,11 +96,11 @@ const EditProfileModal: React.FC<ProfileModalProps> = ({
         if (selectedFiles) {
           const formDataPicture = new FormData();
           formDataPicture.append("file", selectedFiles);
-          await apiClient.put("/user/update", userInformation);
+          await apiClient.put("/user/upload", formDataPicture);
         }
       } catch (error: unknown) {
         if (error instanceof Error) {
-          errors.file = error.message;
+          errors.file = "file is Invalid";
         } else {
           console.log("An unknown error occurred");
         }
@@ -104,7 +108,7 @@ const EditProfileModal: React.FC<ProfileModalProps> = ({
     }
     if (Object.values(errors).every((value) => !value)) {
       const UserData = await apiClient.get("/user/validate");
-      setMyAccount(UserData.data);
+      setMyAccount(UserData.data.data);
       setVisible(false);
     }
     setFormErrors(errors);
@@ -128,17 +132,6 @@ const EditProfileModal: React.FC<ProfileModalProps> = ({
     );
   };
 
-  const footerContent = (
-    <div>
-      <Button
-        label="Update Profile"
-        icon="pi pi-user-edit"
-        type="submit"
-        autoFocus
-      />
-    </div>
-  );
-
   return (
     <Dialog
       header="Edit Profile"
@@ -152,7 +145,6 @@ const EditProfileModal: React.FC<ProfileModalProps> = ({
         if (!visible) return;
         setVisible(false);
       }}
-      footer={footerContent}
     >
       <form className="flex flex-column" onSubmit={handleSubmit}>
         <Avatar
@@ -178,7 +170,9 @@ const EditProfileModal: React.FC<ProfileModalProps> = ({
           headerTemplate={headerTemplate}
         />
         <p className="text-xs text-red-700">{formErrors.file}</p>
+        <label htmlFor="username">Username</label>
         <InputText
+          id="username"
           value={userInformation.username}
           className="w-full"
           placeholder="Edit username"
@@ -190,7 +184,9 @@ const EditProfileModal: React.FC<ProfileModalProps> = ({
           }}
         ></InputText>
         <p className="text-xs text-red-700">{formErrors.username}</p>
+        <label htmlFor="userProfile">User Profile</label>
         <InputText
+          id="userProfile"
           value={userInformation.userProfile}
           className="w-full"
           placeholder="Edit user Profile"
@@ -202,7 +198,9 @@ const EditProfileModal: React.FC<ProfileModalProps> = ({
           }}
         ></InputText>
         <p className="text-xs text-red-700">{formErrors.userProfile}</p>
+        <label htmlFor="name">Name</label>
         <InputText
+          id="name"
           value={userInformation.name}
           className="w-full"
           placeholder="Edit name"
@@ -227,7 +225,9 @@ const EditProfileModal: React.FC<ProfileModalProps> = ({
           />
           <p className="text-white text-lg"> {checked ? "Male" : "Female"} </p>
         </div>
+        <label htmlFor="email">Email</label>
         <InputText
+          id="email"
           value={userInformation.email}
           type="email"
           className="w-full"
@@ -237,7 +237,9 @@ const EditProfileModal: React.FC<ProfileModalProps> = ({
           }}
         ></InputText>
         <p className="text-xs text-red-700">{formErrors.email}</p>
+        <label htmlFor="bio">Bio</label>
         <InputTextarea
+          id="bio"
           value={userInformation.bio}
           placeholder="Edit bios"
           onChange={(e) => {
@@ -245,7 +247,9 @@ const EditProfileModal: React.FC<ProfileModalProps> = ({
           }}
         ></InputTextarea>
         <p className="text-xs text-red-700">{formErrors.bio}</p>
+        <label htmlFor="phone">Phone</label>
         <InputText
+          id="phone"
           value={userInformation.phone}
           className="w-full"
           type="number"
@@ -258,7 +262,7 @@ const EditProfileModal: React.FC<ProfileModalProps> = ({
         <Button
           type="submit"
           className="p-button-secondary w-3 mt-2"
-          label="Login"
+          label="Edit"
         />
       </form>
     </Dialog>

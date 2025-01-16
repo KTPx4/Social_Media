@@ -24,6 +24,7 @@ import EmailConfirmPage from "./pages/EmailConfirmPage";
 import ProfilePage from "./pages/Profile/ProfilePage.tsx";
 import PostDetail from "./pages/Post/PostDetail.tsx";
 import UserRouter from "./routes/UserRouter.tsx";
+import UserProfilePage from "./pages/Profile/UserProfilePage.tsx";
 
 axios.defaults.baseURL = "https://localhost:7212/api/";
 function App() {
@@ -34,15 +35,29 @@ function App() {
           <Routes>
             <Route path="/" element={<LoginPage />}></Route>
             <Route path="/register" element={<RegisterPage />}></Route>
-            <Route path="/home" element={<UserRouter><Layout /></UserRouter>}>
+            <Route
+              path="/home"
+              element={
+                <UserRouter>
+                  <Layout />
+                </UserRouter>
+              }
+            >
+              <Route
+                path="profile/:userProfileString"
+                element={<UserProfilePage />}
+              ></Route>
               <Route index element={<MainPage />} />
               <Route path="profile" element={<ProfilePage />}></Route>
-              {/* <Route path="products" element={<LayoutProduct />}>
-                <Route index element={<ProductList />} />
-                <Route path="details/:id" />
-              </Route> */}
             </Route>
-            <Route path="/post/:id" element={<UserRouter><Layout /></UserRouter>}>
+            <Route
+              path="/post/:id"
+              element={
+                <UserRouter>
+                  <Layout />
+                </UserRouter>
+              }
+            >
               <Route index element={<PostDetail />} />
             </Route>
             <Route path="*" element={<NotFoundPage />}></Route>
