@@ -49,11 +49,6 @@ function App() {
               ></Route>
               <Route index element={<MainPage />} />
               <Route path="profile" element={<ProfilePage />}></Route>
-
-              {/* <Route path="products" element={<LayoutProduct />}>
-                <Route index element={<ProductList />} />
-                <Route path="details/:id" />
-              </Route> */}
             </Route>
             <Route
               path="/post/:id"
