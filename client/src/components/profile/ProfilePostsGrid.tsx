@@ -14,6 +14,7 @@ import { Image } from "primereact/image";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { Card } from "primereact/card";
 import axios from "axios";
+import { Navigate, useNavigate } from "react-router-dom";
 interface ProfileModalProps {
   userProfile: string;
 }
@@ -22,9 +23,14 @@ const ProfilePostsGrid: React.FC<ProfileModalProps> = ({
   userProfile,
 }: ProfileModalProps) => {
   const [page, setPage] = useState(2);
+  const navigate = useNavigate();
   const [checkHasMore, setCheckHasMore] = useState(true);
   const [items, setItems] = useState([]);
+  const token = useRef("");
   useEffect(() => {
+    const localToken = localStorage.getItem("token");
+    const sessionToken = sessionStorage.getItem("token");
+    token.current = localToken || sessionToken || "";
     apiClient
       .get(`/user/profile/${userProfile}/posts`, {
         params: {
@@ -54,7 +60,7 @@ const ProfilePostsGrid: React.FC<ProfileModalProps> = ({
       hasMore={checkHasMore}
       loader={
         <div
-          className="justify-content-center align-items-center w-full mt-2"
+          className="flex justify-content-center align-items-center w-full mt-2"
           key={0}
         >
           <i className="pi pi-spin pi-spinner" style={{ fontSize: "2rem" }}></i>
@@ -78,15 +84,30 @@ const ProfilePostsGrid: React.FC<ProfileModalProps> = ({
           <Button
             key={item.id}
             style={{
+              marginTop: "2vh",
               flexGrow: 0,
               flexShrink: 0,
               flexBasis: "30%",
               justifyContent: "center",
               alignItems: "center",
+              height: "50vh",
             }}
+            onClick={() => navigate(`../post/${item.id}`)}
             outlined
           >
-            <Image src={item.authorImg} alt="Image" />
+            <Image
+              indicatorIcon={<i className="pi pi-search"></i>}
+              prefix=""
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                maxWidth: "100%", // Ensure it doesn’t exceed parent width
+                maxHeight: "100%", // Ensure it doesn’t exceed parent height
+              }}
+              src={item.listMedia[0].mediaUrl + token.current}
+              alt="Image"
+            />
           </Button>
         ))}
       {/* <div className="container">
