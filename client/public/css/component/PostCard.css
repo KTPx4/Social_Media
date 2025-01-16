@@ -25,3 +25,13 @@ button:focus{
     box-shadow: none;
 
 }
+
+.Img-History img{
+    border-radius: 10px;
+}
+.p-dialog-header , .p-dialog-content, .p-dialog-footer{
+    background: transparent;
+}
+.p-dialog{
+    border: 1px solid #979797;
+}

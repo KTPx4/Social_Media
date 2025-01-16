@@ -26,7 +26,7 @@ const themes: Record<string, Theme> = {
         hintColor: '#cfcfcf',
         Caption: '#dfdfdf',
         Border: '#1d1d1d',
-        card: "grey",
+        card: "#1e1e1e",
     },
 };
 

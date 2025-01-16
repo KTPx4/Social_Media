@@ -10,6 +10,7 @@ namespace Server.DTOs.Posts
         public string UserProfile { get; set; }
         public string ImageUrl { get; set; }
         public Guid? ReplyCommentId { get; set; }
+        public string ReplyUserProfile { get; set; }
         public Guid? RootCommentId { get; set; }
         public string Content { get; set; }
         public DateTime CreatedAt { get; set; }

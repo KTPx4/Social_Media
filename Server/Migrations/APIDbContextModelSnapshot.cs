@@ -518,8 +518,14 @@ namespace Server.Migrations
                     b.Property<string>("Content")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ContentType")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<Guid>("MediaId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("MediaUrl")
                         .HasColumnType("nvarchar(max)");

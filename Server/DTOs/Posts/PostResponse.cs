@@ -20,7 +20,7 @@ namespace Server.DTOs.Posts
         public int SumComment { get; set; }
         public bool isLike { get; set; } = false;
         public bool isSave { get; set; } = false;
-
+        public int SumEdit { get; set; } = 0;
         public List<MediaResponse> ListMedia { get; set; } = new List<MediaResponse>();
 
         public PostResponse()
@@ -43,7 +43,11 @@ namespace Server.DTOs.Posts
             
             this.SumLike = post.Likes?.Count ?? 0;
             this.SumComment = post.Comments?.Count ?? 0;
-
+           
+            if (post.Updates?.Count > 0) 
+            {
+                this.SumEdit = post.Updates?.Count ?? 0;
+            }
 
             if(author != null)
             {

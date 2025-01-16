@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, {useContext, useEffect, useRef, useState} from 'react';
 import { useParams } from 'react-router-dom';
 
 import { Button } from 'primereact/button';
@@ -12,6 +12,12 @@ import {Card} from "primereact/card";
 import './PostDetail.css';
 import postCard from "../../components/post/PostCard.tsx";
 import CommentComponent from "../../components/post/CommentComponent.tsx";
+import {confirmDialog, ConfirmDialog} from "primereact/confirmdialog";
+import {Toast} from "primereact/toast";
+import {ProgressSpinner} from "primereact/progressspinner";
+import {InputIcon} from "primereact/inputicon";
+import {InputMask} from "primereact/inputmask";
+import {IconField} from "primereact/iconfield";
 
 interface Media {
     id: string;
@@ -47,6 +53,7 @@ const PostDetail: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [files, setFiles] = useState([])
 
+    const toast = useRef<Toast>(null);
 
     // theme
     const themeContext = useContext(ThemeContext);
@@ -58,6 +65,8 @@ const PostDetail: React.FC = () => {
     const backgroundColor = currentTheme.getBackground()
     const textHintColor = currentTheme.getHint()
     const keyTheme = currentTheme.getKey()
+
+
     const [listComment , setListComment] = useState([])
     const [page, setPage] = useState(1)
     const [isCanLoadComment, setIsCanLoadComment] = useState(true)
@@ -143,6 +152,7 @@ const PostDetail: React.FC = () => {
 
     const PostComment = async( ) =>{
         if(isWaitComment) return;
+        if(!inputComment || !inputComment.trim()) return;
 
         setIsWaitComment(true);
         console.log(inputComment)
@@ -172,7 +182,56 @@ const PostDetail: React.FC = () => {
         }
         setInputComment("")
     }
+    const showConfirm = (message: string): Promise<boolean> => {
+        return new Promise((resolve) => {
+            confirmDialog({
+                message,
+                header: "Delete Comment",
+                icon: "pi pi-exclamation-triangle",
+                accept: () => resolve(true), // Resolve khi người dùng accept
+                reject: () => resolve(false), // Resolve khi người dùng reject
+            });
+        });
+    };
+    const DeleteComment = async(commentId : string, callBackSuccess: any) =>{
+        console.log("Comment id: ", commentId)
 
+        // show confirm
+
+        const isConfirmed = await showConfirm("Are you sure you want to delete this comment?");
+        if (!isConfirmed) {
+
+            return; // Người dùng từ chối, không làm gì cả
+        }
+
+        try{
+            var rs = await apiClient.delete(`/post/${id}/comment/${commentId}`)
+            var statusCode = rs.status
+            if(statusCode === 200 || statusCode === 204)
+            {
+                // if accept
+                callBackSuccess(commentId)
+                // @ts-ignore
+                var findCmt = listComment.filter(comment => comment.id === commentId)
+                if( findCmt.length > 0)
+                {
+                    // @ts-ignore
+                    var newListComment = listComment.filter(comment => comment.id !== commentId)
+                    setTimeout(()=>{
+                        setListComment(newListComment)
+                    }, 1000)
+                }
+            }
+            else{
+                alert("Let reload and try again!")
+            }
+        }
+        catch(err){
+            alert("Let reload and try again!")
+            console.error(err);
+        }
+
+    }
 
 
     if (isLoading) return <div>Loading...</div>;
@@ -207,12 +266,14 @@ const PostDetail: React.FC = () => {
 
     return (
         <div className="post-detail" style={{width: "100%", maxHeight: 700}}>
+            <ConfirmDialog/>
+            <Toast ref={toast}/>
             <div className="post-detail-content" style={{borderRight: `1px solid ${borderColor} !important`}}>
                 {/*// @ts-ignore*/}
                 {/*<PostCard postId={post.id} userId={userId} authorId={post.authorId} isHideComment={true}*/}
                 {/*          createdAt={post.createdAt} medias={files} username={post.authorProfile}*/}
                 {/*          avatar={post.authorImg} caption={post.content}/>*/}
-                <PostCard Post={post} isHideComment={true}/>
+                <PostCard post={post} isHideComment={true}/>
 
             </div>
 
@@ -221,13 +282,17 @@ const PostDetail: React.FC = () => {
             <div className="post-detail-comments">
 
                 <div className="comment-list"
-                     style={{height: "100%", overflow: "auto", backgroundColor: backgroundColor, minHeight: 500}}>
+                     style={{height: "100%", overflow: "auto", backgroundColor: backgroundColor, minHeight: 500, border: `2px solid ${borderColor}`}}>
                     {listComment.map((comment) =>{
                         // @ts-ignore
-                        return (<CommentComponent key={comment.id} comment={comment} postId={id}/>)
+                        return (<CommentComponent DeleteComment={DeleteComment} key={comment.id} comment={comment} postId={id}/>)
                     })}
                      {/*list comment*/}
-                    {isCanLoadComment && (
+
+                    {isWaitLoadComment && (
+                        <ProgressSpinner   style={{marginLeft: 25, width: '30px', height: '30px'}} strokeWidth="5"  animationDuration=".5s" />
+                    )}
+                    {isCanLoadComment && !isWaitLoadComment && (
                         <div style={{marginTop: 2}}>
                             <p onClick={()=> {
                                 if(isWaitLoadComment)
@@ -243,19 +308,28 @@ const PostDetail: React.FC = () => {
                     )}
                 </div>
 
-                <div className="comment-input" style={{marginBottom: 40, minWidth: 300, maxWidth: 700}}>
-                    <InputText
-                        disabled={isWaitComment}
-                        value={inputComment}
-                        onChange={(e)=> setInputComment(e.target.value)}
-                        onKeyDown={(e)=>{
-                            if(e.key === "Enter") {
-                                PostComment()
-                            }
-                        }}
-                        placeholder="Add a comment..." className="input-comment p-inputtext-sm p-mr-2 border-none border-bottom-1"
-                               style={{backgroundColor: "transparent", width: "100%", color: textHintColor}}/>
-                    <Button text label="Post" onClick={handleComment} />
+                <div className="comment-input-div" style={{marginBottom: 40, minWidth: 300, maxWidth: 700}}>
+                    <IconField className="input-comment" style={{width: "100%", margin: "0 0px"}}>
+                        <InputText
+                            style={{
+                                backgroundColor: borderColor,
+                                width: "100%",
+                                color: textHintColor
+                            }}
+                            disabled={isWaitComment}
+                            value={inputComment}
+                            onChange={(e)=> setInputComment(e.target.value)}
+                            onKeyDown={(e)=>{
+                                if(e.key === "Enter") {
+                                    PostComment()
+                                }
+                            }}
+                            placeholder="Add a comment..." className="input-comment p-inputtext-sm p-mr-2 border-none border-bottom-1"
+                        />
+                        <InputIcon className="pi pi-send" onClick={PostComment}/>
+                    </IconField>
+
+                    {/*<Button text icon={"pi pi-send"} onClick={PostComment} />*/}
                 </div>
             </div>
         </div>
