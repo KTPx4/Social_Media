@@ -15,6 +15,7 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import { Card } from "primereact/card";
 import axios from "axios";
 import { Navigate, useNavigate } from "react-router-dom";
+import { id } from "date-fns/locale";
 interface ProfileModalProps {
   userProfile: string;
 }
@@ -75,8 +76,9 @@ const ProfilePostsGrid: React.FC<ProfileModalProps> = ({
         backgroundColor: "transparent",
         display: "flex",
         flexWrap: "wrap",
-        gap: "3%",
-        margin: "0px  20px 0px ",
+        gap: "2%",
+        justifyContent: "space-between", // Ensures proper spacing
+        margin: "0px 20px 0px",
       }}
     >
       {items &&
@@ -84,6 +86,7 @@ const ProfilePostsGrid: React.FC<ProfileModalProps> = ({
           <Button
             key={item.id}
             style={{
+              borderColor: "darkgray",
               marginTop: "2vh",
               flexGrow: 0,
               flexShrink: 0,
@@ -92,22 +95,30 @@ const ProfilePostsGrid: React.FC<ProfileModalProps> = ({
               alignItems: "center",
               height: "50vh",
             }}
-            onClick={() => navigate(`../post/${item.id}`)}
+            onClick={() => {
+              window.location.href = `/post/${item.id}`;
+            }}
             outlined
           >
-            <Image
+            <img
+              className="bg-contain"
+              src={item.listMedia[0].mediaUrl + token.current}
+              alt=""
+            />
+            {/* <Image
               indicatorIcon={<i className="pi pi-search"></i>}
               prefix=""
               style={{
-                width: "100%",
-                height: "100%",
                 objectFit: "cover",
-                maxWidth: "100%", // Ensure it doesn’t exceed parent width
-                maxHeight: "100%", // Ensure it doesn’t exceed parent height
+                width: "100%",
+                height: "100%", // Sets the fixed height
+                flexGrow: 0,
+                flexShrink: 0,
               }}
+              key={item.id}
               src={item.listMedia[0].mediaUrl + token.current}
               alt="Image"
-            />
+            /> */}
           </Button>
         ))}
       {/* <div className="container">
@@ -115,109 +126,6 @@ const ProfilePostsGrid: React.FC<ProfileModalProps> = ({
       </div> */}
     </InfiniteScroll>
   );
-  // const loadMoreHandler = async () => {
-  //   try {
-  //     // setPage((prevState) => prevState + 1);
-  //     const postData = await apiClient("/user/profile/px4/posts", {
-  //       params: { page },
-  //     });
-  //     if (postData?.data.length === 0) {
-  //       setCheckHasMore(false);
-  //     }
-  //     // items.push(
-  //     //   postData?.data.map((post) => (
-  //     //     <Image src={post.authorId} alt="Image" width="250" />
-  //     //   ))
-  //     // );
-  //     const addedItems = [...items, postData?.data.data];
-  //     setItems(addedItems);
-  //     // items.push(postData?.data);
-  //   } catch (error) {
-  //     if (error instanceof Error) {
-  //       console.log(error.message);
-  //     }
-  //   }
-  // };
-  // useEffect(() => {
-  //   loadMoreHandler();
-  // }, []);
-  // return (
-  //   <InfiniteScroll
-  //     pageStart={page}
-  //     loadMore={loadMoreHandler}
-  //     hasMore={checkHasMore}
-  //     loader={
-  //       <div className="loader" key={0}>
-  //         Loading ...
-  //       </div>
-  //     }
-  //   >
-  //     {items.map((post) => (
-  //       <Image key={post.id} src={post.mediaUrl} alt="Image" width="250" />
-  //     ))}
-  //   </InfiniteScroll>
-  // );
-  // const [items, setItems] = useState([]);
-  // const [hasMore, setHasMore] = useState(true);
-  // const [index, setIndex] = useState(2);
-  // useEffect(() => {
-  //   axios
-  //     .get("https://api.escuelajs.co/api/v1/products?offset=10&limit=12")
-  //     .then((res) => setItems(res.data))
-  //     .catch((err) => console.log(err));
-  // }, []);
-  // const fetchMoreData = () => {
-  //   axios
-  //     .get(`https://api.escuelajs.co/api/v1/products?offset=${index}0&limit=12`)
-  //     .then((res) => {
-  //       setItems((prevItems) => [...prevItems, ...res.data]);
-  //       res.data.length > 0 ? setHasMore(true) : setHasMore(false);
-  //     })
-  //     .catch((err) => console.log(err));
-  //   setIndex((prevIndex) => prevIndex + 1);
-  // };
-  // return (
-  //   <InfiniteScroll
-  //     dataLength={items.length}
-  //     next={fetchMoreData}
-  //     hasMore={hasMore}
-  //     loader={
-  //       <div className="loader" key={0}>
-  //         Loading ...
-  //       </div>
-  //     }
-  //     endMessage={
-  //       <p style={{ textAlign: "center" }}>
-  //         <b>Yay! You have seen it all</b>
-  //       </p>
-  //     }
-  //     style={{
-  //       backgroundColor: "transparent",
-  //       display: "flex",
-  //       flexWrap: "wrap",
-  //     }}
-  //   >
-  //     {items &&
-  //       items.map((item) => (
-  //         <Button
-  //           key={item.id}
-  //           style={{
-  //             flexGrow: 0,
-  //             flexShrink: 0,
-  //             flexBasis: "33.3333%",
-  //             justifyContent: "center",
-  //             alignItems: "center",
-  //           }}
-  //           outlined
-  //         >
-  //           <Image src="https://picsum.photos/id/237/200/300" alt="Image" />
-  //         </Button>
-  //       ))}
-  //     {/* <div className="container">
-  //       <div className="row"></div>
-  //     </div> */}
-  //   </InfiniteScroll>
-  // );
 };
 
 export default ProfilePostsGrid;
