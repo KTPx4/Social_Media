@@ -22,6 +22,13 @@ interface HistoryProps {
 
 const HistoryUpdate: React.FC<HistoryProps> = ({ visible, onHide, listPost, toast }) => {
     var token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
+    // Sử dụng một object để lưu trạng thái lỗi theo `id`
+
+    const [errorMap, setErrorMap] = useState<{ [id: string]: boolean }>({});
+
+    const handleImageError = (id: string) => {
+        setErrorMap((prev) => ({ ...prev, [id]: true }));
+    };
 
     // theme
     const themeContext = useContext(ThemeContext);
@@ -95,7 +102,7 @@ const HistoryUpdate: React.FC<HistoryProps> = ({ visible, onHide, listPost, toas
                                 gap: "10px", // Khoảng cách giữa các phần tử cả ngang và dọc
                             }}>
                                 {post.listMedia.map((media: any) => {
-                                    if(media.isDeleted)
+                                    if(media.isDeleted || errorMap[media.id])
                                     {
                                         return (
                                             <div
@@ -119,6 +126,7 @@ const HistoryUpdate: React.FC<HistoryProps> = ({ visible, onHide, listPost, toas
                                     else {
                                         return (
                                             <div key={media.id} style={{position: "relative", width: "fit-content"}}>
+
                                                 <Image
                                                     className="Img-History"
                                                     preview
@@ -126,8 +134,10 @@ const HistoryUpdate: React.FC<HistoryProps> = ({ visible, onHide, listPost, toas
                                                     alt="Media"
                                                     width="100"
                                                     height="100"
+                                                    onError={() => handleImageError(media.id)}
                                                     style={{width: "100px", height: "100px", objectFit: "cover", borderRadius: 10}}
                                                 />
+
                                             </div>
                                         )
                                     }

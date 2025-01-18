@@ -18,6 +18,7 @@ import {convertToHoChiMinhTime, toHCMTime} from "../../utils/Convertor.tsx";
 import EditPostModal from "./EditPostModal.tsx";
 import HistoryUpdate from "./HistoryUpdate.tsx";
 import historyUpdate from "./HistoryUpdate.tsx";
+import {Image} from "primereact/image";
 interface PostCardProps {
     post: any,
     isHideComment: boolean
@@ -343,7 +344,8 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false}) => {
         if (media && cachedBlobs.current[currentIndex]) {
             if (media?.contentType.startsWith("image")) {
                 return (
-                    <img
+                    <Image
+                        preview
                         src={cachedBlobs.current[currentIndex]}
                         alt={`Post Image ${currentIndex + 1}`}
                         style={{

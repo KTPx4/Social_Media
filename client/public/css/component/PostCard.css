@@ -35,3 +35,7 @@ button:focus{
 .p-dialog{
     border: 1px solid #979797;
 }
+img {
+    width: 100%;
+    object-fit: cover;
+}
