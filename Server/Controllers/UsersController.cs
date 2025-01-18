@@ -80,7 +80,29 @@ namespace Server.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
             }
         }
+        [HttpGet("profile/{profile}/saves")]
+        [Authorize]
+        public async Task<IActionResult> GetSaveByProfile(string profile, [FromQuery] int page = 1)
+        {
+            var userId = User.FindFirstValue("UserId");
+            try
+            {
+                var rs = await _userService.GetSavesByProfile(userId, profile, page);
 
+                return Ok(new { message = "Get success", data = rs });
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                if (message.StartsWith("Account-"))
+                {
+                    return BadRequest(new { message = message.Split("-")[1] });
+                }
+                Console.WriteLine("Get by profile: " + ex.Message);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
+            }
+        }
         [HttpGet("profile/{profile}/posts")]
         [Authorize]
         public async Task<IActionResult> GetByProfile(string profile, [FromQuery] int page = 1)
