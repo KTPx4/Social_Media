@@ -116,6 +116,84 @@ namespace Server.Services
 
             return listPost;
         }
+        public async Task<List<PostResponse>> GetSavesByProfile(string userId, string userProfile, int page)
+        {
+            if (page < 1) page = 1;
+
+            var myAccount = _userManager.FindByIdAsync(userId);
+            if (myAccount == null) throw new Exception("Account-Your account not exists");
+
+            var profile = await context.Users
+             .Where(u => u.UserProfile.ToLower().Trim() == userProfile.ToLower().Trim())
+             .FirstOrDefaultAsync();
+
+            if (profile == null) throw new Exception("Account-Account not exists or user profile has been changed");
+
+            var relation = await context.FriendShips
+               .Where(f => f.UserId.ToString() == userId && f.FriendId == profile.Id)
+               .FirstOrDefaultAsync();
+
+            if (relation != null && relation.Status != FriendShip.FriendStatus.Normal)
+            {
+                throw new Exception("Account-You not allow to view this profile");
+            }
+            var listPost = await context.PostSaves
+                .Where(p => p.UserId == profile.Id)
+                .Include(p => p.Post)
+                .OrderByDescending(p => p.Post.CreatedAt) // Sắp xếp bài viết theo ngày đăng mới nhất
+                .Skip((page - 1) * LIMIT_PAGE_POST)
+                .Take(LIMIT_PAGE_POST)
+                .Include(p => p.Post.Medias)
+                .Include(p => p.Post.Author)
+                .Select(post => new PostResponse
+                {
+                    Id = post.Post.Id,
+                    CreatedAt = post.Post.CreatedAt,
+                    AuthorId = post.Post.AuthorId,
+                    Content = post.Post.Content,
+                    PostShareId = post.Post.PostShareId,
+                    IsHide = post.Post.IsHide,
+                    Status = post.Post.Status,
+                    Type = post.Post.Type,
+                    AuthorImg = $"{_ServerHost}/public/account/{post.Post.Author.Id.ToString()}/{post.Post.Author.ImageUrl}",
+                    AuthorProfile = post.Post.Author.UserProfile,
+                    SumComment = post.Post.Comments.Count,
+                    SumLike = post.Post.Likes.Count,
+                    ListMedia = post.Post.Medias
+                                .Select(m => new MediaResponse()
+                                {
+                                    Id = m.Id,
+                                    Content = m.Content,
+                                    ContentType = m.ContentType,
+                                    IsDeleted = m.IsDeleted,
+                                    MediaUrl = $"{_ServerHost}/api/file/src?id={m.Id.ToString()}&token=",
+                                    PostId = m.PostId,
+                                    Type = m.Type
+                                })
+                                .ToList()
+                })
+                .ToListAsync();
+
+                foreach (var post in listPost)
+                {
+                    var Like = await context.PostLikes
+                        .Where(l => l.PostId.ToString() == post.Id.ToString() && l.UserId.ToString() == userId)
+                        .FirstOrDefaultAsync();
+
+                    var Save = await context.PostSaves
+                        .Where(l => l.PostId.ToString() == post.Id.ToString() && l.UserId.ToString() == userId)
+                        .FirstOrDefaultAsync();
+
+                    var isLike = Like != null;
+                    var isSave = Save != null;
+                    post.isLike = isLike;
+                    post.isSave = isSave;
+
+                }
+
+            return listPost;
+        }
+
         public async Task<UserResponse> FindByUserProfile(string userId, string userProfile)
         {
             var myAccount = _userManager.FindByIdAsync(userId);

@@ -24,6 +24,12 @@ const UserRouter: React.FC<UserRouterProps> = ({ children }) => {
     else{
 
     }
+    if(!isAuthenticated)
+    {
+        localStorage.removeItem("token")
+        sessionStorage.removeItem("token")
+    }
+
     // Render component chính hoặc điều hướng
     return isAuthenticated ? <>{children}</> : <Navigate to="/" />;
 };

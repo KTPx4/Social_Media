@@ -10,26 +10,33 @@ import {IconField} from "primereact/iconfield";
 import {InputIcon} from "primereact/inputicon";
 import {ThemeContext} from "../../ThemeContext.tsx";
 import {TieredMenu} from "primereact/tieredmenu"; // Import cả font-weight mặc định của Roboto
-import convertToHoChiMinhTime from "../../utils/Convertor.tsx"
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import {Toast} from "primereact/toast";
 import apiClient from "../../utils/apiClient.tsx";
 import useStore from "../../store/useStore.tsx";
+import {convertToHoChiMinhTime, toHCMTime} from "../../utils/Convertor.tsx";
+import EditPostModal from "./EditPostModal.tsx";
+import HistoryUpdate from "./HistoryUpdate.tsx";
+import historyUpdate from "./HistoryUpdate.tsx";
+import {Image} from "primereact/image";
 interface PostCardProps {
-    Post: any,
+    post: any,
     isHideComment: boolean
 }
 
 
-const PostCard: React.FC<PostCardProps> = ({Post, isHideComment= false}) => {
+const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false}) => {
     // @ts-ignore
+    const [Post, setPost] = useState(post)
     const {userId, setId} = useStore()
-    var {id ,authorId,  createdAt, authorProfile, authorImg, content, listMedia} = Post
-    var postId = id,  username = authorProfile, avatar = authorImg, caption = content, medias = listMedia
-    const [isLike, setIsLike] = useState<boolean>(Post.isLike);
-    const [isSave, setIsSave] = useState<boolean>(Post.isSave);
-    const [countLike, setCountLike]= useState<number>(Post.sumLike)
-    const [countComment, setCountComment]= useState<number>(Post.sumComment)
+
+    // var {id ,authorId,  createdAt, authorProfile, authorImg, content, listMedia} = Post
+
+    //
+    const [isLike, setIsLike] = useState<boolean>(post.isLike);
+    const [isSave, setIsSave] = useState<boolean>(post.isSave);
+    const [countLike, setCountLike]= useState<number>(post.sumLike)
+    const [countComment, setCountComment]= useState<number>(post.sumComment)
 
     {/*<PostCard
     isHideComment={true}*/}
@@ -48,20 +55,43 @@ const PostCard: React.FC<PostCardProps> = ({Post, isHideComment= false}) => {
 
     var token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
 
-    const listInfoMedia = medias.map((media: { mediaUrl: any; contentType: any; }) =>  {
-        return {mediaUrl: media.mediaUrl + token, contentType: media.contentType}
-    })
+    const [listInfoMedia, setListInfoMedia] = useState([])
 
     const cachedBlobs = useRef<Record<number, string>>({}); // Lưu blob URLs của media
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isLoading, setIsLoading] = useState(true); // Trạng thái tải media
     const [isWaitRequest, setIsWaitRequest] = useState(false); // Trạng thái tải media
+    const [parentVisible, setParentVisible] = useState(false);
+    const [visibleHistory, setVisibleHistory] = useState(false);
+    const [listPostHistory, setHistory] = useState([])
 
+    useEffect(() => {
+        if(Post)
+        {
+            console.log(Post)
+            setListInfoMedia(Post.listMedia.map((media: { mediaUrl: any; contentType: any; isDeleted: any;}) =>  {
+                return {mediaUrl: media.mediaUrl + token, contentType: media.contentType, isDeleted: media.isDeleted}
+            }))
+        }
+    }, [Post]);
     // @ts-ignore
-    const isOwn = authorId === userId
+    const isOwn = Post.authorId === userId
 
     const menu = useRef(null);
-    var items = [
+    var items = []
+
+    if(Post.sumEdit > 0 )
+    {
+        items = [...items, {
+            label: 'View history edit',
+            icon: 'pi pi-history',
+            command: () =>{
+                loadHistory()
+            }
+        }]
+    }
+
+    items = [ ...items,
         !isOwn ? {
             label: 'Report',
             icon: 'pi pi-exclamation-triangle',
@@ -72,12 +102,12 @@ const PostCard: React.FC<PostCardProps> = ({Post, isHideComment= false}) => {
             label: 'Edit',
             icon: 'pi pi-pen-to-square',
             command: () =>{
-
+                setModalVisible(true)
             }
         },
     ];
 
-    if(authorId === userId)
+    if(Post.authorId === userId)
     {
         items = [...items, {
             label: 'Delete',
@@ -87,26 +117,29 @@ const PostCard: React.FC<PostCardProps> = ({Post, isHideComment= false}) => {
             }
         }]
     }
-    createdAt = convertToHoChiMinhTime(createdAt) + " ago"
+////// load history
+    const loadHistory = async() =>{
+        try{
+            var rs = await  apiClient.get(`/post/${Post.id}/history`)
+            console.log("history:",rs)
+            var statusCode = rs.status
+            if(statusCode === 200)
+            {
+                var data = rs.data.data
+                setHistory(data)
+                setVisibleHistory(true)
+            }
+        }
+        catch(e)
+        {
+            console.log(e)
+        }
+    }
 
 ///////////////delete post
-    const deletePost = () =>{
-        console.log("postid-:",postId)
-        confirmDelete()
-    }
-    const confirmDelete = () => {
-        confirmDialog({
-            message: 'Do you want to delete this post?',
-            header: 'Delete Confirmation',
-            icon: 'pi pi-info-circle',
-            defaultFocus: 'reject',
-            acceptClassName: 'p-button-danger',
-            accept
-        });
-    };
-
-    const accept = async () => {
-        var rs = await apiClient.delete(`/post/${postId}`)
+    const handleParentAccept = async () => {
+        console.log("Parent accepted");
+        var rs = await apiClient.delete(`/post/${Post.id}`)
         var statusCode = rs.status
         if(statusCode == 200)
         {
@@ -119,7 +152,16 @@ const PostCard: React.FC<PostCardProps> = ({Post, isHideComment= false}) => {
             var mess = rs.data?.message || "Delete failed"
             toast.current?.show({ severity: 'error', summary: 'Delete', detail: mess, life: 3000 });
         }
+        setParentVisible(false);
+    };
+
+    const deletePost = () =>{
+        console.log("postid-:",Post.id)
+        setParentVisible(true);
+
     }
+
+
 
 //////////////// like/unlike post
     const actionPost = async( ) =>{
@@ -210,7 +252,32 @@ const PostCard: React.FC<PostCardProps> = ({Post, isHideComment= false}) => {
     const openModalPost = async()=>{
 
     }
+/////// edit post
+    const [modalVisible, setModalVisible] = useState(false);
 
+
+
+    const handleSave = async (formData: any) => {
+        try{
+            var rs = await apiClient.put(`/post/${Post.id}`, formData)
+            console.log(rs)
+            var statusCode = rs.status
+            if(statusCode === 200 )
+            {
+                var data = rs.data.data
+                toast.current?.show({ severity: 'success', summary: 'Edit post success' })
+                setPost((prev : any) => {
+                    return {...prev, content: data.content, listMedia: data.listMedia, status: data.status}
+                })
+            }
+
+        }
+        catch (e)
+        {
+            console.log(e)
+        }
+        setModalVisible(false)
+    };
 
     const toggleCaption = () => {
         setIsExpanded(!isExpanded);
@@ -253,10 +320,32 @@ const PostCard: React.FC<PostCardProps> = ({Post, isHideComment= false}) => {
     // Render media (ảnh hoặc video)
     const renderMedia = () => {
         const media = listInfoMedia[currentIndex];
-        if (cachedBlobs.current[currentIndex]) {
-            if (media.contentType.startsWith("image")) {
+        // console.log("MediaL ", media)
+        if(media && media.isDeleted) {
+
+            return (
+                <div
+                    style={{
+                        padding: 50,
+                        height: "200px",
+                        backgroundColor: "grey",
+                        maxWidth: 500,
+                        objectFit: "cover",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center"
+                    }}
+                >
+                    <p style={{color: "white"}}>This image can not display!</p>
+
+                </div>
+            )
+        }
+        if (media && cachedBlobs.current[currentIndex]) {
+            if (media?.contentType.startsWith("image")) {
                 return (
-                    <img
+                    <Image
+                        preview
                         src={cachedBlobs.current[currentIndex]}
                         alt={`Post Image ${currentIndex + 1}`}
                         style={{
@@ -281,7 +370,7 @@ const PostCard: React.FC<PostCardProps> = ({Post, isHideComment= false}) => {
                         autoPlay
                         muted
                     >
-                        <source src={cachedBlobs.current[currentIndex]} type={media.contentType} />
+                        <source src={cachedBlobs.current[currentIndex]} type={media?.contentType} />
                     </video>
                 );
             }
@@ -293,7 +382,7 @@ const PostCard: React.FC<PostCardProps> = ({Post, isHideComment= false}) => {
                     const blobUrl = URL.createObjectURL(blob);
                     handleMediaLoad(currentIndex, blobUrl);
                 } catch (error) {
-                    console.error("Error loading media:", error);
+                    // console.error("Error loading media:", error);
                 }
             };
             fetchBlob();
@@ -318,7 +407,22 @@ const PostCard: React.FC<PostCardProps> = ({Post, isHideComment= false}) => {
             <Helmet>
                 <link rel="stylesheet" href="/css/component/PostCard.css"/>
             </Helmet>
-            <ConfirmDialog/>
+            <HistoryUpdate toast={toast} listPost={listPostHistory} visible={visibleHistory} onHide={()=> setVisibleHistory(false)}/>
+            <EditPostModal
+                visible={modalVisible}
+                onHide={() => setModalVisible(false)}
+                post={Post}
+                onSave={handleSave}
+                toast={toast}
+            />
+            <ConfirmDialog
+                visible={parentVisible}
+                onHide={() => setParentVisible(false)}
+                message="Are you sure???"
+                header="Delete Post?"
+                icon="pi pi-exclamation-triangle"
+                accept={handleParentAccept}
+            />
             <Toast ref={toast}/>
             <div className="p-card p-mb-3 p-shadow-4" style={{
                 backgroundColor: "transparent",
@@ -331,11 +435,13 @@ const PostCard: React.FC<PostCardProps> = ({Post, isHideComment= false}) => {
                 {/* Header */}
                 <div className="post-header mx-2 my-3">
                     <div className="post-header-profile">
-                        <Avatar image={avatar} size="large" shape="circle" className="p-mr-2"/>
+
+
+                        <Avatar image={Post.authorImg} size="large" shape="circle" className="p-mr-2"/>
                         <div style={{marginLeft: 5}}>
-                            <small className="p-m-0 font-bold" style={{color: textColor}}>{username}</small>
+                            <small className="p-m-0 font-bold" style={{color: textColor}}>{Post.authorProfile}</small>
                             <br></br>
-                            <small className="p-text-secondary" style={{fontSize: 12, color: textHintColor}}>{createdAt}</small>
+                            <small title={toHCMTime(Post.createdAt)} className="p-text-secondary" style={{fontSize: 12, color: textHintColor}}>{convertToHoChiMinhTime(Post.createdAt) + " ago"}</small>
                         </div>
                     </div>
                     <TieredMenu model={items} popup ref={menu} breakpoint="767px" />
@@ -357,9 +463,10 @@ const PostCard: React.FC<PostCardProps> = ({Post, isHideComment= false}) => {
                             color: captionColor
                         }}
                     >
-                        {caption}
+
+                        {Post.content}
                     </p>
-                    {caption.length > 50 && (
+                    {Post.content.length > 50 && (
                         <button
                             onClick={toggleCaption}
                             style={{
@@ -464,10 +571,10 @@ const PostCard: React.FC<PostCardProps> = ({Post, isHideComment= false}) => {
                 {/* Actions */}
                 <div className="p-d-flex p-ai-center p-jc-between p-p-3">
                     <div>
-                        <Button onClick={actionPost} icon={`pi ${isLike ?  "pi-heart-fill" : "pi-heart" } `} className="p-button-rounded p-button-text p-mr-2"/>
+                        <Button onClick={actionPost} title={isLike ? "Unlike" : "Like"} icon={`pi ${isLike ?  "pi-heart-fill" : "pi-heart" } `} className="p-button-rounded p-button-text p-mr-2"/>
                         {ButtonComment}
                         <Button onClick={sendPostToMess} icon="pi pi-send" className="p-button-rounded p-button-text"/>
-                        <Button onClick={savePost} icon={`pi ${isSave ? "pi-bookmark-fill" : "pi-bookmark"}`} className="p-button-rounded p-button-text"/>
+                        <Button onClick={savePost} title={"Save"} icon={`pi ${isSave ? "pi-bookmark-fill" : "pi-bookmark"}`} className="p-button-rounded p-button-text"/>
                     </div>
                             {InputComponent}
 

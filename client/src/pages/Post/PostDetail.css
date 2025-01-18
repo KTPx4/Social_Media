@@ -40,7 +40,7 @@
 }
 
 .comment-list {
-    border: 1px solid #ddd;
+    /*border: 1px solid #ddd;*/
     border-radius: 5px;
     padding: 1rem;
     min-height: 200px;
@@ -60,5 +60,17 @@
 
     .divider {
         display: none;
+    }
+
+    .comment-input-div{
+        margin: 0 15px;
+        width: 90% !important;
+        position: absolute;
+        bottom: 35px;
+
+        background-color: #f9f9f9;
+    }
+    .comment-list{
+        margin-bottom: 70px;
     }
 }
