@@ -134,7 +134,7 @@ const Layout: React.FC = () => {
                 />
               }
               onClick={() => {
-                navigate("profile");
+                window.location.href = "/home/profile";
               }}
               style={{ color: textColor }}
             />

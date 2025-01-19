@@ -7,35 +7,48 @@ import { Button } from "primereact/button";
 import { data, useNavigate } from "react-router-dom";
 
 import { Menubar } from "primereact/menubar";
-import { useContext, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import EditProfileModal from "../../components/profile/EditProfileModal";
 import useStore from "../../store/useStore";
 import ProfilePostsGrid from "../../components/profile/ProfilePostsGrid";
+import { Toast } from "primereact/toast";
 
 const ProfilePage = () => {
   const { myAccount } = useStore();
   const navigate = useNavigate(); //  const username = queryParams.get("username"); //  const token = queryParams.get("token"); //  const [passwordError, setPasswordError] = useState(""); //  const [NewPass, setPassword] = useState(""); //  async function handleResetPassword() { //   let error = ""; //   if (!NewPass) { //    error = "This field can not be empty"; //   } else if (NewPass.length < 6 || NewPass.length > 30) { //    error = "Password must be between  6 to 30  characters long"; //   } //   if (!error) { //    try { //     await apiClient.get("/user/reset", { //      params: { username, token, NewPass }, //     }); //     navigate("/"); //    } catch (err) { //     if (err instanceof Error) { //      error = err.message; //     } //    } //   } //   setPasswordError(error); //  }
   const [visible, setVisible] = useState(false);
+  const [postType, setPostType] = useState("posts");
+  const handleSetPostType = (type: string) => {
+    return () => {
+      setPostType(type);
+    };
+  };
   const items = [
     {
       label: "POSTS",
-
       icon: "pi pi-table",
-      command: () => {},
+      command: handleSetPostType("posts"),
     },
-
+    {
+      separator: true,
+    },
     {
       label: "SAVED",
-
       icon: "pi pi-bookmark",
+      command: handleSetPostType("saves"),
     },
-
+    {
+      separator: true,
+    },
     {
       label: "TAGGED",
-
       icon: "pi pi-tag",
     },
+    {
+      separator: true,
+    },
   ];
+
   return (
     <div className="flex-column h-screen w-screen ">
       <EditProfileModal
@@ -86,8 +99,12 @@ const ProfilePage = () => {
 
       <div className="w-full h-auto ">
         <Menubar model={items} />
+        {/* <Toast ref={toast} /> */}
+        <ProfilePostsGrid
+          postType={postType}
+          userProfile={myAccount?.userProfile}
+        ></ProfilePostsGrid>
       </div>
-      <ProfilePostsGrid userProfile={myAccount?.userProfile}></ProfilePostsGrid>
     </div>
   );
 };

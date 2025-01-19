@@ -50,17 +50,20 @@ const UserProfilePage = () => {
     }
     getUserInfo();
   }, []);
+  const [postType, setPostType] = useState("posts");
   const items = [
     {
       label: "POSTS",
 
       icon: "pi pi-table",
+      command: () => setPostType("posts"),
     },
 
     {
       label: "SAVED",
 
       icon: "pi pi-bookmark",
+      command: () => setPostType("saves"),
     },
 
     {
@@ -131,6 +134,7 @@ const UserProfilePage = () => {
       <div className="w-full h-auto ">
         <Menubar model={items} />
         <ProfilePostsGrid
+          postType={postType}
           userProfile={userProfile?.data.userProfile}
         ></ProfilePostsGrid>
       </div>
