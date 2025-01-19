@@ -18,13 +18,15 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { id } from "date-fns/locale";
 interface ProfileModalProps {
   userProfile: string;
+  postType: string;
 }
 
 const ProfilePostsGrid: React.FC<ProfileModalProps> = ({
   userProfile,
+  postType,
 }: ProfileModalProps) => {
   const [page, setPage] = useState(2);
-  const navigate = useNavigate();
+
   const [checkHasMore, setCheckHasMore] = useState(true);
   const [items, setItems] = useState([]);
   const token = useRef("");
@@ -33,7 +35,7 @@ const ProfilePostsGrid: React.FC<ProfileModalProps> = ({
     const sessionToken = sessionStorage.getItem("token");
     token.current = localToken || sessionToken || "";
     apiClient
-      .get(`/user/profile/${userProfile}/posts`, {
+      .get(`/user/profile/${userProfile}/${postType}`, {
         params: {
           page: 1,
         },
@@ -42,7 +44,7 @@ const ProfilePostsGrid: React.FC<ProfileModalProps> = ({
   }, []);
   const fetchMoreData = () => {
     apiClient
-      .get(`/user/profile/${userProfile}/posts`, {
+      .get(`/user/profile/${userProfile}/${postType}`, {
         params: {
           page,
         },
