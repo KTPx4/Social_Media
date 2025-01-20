@@ -338,47 +338,68 @@ namespace Server.Services.SPosts
 
         public async Task<List<PostResponse>> GetAllMyPost(string userId, int page)
         {
-            var user= await _userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByIdAsync(userId);
 
             if (user == null) return null;
+
             try
             {
+                // Lấy danh sách bài viết của người dùng
                 var listPost = await _context.Posts
                     .Where(p => p.AuthorId.ToString() == userId)
-                    .Include(p=>p.Medias)
+                    .Include(p => p.Medias)
                     .Include(p => p.Updates)
                     .OrderByDescending(p => p.CreatedAt)
-                    .Skip( (page-1)*LIMIT_SIZE )
+                    .Skip((page - 1) * LIMIT_SIZE)
                     .Take(LIMIT_SIZE)
-                    .Select(p => new PostResponse(p, _ServerHost))            
+                    .Select(p => new PostResponse(p, _ServerHost))
                     .ToListAsync();
-                
-                foreach (var post in listPost) 
+
+                // Lấy danh sách ID bài viết
+                var postIds = listPost.Select(p => p.Id).ToList();
+
+                // Truy vấn dữ liệu Like và Save
+                var postLikes = await _context.PostLikes
+                    .Where(l => postIds.Contains(l.PostId) && l.UserId.ToString() == userId)
+                    .ToListAsync();
+
+                var postSaves = await _context.PostSaves
+                    .Where(s => postIds.Contains(s.PostId) && s.UserId.ToString() == userId)
+                    .ToListAsync();
+
+                // Truy vấn tổng số Like và Comment
+                var likeCounts = await _context.PostLikes
+                    .Where(l => postIds.Contains(l.PostId))
+                    .GroupBy(l => l.PostId)
+                    .Select(g => new { PostId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(g => g.PostId, g => g.Count);
+
+                var commentCounts = await _context.PostComments
+                    .Where(c => postIds.Contains(c.PostId))
+                    .GroupBy(c => c.PostId)
+                    .Select(g => new { PostId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(g => g.PostId, g => g.Count);
+
+                // Gán dữ liệu vào từng bài viết
+                foreach (var post in listPost)
                 {
-                    var Like = await _context.PostLikes
-                        .Where(l => l.PostId.ToString() == post.Id.ToString() && l.UserId.ToString() == userId)
-                        .FirstOrDefaultAsync();
+                    post.isLike = postLikes.Any(l => l.PostId == post.Id);
+                    post.isSave = postSaves.Any(s => s.PostId == post.Id);
 
-                    var Save = await _context.PostSaves
-                        .Where(l => l.PostId.ToString() == post.Id.ToString() && l.UserId.ToString() == userId)
-                        .FirstOrDefaultAsync();
-
-                    var isLike = Like != null;
-                    var isSave = Save != null;
-                    post.isLike = isLike;
-                    post.isSave = isSave;
-                    post.SumLike = await _context.PostLikes.CountAsync(l => l.PostId == post.Id);
-                    post.SumComment = await _context.PostComments.CountAsync(c => c.PostId == post.Id);
+                    post.SumLike = likeCounts.ContainsKey(post.Id) ? likeCounts[post.Id] : 0;
+                    post.SumComment = commentCounts.ContainsKey(post.Id) ? commentCounts[post.Id] : 0;
                 }
-                return listPost;
 
+                return listPost;
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
             }
+
             return null;
         }
+
 
         public async Task<PostResponse> GetById(string userId, string postId)
         {
@@ -585,68 +606,66 @@ namespace Server.Services.SPosts
         {
             var post = await GetById(userId, postId);
 
-            // get comment desc without root comment
+            if (post == null) return new List<CommentResponse>();
+
+            // Lấy các comment gốc
             var rootComments = await _context.PostComments
                 .Where(c => c.PostId.ToString() == postId && c.RootCommentId == null)
                 .OrderByDescending(c => c.CreatedAt)
                 .Skip((page - 1) * LIMIT_COMMENT_SIZE)
                 .Take(LIMIT_COMMENT_SIZE)
                 .Include(c => c.User)
-                .Include(c => c.ReplyComment)
                 .ToListAsync();
 
             var rootIds = rootComments.Select(c => c.Id).ToList();
 
-            // get reply comment in root comment
+            // Truy vấn dữ liệu cần thiết trước
             var replyCounts = await _context.PostComments
                 .Where(c => rootIds.Contains(c.RootCommentId.Value))
                 .GroupBy(c => c.RootCommentId)
                 .Select(g => new { RootCommentId = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(g => g.RootCommentId, g => g.Count);
 
-            // get like of each comment
             var likeCounts = await _context.CommentReactions
                 .Where(cr => rootIds.Contains(cr.CommentId))
                 .GroupBy(cr => cr.CommentId)
                 .Select(g => new { CommentId = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(g => g.CommentId, g => g.Count);
 
-            // Map rootComments to CommentResponse
-            var commentResponses = new List<CommentResponse>();
+            var userLikes = await _context.CommentReactions
+                .Where(cr => rootIds.Contains(cr.CommentId) && cr.UserId.ToString() == userId)
+                .ToListAsync();
 
-            foreach (var c in rootComments)
+            // Tạo danh sách phản hồi
+            var commentResponses = rootComments.Select(c => new CommentResponse
             {
-                var Like = await _context.CommentReactions
-                    .Where(l => l.UserId.ToString() == c.UserId.ToString() && l.CommentId.ToString() == c.Id.ToString())
-                    .FirstOrDefaultAsync();
-
-                commentResponses.Add(new CommentResponse
-                {
-                    Id = c.Id,
-                    PostId = c.PostId,
-                    UserId = c.UserId,
-                    UserProfile = c.User.UserProfile,
-                    ImageUrl = $"{_ServerHost}/{_AccessImgAccount}/{c.UserId}/{c.User.ImageUrl}",
-                    ReplyCommentId = c.ReplyCommentId,
-                    RootCommentId = c.RootCommentId,
-                    ReplyUserProfile = c.ReplyComment?.User.UserProfile ?? "",
-                    Content = c.Content,
-                    CreatedAt = c.CreatedAt,
-                    IsLike = Like != null,
-                    CountReply = replyCounts.ContainsKey(c.Id) ? replyCounts[c.Id] : 0, // Số lượng trả lời
-                    CountLike = likeCounts.ContainsKey(c.Id) ? likeCounts[c.Id] : 0 // Số lượng like
-                });
-            }
+                Id = c.Id,
+                PostId = c.PostId,
+                UserId = c.UserId,
+                UserProfile = c.User.UserProfile,
+                ImageUrl = $"{_ServerHost}/{_AccessImgAccount}/{c.UserId}/{c.User.ImageUrl}",
+                ReplyCommentId = c.ReplyCommentId,
+                RootCommentId = c.RootCommentId,
+                ReplyUserProfile = "",
+                Content = c.Content,
+                CreatedAt = c.CreatedAt,
+                IsLike = userLikes.Any(l => l.CommentId == c.Id),
+                CountReply = replyCounts.ContainsKey(c.Id) ? replyCounts[c.Id] : 0,
+                CountLike = likeCounts.ContainsKey(c.Id) ? likeCounts[c.Id] : 0
+            }).ToList();
 
             return commentResponses;
         }
+
 
 
         public async Task<List<CommentResponse>> GetReplyCommentPost(string userId, string postId, string replyId, int page)
         {
             var post = await GetById(userId, postId);
 
-            // Lấy danh sách bình luận
+            if (post == null) return new List<CommentResponse>();
+
+            // Lấy các comment trả lời
             var listComment = await _context.PostComments
                 .Where(c => c.PostId.ToString() == postId && c.RootCommentId.ToString() == replyId)
                 .OrderBy(c => c.CreatedAt)
@@ -654,50 +673,42 @@ namespace Server.Services.SPosts
                 .Take(LIMIT_COMMENT_SIZE)
                 .Include(c => c.User)
                 .Include(c => c.ReplyComment)
-                .Include(c => c.ReplyComment.User)
                 .ToListAsync();
 
-            var rootIds = listComment.Select(c => c.Id).ToList();
+            var commentIds = listComment.Select(c => c.Id).ToList();
 
-            // Lấy số lượng like cho mỗi bình luận
+            // Truy vấn dữ liệu cần thiết
             var likeCounts = await _context.CommentReactions
-                .Where(cr => rootIds.Contains(cr.CommentId))
+                .Where(cr => commentIds.Contains(cr.CommentId))
                 .GroupBy(cr => cr.CommentId)
                 .Select(g => new { CommentId = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(g => g.CommentId, g => g.Count);
 
-            // Tạo danh sách phản hồi
-            var commentResponses = new List<CommentResponse>();
+            var userLikes = await _context.CommentReactions
+                .Where(cr => commentIds.Contains(cr.CommentId) && cr.UserId.ToString() == userId)
+                .ToListAsync();
 
-            foreach (var c in listComment)
+            // Tạo danh sách phản hồi
+            var commentResponses = listComment.Select(c => new CommentResponse
             {
-                // Kiểm tra người dùng đã like hay chưa
-                var Like = await _context.CommentReactions
-                    .Where(l => l.UserId.ToString() == c.UserId.ToString() && l.CommentId.ToString() == c.Id.ToString())
-                    .FirstOrDefaultAsync();
-                //Console.WriteLine("user==========================: " + ;
-                var profile = c.ReplyComment?.User.UserProfile;
-                // Thêm phản hồi vào danh sách
-                commentResponses.Add(new CommentResponse
-                {
-                    Id = c.Id,
-                    PostId = c.PostId,
-                    UserId = c.UserId,
-                    UserProfile = c.User.UserProfile,
-                    ImageUrl = $"{_ServerHost}/{_AccessImgAccount}/{c.UserId}/{c.User.ImageUrl}",
-                    ReplyCommentId = c.ReplyCommentId,
-                    RootCommentId = c.RootCommentId,
-                    ReplyUserProfile = profile,
-                    Content = c.Content,
-                    CreatedAt = c.CreatedAt,
-                    IsLike = Like != null,
-                    CountReply = 0, // Đếm số lượng trả lời, nếu cần có thể thêm logic tính toán
-                    CountLike = likeCounts.ContainsKey(c.Id) ? likeCounts[c.Id] : 0 // Số lượng like
-                });
-            }
+                Id = c.Id,
+                PostId = c.PostId,
+                UserId = c.UserId,
+                UserProfile = c.User.UserProfile,
+                ImageUrl = $"{_ServerHost}/{_AccessImgAccount}/{c.UserId}/{c.User.ImageUrl}",
+                ReplyCommentId = c.ReplyCommentId,
+                RootCommentId = c.RootCommentId,
+                ReplyUserProfile = c.ReplyComment?.User?.UserProfile,
+                Content = c.Content,
+                CreatedAt = c.CreatedAt,
+                IsLike = userLikes.Any(l => l.CommentId == c.Id),
+                CountReply = 0, // Nếu cần tính số lượng trả lời, bổ sung logic
+                CountLike = likeCounts.ContainsKey(c.Id) ? likeCounts[c.Id] : 0
+            }).ToList();
 
             return commentResponses;
         }
+
 
         public async Task<bool> DeleteComment(string userId, string commentId)
         {

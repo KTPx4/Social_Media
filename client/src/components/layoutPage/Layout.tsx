@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, {useContext, useEffect, useState} from "react";
 import { Button } from "primereact/button";
 import "./Layout.css";
 import { Outlet, useNavigate } from "react-router-dom";
@@ -12,6 +12,9 @@ const Layout: React.FC = () => {
   const navigate = useNavigate();
   const [isModalVisible, setModalVisible] = useState(false);
   const [isOpenCreate, setIsOpenCreate] = useState(false);
+  const [countNotifies, setCountNotifies] = useState(myAccount.countNotifies ?? 0);
+
+
   // Hàm để hiển thị và ẩn modal
   // @ts-ignore
   const showModal = () => setModalVisible(true);
@@ -28,6 +31,8 @@ const Layout: React.FC = () => {
   // @ts-ignore
   const captionColor = currentTheme.getCaption();
   const backgroundColor = currentTheme.getBackground();
+
+  if(countNotifies > 99) setCountNotifies("99+")
   return (
     <div
       style={{
@@ -102,8 +107,8 @@ const Layout: React.FC = () => {
                 icon="pi pi-bell"
                 label="Notifications"
                 className="navbar-item"
-                badge="2"
-                badgeClassName="red-badge"
+                badge={countNotifies}
+                badgeClassName="p-badge-info"
                 style={{ color: textColor }}
               />
               <Button

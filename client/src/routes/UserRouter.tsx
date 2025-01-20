@@ -28,10 +28,14 @@ const UserRouter: React.FC<UserRouterProps> = ({ children }) => {
     {
         localStorage.removeItem("token")
         sessionStorage.removeItem("token")
+        return <Navigate to="/" />
     }
+    else{
 
+        return children
+    }
     // Render component chính hoặc điều hướng
-    return isAuthenticated ? <>{children}</> : <Navigate to="/" />;
+    // return isAuthenticated ? <>{children}</> : ;
 };
 
 export default UserRouter;
