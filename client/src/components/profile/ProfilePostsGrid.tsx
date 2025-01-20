@@ -31,19 +31,29 @@ const ProfilePostsGrid: React.FC<ProfileModalProps> = ({
   const [items, setItems] = useState([]);
   const token = useRef("");
   useEffect(() => {
-    const localToken = localStorage.getItem("token");
-    const sessionToken = sessionStorage.getItem("token");
-    token.current = localToken || sessionToken || "";
-    apiClient
-      .get(`/user/profile/${userProfile}/${postType}`, {
-        params: {
-          page: 1,
-        },
-      })
-      .then((res) => setItems(res.data.data));
-  }, []);
-  const fetchMoreData = () => {
-    apiClient
+    const initializeData = async () => {
+      const localToken = localStorage.getItem("token");
+      const sessionToken = sessionStorage.getItem("token");
+      token.current = localToken || sessionToken || "";
+
+      try {
+        await apiClient
+          .get(`/user/profile/${userProfile}/${postType}`, {
+            params: {
+              page: 1,
+            },
+          })
+          .then((res) => setItems(res.data.data))
+          .catch((err) => console.log(err));
+      } catch (error) {
+        console.log(error.message);
+      }
+    };
+
+    initializeData();
+  }, [userProfile, postType]);
+  const fetchMoreData = async () => {
+    await apiClient
       .get(`/user/profile/${userProfile}/${postType}`, {
         params: {
           page,
