@@ -27,6 +27,7 @@ namespace Server.DTOs.Account
         public int CountFollowers { get; set; } = 0;
         public int CountFollowings { get; set; } = 0;
         public int CountPosts {  get; set; } = 0;
+        public int CountNotifies { get; set; } = 0;
 
         public List<PostResponse> Posts { get; set; } = new List<PostResponse> { };
 

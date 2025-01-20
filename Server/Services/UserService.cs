@@ -97,21 +97,23 @@ namespace Server.Services
                 })
                 .ToListAsync();
 
+            // Lấy danh sách ID các bài viết
+            var postIds = listPost.Select(p => p.Id).ToList();
+
+            // Lấy thông tin Like và Save một lần
+            var postLikes = await context.PostLikes
+                .Where(l => postIds.Contains(l.PostId) && l.UserId.ToString() == userId)
+                .ToListAsync();
+
+            var postSaves = await context.PostSaves
+                .Where(s => postIds.Contains(s.PostId) && s.UserId.ToString() == userId)
+                .ToListAsync();
+
+            // Gán thông tin Like và Save
             foreach (var post in listPost)
             {
-                var Like = await context.PostLikes
-                    .Where(l => l.PostId.ToString() == post.Id.ToString() && l.UserId.ToString() == userId)
-                    .FirstOrDefaultAsync();
-
-                var Save = await context.PostSaves
-                    .Where(l => l.PostId.ToString() == post.Id.ToString() && l.UserId.ToString() == userId)
-                    .FirstOrDefaultAsync();
-
-                var isLike = Like != null;
-                var isSave = Save != null;
-                post.isLike = isLike;
-                post.isSave = isSave;
-               
+                post.isLike = postLikes.Any(l => l.PostId == post.Id);
+                post.isSave = postSaves.Any(s => s.PostId == post.Id);
             }
 
             return listPost;
@@ -174,21 +176,23 @@ namespace Server.Services
                 })
                 .ToListAsync();
 
+                // Lấy danh sách ID các bài viết
+                var postIds = listPost.Select(p => p.Id).ToList();
+
+                // Lấy thông tin Like và Save một lần
+                var postLikes = await context.PostLikes
+                    .Where(l => postIds.Contains(l.PostId) && l.UserId.ToString() == userId)
+                    .ToListAsync();
+
+                var postSaves = await context.PostSaves
+                    .Where(s => postIds.Contains(s.PostId) && s.UserId.ToString() == userId)
+                    .ToListAsync();
+
+                // Gán thông tin Like và Save
                 foreach (var post in listPost)
                 {
-                    var Like = await context.PostLikes
-                        .Where(l => l.PostId.ToString() == post.Id.ToString() && l.UserId.ToString() == userId)
-                        .FirstOrDefaultAsync();
-
-                    var Save = await context.PostSaves
-                        .Where(l => l.PostId.ToString() == post.Id.ToString() && l.UserId.ToString() == userId)
-                        .FirstOrDefaultAsync();
-
-                    var isLike = Like != null;
-                    var isSave = Save != null;
-                    post.isLike = isLike;
-                    post.isSave = isSave;
-
+                    post.isLike = postLikes.Any(l => l.PostId == post.Id);
+                    post.isSave = postSaves.Any(s => s.PostId == post.Id);
                 }
 
             return listPost;
@@ -241,23 +245,58 @@ namespace Server.Services
                 throw new Exception("Account-You not allow to view this profile");
             }
 
+            //foreach (var post in profile.Posts)
+            //{
+            //    var Like = await context.PostLikes
+            //        .Where(l => l.PostId.ToString() == post.Id.ToString() && l.UserId.ToString() == userId)
+            //        .FirstOrDefaultAsync();
+
+            //    var Save = await context.PostSaves
+            //        .Where(l => l.PostId.ToString() == post.Id.ToString() && l.UserId.ToString() == userId)
+            //        .FirstOrDefaultAsync();
+
+            //    var isLike = Like != null;
+            //    var isSave = Save != null;
+            //    post.isLike = isLike;
+            //    post.isSave = isSave;
+            //    post.SumLike = await context.PostLikes.CountAsync(l => l.PostId == post.Id);
+            //    post.SumComment = await context.PostComments.CountAsync(c => c.PostId == post.Id);
+            //}
+            // Lấy danh sách ID các bài viết
+            var postIds = profile.Posts.Select(p => p.Id).ToList();
+
+            // Lấy thông tin Like, Save, và tổng Like/Comment cho tất cả bài viết
+            var postLikes = await context.PostLikes
+                .Where(l => postIds.Contains(l.PostId) && l.UserId.ToString() == userId)
+                .ToListAsync();
+
+            var postSaves = await context.PostSaves
+                .Where(s => postIds.Contains(s.PostId) && s.UserId.ToString() == userId)
+                .ToListAsync();
+
+            var likeCounts = await context.PostLikes
+                .Where(l => postIds.Contains(l.PostId))
+                .GroupBy(l => l.PostId)
+                .Select(g => new { PostId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(g => g.PostId, g => g.Count);
+
+            var commentCounts = await context.PostComments
+                .Where(c => postIds.Contains(c.PostId))
+                .GroupBy(c => c.PostId)
+                .Select(g => new { PostId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(g => g.PostId, g => g.Count);
+
+            // Gán giá trị vào từng bài viết
             foreach (var post in profile.Posts)
             {
-                var Like = await context.PostLikes
-                    .Where(l => l.PostId.ToString() == post.Id.ToString() && l.UserId.ToString() == userId)
-                    .FirstOrDefaultAsync();
+                post.isLike = postLikes.Any(l => l.PostId == post.Id);
+                post.isSave = postSaves.Any(s => s.PostId == post.Id);
 
-                var Save = await context.PostSaves
-                    .Where(l => l.PostId.ToString() == post.Id.ToString() && l.UserId.ToString() == userId)
-                    .FirstOrDefaultAsync();
-
-                var isLike = Like != null;
-                var isSave = Save != null;
-                post.isLike = isLike;
-                post.isSave = isSave;
-                post.SumLike = await context.PostLikes.CountAsync(l => l.PostId == post.Id);
-                post.SumComment = await context.PostComments.CountAsync(c => c.PostId == post.Id);
+                // Gán số lượng Like và Comment (nếu không có, mặc định là 0)
+                post.SumLike = likeCounts.ContainsKey(post.Id) ? likeCounts[post.Id] : 0;
+                post.SumComment = commentCounts.ContainsKey(post.Id) ? commentCounts[post.Id] : 0;
             }
+
 
             return profile;
         }
@@ -558,9 +597,18 @@ namespace Server.Services
             }
         }
 
-        public async Task<User> GetMyInfo(string userId)
+        public async Task<UserResponse> GetMyInfo(string userId)
         {
-            return await context.Users.FirstOrDefaultAsync(u => u.Id.ToString() == userId);
+            var rs = await context.Users.FirstOrDefaultAsync(u => u.Id.ToString() == userId);
+            
+            if (rs != null)
+            {
+                var res = new UserResponse(rs, _ServerHost, $"{_ServerHost}/{_AccessImgAccount}");
+                var notifies = await context.UserNotifies.Where(n => n.UserId == rs.Id).CountAsync();
+                res.CountNotifies = notifies;
+                return res;
+            }
+            return null;
         }
     }
 }

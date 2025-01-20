@@ -245,11 +245,10 @@ namespace Server.Controllers
                 
                 if (user == null) return NotFound(new { message = "Your account not found or was deleted" });
                
-                var ruser = new UserResponse(user, _ServerHost, _ServerIMGHost);
                 
                 await CheckAvt(user.Id.ToString(), user.ImageUrl);
 
-                return Ok(new {message = "Get info success", data = ruser, imghost= _ServerIMGHost });
+                return Ok(new {message = "Get info success", data = user, imghost= _ServerIMGHost });
 
             }
             catch (Exception ex)
