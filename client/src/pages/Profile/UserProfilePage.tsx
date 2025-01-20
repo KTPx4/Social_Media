@@ -29,6 +29,7 @@ const UserProfilePage = () => {
   const [userProfile, setUserProfile] = useState<Record<string, any> | null>(
     null
   );
+  const [postType, setPostType] = useState("posts");
   const [profileError, setProfileError] = useState("");
   useEffect(() => {
     // if (userId == id) navigate("../profile");
@@ -50,26 +51,34 @@ const UserProfilePage = () => {
     }
     getUserInfo();
   }, []);
-  const [postType, setPostType] = useState("posts");
+  const handleSetPostType = (type: string) => {
+    return () => {
+      setPostType(type);
+    };
+  };
   const items = [
     {
       label: "POSTS",
-
       icon: "pi pi-table",
-      command: () => setPostType("posts"),
+      command: handleSetPostType("posts"),
     },
-
+    {
+      separator: true,
+    },
     {
       label: "SAVED",
-
       icon: "pi pi-bookmark",
-      command: () => setPostType("saves"),
+      command: handleSetPostType("saves"),
     },
-
+    {
+      separator: true,
+    },
     {
       label: "TAGGED",
-
       icon: "pi pi-tag",
+    },
+    {
+      separator: true,
     },
   ];
 
