@@ -543,6 +543,13 @@ namespace Server.Services.SPosts
                     Content = commentModel.Content
                 };
 
+                var notify = new UserNotify()
+                {
+                    Type = TypeNotify.Comment,
+                    InteractId = new Guid(userId),
+                    DestinationId = post.Id,
+                };
+
                 PostComment replyComment = null;
 
                 if (!string.IsNullOrEmpty(replyid))
@@ -565,18 +572,8 @@ namespace Server.Services.SPosts
                     newComment.Content = $"{newComment.Content}";
 
                     // create notify to user has get reply
-                    if (replyComment.UserId.ToString() != userId)
-                    {
-                        var notify = new UserNotify()
-                        {
-                            TargetId = newComment.Id,
-                            UserId = replyComment.UserId,
-                            Type = TypeNotify.Comment,
-                            ImageUrl = user.ImageUrl
-                        };
-                        await _context.UserNotifies.AddAsync(notify);
-                    }
-
+                    notify.UserId = replyComment.UserId; // notify for person has get reply
+                    notify.Content = "reply your comment";
 
                     //........
                     // send socket refresh notify
@@ -584,11 +581,24 @@ namespace Server.Services.SPosts
 
                 }
                 else // new comment in post
-                { }
+                {
+                    notify.UserId = post.AuthorId; // notify for author of post
+                    notify.Content = "comment your post";
+                }
+               
+
+                
 
                 await _context.PostComments.AddAsync(newComment);
                 await _context.SaveChangesAsync();
                 
+                notify.TargetId = newComment.Id;
+                if (post.AuthorId.ToString() != userId || (replyComment != null && replyComment.UserId.ToString() != userId))
+                {
+                    await _context.UserNotifies.AddAsync(notify);
+                }
+                await _context.SaveChangesAsync();
+
                 var rs = new CommentResponse(newComment);
                 rs.UserProfile = user.UserProfile;
                 rs.ImageUrl = $"{_ServerHost}/{_AccessImgAccount}/{user.Id.ToString()}/{user.ImageUrl}";

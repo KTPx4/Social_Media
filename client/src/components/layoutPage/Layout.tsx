@@ -5,6 +5,8 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { ThemeContext } from "../../ThemeContext.tsx";
 import CreatePostModal from "../post/CreatePostModal.tsx";
 import useStore from "../../store/useStore.tsx";
+import {Sidebar} from "primereact/sidebar";
+import NotificationPage from "../../pages/Notification/NotificationPage.tsx";
 const Layout: React.FC = () => {
   const { myAccount } = useStore();
 
@@ -13,7 +15,7 @@ const Layout: React.FC = () => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [isOpenCreate, setIsOpenCreate] = useState(false);
   const [countNotifies, setCountNotifies] = useState(myAccount.countNotifies ?? 0);
-
+    const [vNotifications, setVNotifications] = useState<boolean>(false);
 
   // Hàm để hiển thị và ẩn modal
   // @ts-ignore
@@ -31,7 +33,12 @@ const Layout: React.FC = () => {
   // @ts-ignore
   const captionColor = currentTheme.getCaption();
   const backgroundColor = currentTheme.getBackground();
-
+  const ShowNotificationPage = () =>{
+      navigate("/notifications");
+  }
+  const ToHome = () =>{
+      navigate("/home")
+  }
   if(countNotifies > 99) setCountNotifies("99+")
   return (
     <div
@@ -53,6 +60,7 @@ const Layout: React.FC = () => {
         }}
       >
         <CreatePostModal visible={isOpenCreate} setVisible={setIsOpenCreate} />
+
         {/* Nav-bar dọc */}
         <div className="app-navbar">
           <div
@@ -82,6 +90,7 @@ const Layout: React.FC = () => {
               }}
             >
               <Button
+                  onClick={ToHome}
                 icon="pi pi-home"
                 label="Home"
                 className="navbar-item"
@@ -104,6 +113,7 @@ const Layout: React.FC = () => {
               />
 
               <Button
+                onClick={()=>setVNotifications(!vNotifications)}
                 icon="pi pi-bell"
                 label="Notifications"
                 className="navbar-item"
@@ -153,9 +163,25 @@ const Layout: React.FC = () => {
           </div>
         </div>
         {/*body*/}
-        {/* Nội dung */}
+              <div className="slider-bar-custom" style={{
+                  position: "absolute",
+                  zIndex: 1111,
+                  height: "100%",
+                  left: 230,
+                  display: vNotifications ? "block" : "none",
+                  backgroundColor: backgroundColor,
+
+              }}>
+                  <Button text style={{right: "-80%", marginTop: 10,color: textColor}} icon={"pi pi-times"} onClick={()=>setVNotifications(false)}/>
+                  <NotificationPage />
+                  {/*<Sidebar visible={vNotifications} onHide={() => setVNotifications(false)}>*/}
+                  {/*</Sidebar>*/}
+              </div>
+
+          {/* Nội dung */}
         <Outlet />
       </div>
+
       {/* Nav-bar ngang */}
       <div
         className="horizontal-navbar"
@@ -173,6 +199,7 @@ const Layout: React.FC = () => {
         }}
       >
         <Button
+          onClick={ToHome}
           icon="pi pi-home"
           rounded
           text
@@ -192,7 +219,8 @@ const Layout: React.FC = () => {
           className="horizontal-navbar-item"
         />
         <Button
-          icon="pi pi-bell"
+            onClick={ShowNotificationPage}
+            icon="pi pi-bell"
           rounded
           text
           className="horizontal-navbar-item"

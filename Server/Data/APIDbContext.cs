@@ -91,12 +91,15 @@ namespace Server.Data
                     .WithMany(u => u.UserNotifies)     // Một Users có nhiều UserNotify
                     .HasForeignKey(un => un.UserId)    // Khóa ngoại là UserId
                     .OnDelete(DeleteBehavior.Cascade); // Cascade delete
+                
+                e.HasOne(un => un.Interact)
+                .WithMany()
+                .HasForeignKey(un => un.InteractId)
+                .OnDelete(DeleteBehavior.NoAction);
 
                 e.Property(un => un.CreatedAt).HasDefaultValueSql("getutcdate()");
                 e.Property(un => un.IsSeen).HasDefaultValue(true);
                 e.Property(un => un.Content).IsRequired(false);
-                e.Property(un => un.ImageUrl).IsRequired(false);
-
             });
 
 

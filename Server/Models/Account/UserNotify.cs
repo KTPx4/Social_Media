@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Server.Models.Account
 {
-    [Table("UserNotifys")]
+    [Table("UserNotifies")]
 
     public class UserNotify
     {
@@ -16,12 +16,15 @@ namespace Server.Models.Account
         public Guid Id { get; set; }
         
         public Guid UserId { get; set; }
-        public TypeNotify Type {  get; set; }
         public Guid TargetId { get; set; }
+        public Guid DestinationId { get; set; }
+        public Guid InteractId { get; set; }
+        public TypeNotify Type {  get; set; }
         public DateTime CreatedAt { get; set; }
         public bool IsSeen { get; set; }
         public string Content { get; set; }
-        public string ImageUrl { get; set; }
+
         public User User { get; set; }
+        public User Interact { get; set; }
     }
 }
