@@ -5,10 +5,12 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using Server.Data;
 using Server.DTOs.Account;
+using Server.DTOs.Notify;
 using Server.DTOs.Posts;
 using Server.Models.Account;
 using Server.Models.Community.Posts;
 using Server.Models.RelationShip;
+using System.Linq;
 using System.Security.Claims;
 
 namespace Server.Services
@@ -25,6 +27,7 @@ namespace Server.Services
         private readonly string _ServerHost;
         private readonly string _PublicUrl;
         private readonly int LIMIT_PAGE_POST = 5;
+
 
         public UserService(APIDbContext context, RoleManager<Role> roleManager, UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration configuration)
         {
@@ -609,6 +612,26 @@ namespace Server.Services
                 return res;
             }
             return null;
+        }
+
+
+        public async Task<List<NotifyResponse>> GetNotifies(string userId, int page = 1)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null) throw new Exception("Account-Your account not exists");
+
+            var notifies = await context.UserNotifies
+                .Where(n => n.UserId.ToString() == userId)
+                .OrderBy(n => n.CreatedAt)
+                .Include(n => n.Interact)
+                .Select(n => new NotifyResponse(n, _PublicUrl))
+                .ToListAsync();
+
+             
+            
+            return notifies;
+
         }
     }
 }

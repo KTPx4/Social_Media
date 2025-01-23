@@ -55,6 +55,31 @@ namespace Server.Controllers
             _ServerIMGHost = Path.Combine(_ServerHost, _AccessImgHost);
 
         }
+        [HttpGet("notifies")]
+        [Authorize]
+        public async Task<IActionResult> GetNotifies()
+        {
+            var userId = User.FindFirstValue("UserId");
+            try
+            {
+                var rs = await _userService.GetNotifies(userId);
+
+                return Ok(new { message = "Get success", data = rs });
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                if (message.StartsWith("Account-"))
+                {
+                    return BadRequest(new { message = message.Split("-")[1] });
+                }
+                Console.WriteLine("Get notifies: " + ex.Message);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
+            }
+        }
+
+
         [HttpGet("profile/{profile}")]
         [Authorize]
         public async Task<IActionResult> GetByProfile(string profile)
@@ -80,6 +105,8 @@ namespace Server.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
             }
         }
+
+       
         [HttpGet("profile/{profile}/saves")]
         [Authorize]
         public async Task<IActionResult> GetSaveByProfile(string profile, [FromQuery] int page = 1)
