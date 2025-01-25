@@ -41,6 +41,7 @@ type CommentProps = {
 const LIMIT_LOAD_COMMENT = 20
 
 const CommentComponent: React.FC<CommentProps> = ({ comment, postId, isChild = false, ClickComment, DeleteComment }) => {
+    var hrefProfile = "/home/profile"
     const {userId} = useStore()
 
     const isOwn = comment.userId === userId
@@ -271,7 +272,7 @@ const CommentComponent: React.FC<CommentProps> = ({ comment, postId, isChild = f
         var userProfile = cmt.substring(0, index)
         if(userProfile)
         {
-            prefixComment = <a href={`/account/${userProfile.substring(1)}`}>{userProfile}</a>
+            prefixComment = <a href={`${hrefProfile}/${userProfile.substring(1)}`}>{userProfile}</a>
         }
     }
     else{
@@ -329,16 +330,16 @@ const CommentComponent: React.FC<CommentProps> = ({ comment, postId, isChild = f
                                                }}
                                         >
                                             <a style={{fontSize: 13, textDecoration: "none", color: textColor}}
-                                               href={"/account/" + comment.userProfile}>  {comment.userProfile}</a>
+                                               href={hrefProfile + "/" + comment.userProfile}>  {comment.userProfile}</a>
 
                                             {comment.replyUserProfile && (
                                                 <>
                                                     {" "}
                                                     <span
-                                                        style={{height: 13, width: 13, fontSize: 12, color: textColor}}
-                                                        className="pi pi-caret-right"/>
+                                                        style={{height: 13, width: 13, fontSize: 12, color: textHintColor}}
+                                                        className="pi pi-angle-right"/>
                                                     <a style={{fontSize: 13, textDecoration: "none", color: textColor}}
-                                                       href={"/account/" + comment.replyUserProfile}>{comment.replyUserProfile}</a>
+                                                       href={hrefProfile + "/" + comment.replyUserProfile}>{comment.replyUserProfile}</a>
                                                 </>
                                             )}
                                         </small>

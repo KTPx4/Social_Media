@@ -17,7 +17,7 @@ namespace Server.Configs
 
             services.AddScoped<PostService>();
             services.AddScoped<FileService>();
-
+            services.AddScoped<NotifyService>();
 
 
         }

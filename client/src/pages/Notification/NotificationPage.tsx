@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import Notification from "../../components/notification/Notification.tsx";
 import apiClient from "../../utils/apiClient.tsx";
-
+import "../../../public/css/NotificationPage.css"
 interface NotificationData {
   id: string;
   userId: string;
@@ -13,8 +13,10 @@ interface NotificationData {
   imageUrl: string;
   interactProfile: string;
 }
-
-const NotificationPage: React.FC = () => {
+interface NotificationPageProps{
+    CallBackCloseNotification: any;
+}
+const NotificationPage: React.FC<NotificationPageProps> = ({CallBackCloseNotification}) => {
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
 
   useEffect(() => {
@@ -39,12 +41,20 @@ const NotificationPage: React.FC = () => {
   }, []);
 
   return (
-      <div style={{ padding: '10px 20px', width: 320 }}>
+      <div style={{ padding: '10px 20px', width: 320, height: "92%" }}>
         <h2>Notifications</h2>
-        {notifications.map(notification => (
-            // @ts-ignore
-            <Notification key={notification.id} {...notification} />
-        ))}
+        <div style={{height: "95%", overflow: "auto"}}>
+          {notifications.map(notification => (
+              // @ts-ignore
+              <Notification key={notification.id}  Notify={notification} CallBackClick={CallBackCloseNotification}/>
+          ))}
+          {!notifications || notifications.length === 0 && (
+              <div style={{display: "flex", justifyContent:  "center", marginTop: 15}}>
+                <p style={{fontSize: 12, fontStyle: "italic"}}>Nothing here</p>
+              </div>
+          )}
+        </div>
+
       </div>
   );
 };
