@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useState} from "react";
+import React, {useContext, useEffect, useRef, useState} from "react";
 import { Button } from "primereact/button";
 import "./Layout.css";
 import { Outlet, useNavigate } from "react-router-dom";
@@ -7,6 +7,7 @@ import CreatePostModal from "../post/CreatePostModal.tsx";
 import useStore from "../../store/useStore.tsx";
 import {Sidebar} from "primereact/sidebar";
 import NotificationPage from "../../pages/Notification/NotificationPage.tsx";
+import {TieredMenu} from "primereact/tieredmenu";
 const Layout: React.FC = () => {
   const { myAccount } = useStore();
 
@@ -16,7 +17,7 @@ const Layout: React.FC = () => {
   const [isOpenCreate, setIsOpenCreate] = useState(false);
   const [countNotifies, setCountNotifies] = useState(myAccount.countNotifies ?? 0);
     const [vNotifications, setVNotifications] = useState<boolean>(false);
-
+    const menu = useRef(null);
   // Hàm để hiển thị và ẩn modal
   // @ts-ignore
   const showModal = () => setModalVisible(true);
@@ -39,8 +40,31 @@ const Layout: React.FC = () => {
   const ToHome = () =>{
       navigate("/home")
   }
+    const items = [
+        {
+            label: 'Theme',
+            icon: 'pi pi-palette',
+            items: [
+                {
+                    label: 'Light',
+                    icon: "pi pi-sun",
+                    command: ()=>{
+                        changeTheme("theme_light")
+                    }
+                },
+                {
+                    label: 'Dark',
+                    icon: "pi pi-moon",
+                    command: ()=>{
+                        changeTheme("theme_dark")
+                    }
+                },
+            ]
+        },
+
+    ];
   if(countNotifies > 99) setCountNotifies("99+")
-  return (
+    return (
     <div
       style={{
         display: "flex",
@@ -129,51 +153,58 @@ const Layout: React.FC = () => {
               />
             </div>
           </div>
-          <div
-            className="navbar-menu"
-            style={{
-              height: "20%",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "flex-end",
-            }}
-          >
-            <Button
-              className="navbar-item"
-              label="Profile"
-              icon={
-                <img
-                  src={myAccount?.imageUrl}
-                  alt="Profile"
-                  className="profile-icon"
+            <div
+                className="navbar-menu"
+                style={{
+                    height: "20%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "flex-end",
+                }}
+            >
+                <Button
+                    className="navbar-item"
+                    label="Profile"
+                    icon={
+                        <img
+                            src={myAccount?.imageUrl}
+                            alt="Profile"
+                            className="profile-icon"
+                        />
+                    }
+                    onClick={() => {
+                        window.location.href = "/home/profile";
+                    }}
+                    style={{color: textColor}}
                 />
-              }
-              onClick={() => {
-                window.location.href = "/home/profile";
-              }}
-              style={{ color: textColor }}
-            />
-            {/*<Button icon="pi pi-comments" label="Threads" className="navbar-item"/>*/}
-            <Button
-              icon="pi pi-bars"
-              label="More"
-              className="navbar-item"
-              style={{ color: textColor }}
-            />
-          </div>
+                {/*<Button icon="pi pi-comments" label="Threads" className="navbar-item"/>*/}
+
+                <div className="card flex justify-content-center">
+                    <TieredMenu popup ref={menu} model={items} breakpoint="767px"/>
+
+                    <Button
+                        icon="pi pi-bars"
+                        label="More"
+                        className="navbar-item"
+                        style={{color: textColor}}
+                        // @ts-ignore
+                        onClick={(e) => menu.current.toggle(e)}
+                    />
+                </div>
+            </div>
         </div>
-        {/*body*/}
-              <div className="slider-bar-custom" style={{
-                  position: "absolute",
-                  zIndex: 1111,
-                  height: "100%",
-                  left: 230,
+          {/*body*/}
+          <div className="slider-bar-custom" style={{
+              position: "absolute",
+              zIndex: 1111,
+              height: "100%",
+              left: 220,
                   display: vNotifications ? "block" : "none",
                   backgroundColor: backgroundColor,
 
               }}>
                   <Button text style={{right: "-80%", marginTop: 10,color: textColor}} icon={"pi pi-times"} onClick={()=>setVNotifications(false)}/>
-                  <NotificationPage />
+                  <NotificationPage CallBackCloseNotification={()=>setVNotifications(false)}/>
                   {/*<Sidebar visible={vNotifications} onHide={() => setVNotifications(false)}>*/}
                   {/*</Sidebar>*/}
               </div>

@@ -607,7 +607,7 @@ namespace Server.Services
             if (rs != null)
             {
                 var res = new UserResponse(rs, _ServerHost, $"{_ServerHost}/{_AccessImgAccount}");
-                var notifies = await context.UserNotifies.Where(n => n.UserId == rs.Id).CountAsync();
+                var notifies = await context.UserNotifies.Where(n => n.UserId == rs.Id && n.IsSeen == false).CountAsync();
                 res.CountNotifies = notifies;
                 return res;
             }
@@ -623,7 +623,7 @@ namespace Server.Services
 
             var notifies = await context.UserNotifies
                 .Where(n => n.UserId.ToString() == userId)
-                .OrderBy(n => n.CreatedAt)
+                .OrderByDescending(n => n.CreatedAt)
                 .Include(n => n.Interact)
                 .Select(n => new NotifyResponse(n, _PublicUrl))
                 .ToListAsync();
