@@ -44,6 +44,7 @@ function App() {
                 </UserRouter>
               }
             >
+
               <Route
                 path="profile/:userProfileString"
                 element={<UserProfilePage />}
@@ -51,6 +52,7 @@ function App() {
               <Route index element={<MainPage />} />
               <Route path="profile" element={<ProfilePage />}></Route>
             </Route>
+
             <Route
               path="/post/:id"
               element={
@@ -61,6 +63,7 @@ function App() {
             >
               <Route index element={<PostDetail />} />
             </Route>
+
             <Route
                 path="/notifications"
                 element={
@@ -71,6 +74,7 @@ function App() {
             >
               <Route index element={<NotificationPage />} />
             </Route>
+
             <Route path="*" element={<NotFoundPage />}></Route>
           </Routes>
         </UserContextProvider>

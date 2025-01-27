@@ -9,6 +9,7 @@ namespace Server.Configs
         {
             // Đăng ký TokenService 
             services.AddScoped<TokenService>();
+            services.AddSingleton<TokenService>();
 
             services.AddScoped<GmailSenderService>();
 

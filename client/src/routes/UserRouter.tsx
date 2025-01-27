@@ -31,7 +31,6 @@ const UserRouter: React.FC<UserRouterProps> = ({ children }) => {
         return <Navigate to="/" />
     }
     else{
-
         return children
     }
     // Render component chính hoặc điều hướng

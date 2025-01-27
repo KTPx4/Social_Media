@@ -37,6 +37,7 @@ namespace Server
             // Sử dụng lớp cấu hình để đăng ký dịch vụ
             builder.Services.AddUserService();
 
+           
 
             // register middware jwt
             builder.Services.AddJwtAuthentication(builder.Configuration);
@@ -84,6 +85,21 @@ namespace Server
 
             app.UseAuthorization();
 
+            app.UseWebSockets();
+
+
+            app.Map("/ws", async context =>
+            {
+                if (context.WebSockets.IsWebSocketRequest)
+                {
+                    
+                    await WebSocketHandler.HandleWebSocketAsync(context);
+                }
+                else
+                {
+                    context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                }
+            });
             app.MapControllers();
 
             app.Run();
