@@ -1,9 +1,12 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import { HubConnectionBuilder, HubConnection, LogLevel } from "@microsoft/signalr";
+import useStore from "./useStore.tsx";
 
+// Định nghĩa kiểu dữ liệu cho Context
 interface WebSocketContextProps {
     isConnected: boolean;
-    messages: string[];
-    sendMessage: (message: string) => void;
+    messages: { sender: string; message: string }[];
+    sendMessage: (receiverUserId: string, message: string) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextProps | undefined>(undefined);
@@ -15,60 +18,104 @@ interface WebSocketProviderProps {
 
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, children }) => {
     const [isConnected, setIsConnected] = useState(false);
-    const [messages, setMessages] = useState<string[]>([]);
-    const ws = useRef<WebSocket | null>(null);
+    const [messages, setMessages] = useState<{ sender: string; message: string }[]>([]);
+    const connectionRef = useRef<HubConnection | null>(null);
+    const reconnectTimeout = useRef<NodeJS.Timeout | null>(null); // Lưu timeout để reconnect
+    const {userId} = useStore()
 
-    var token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
 
-    const connect = () => {
-        if (ws.current || !token) return;
+    const connectWebSocket = () => {
+        if (!token || connectionRef.current) return; // Nếu không có token hoặc đã có kết nối thì không tạo mới
 
-        // Thêm token vào URL (query parameter)
-        const fullUrl = `${url}?token=${token}`;
+        console.log("🔄 Connecting to WebSocket...");
 
-        ws.current = new WebSocket(fullUrl);
+        const connection = new HubConnectionBuilder()
+            .withUrl(url, {
+                accessTokenFactory: () => token, // Truyền JWT vào Header
+            })
+            .configureLogging(LogLevel.Information)
+            .build();
 
-        ws.current.onopen = () => {
-            console.log("WebSocket connected");
-            setIsConnected(true);
-        };
+        connectionRef.current = connection;
 
-        ws.current.onmessage = (event) => {
-            console.log("Message received:", event.data);
-            setMessages((prev) => [...prev, event.data]);
-        };
+        connection
+            .start()
+            .then(() => {
+                console.log("✅ Connected to WebSocket");
+                setIsConnected(true);
 
-        ws.current.onclose = () => {
-            console.log("WebSocket disconnected");
+                // Lắng nghe tin nhắn từ server
+                connection.on("ReceiveMessage", (sender: string, message: string) => {
+                    console.log("📩 Message received:", { sender, message });
+                    setMessages((prev) => [...prev, { sender, message }]);
+                });
+
+                // Xóa timeout nếu kết nối thành công
+                if (reconnectTimeout.current) {
+                    clearTimeout(reconnectTimeout.current);
+                    reconnectTimeout.current = null;
+                }
+            })
+            .catch((err) => {
+                console.error("❌ WebSocket connection error:", err);
+                retryConnection(); // Thử kết nối lại sau 10 giây nếu lỗi
+            });
+
+        // Sự kiện khi kết nối bị ngắt
+        connection.onclose(() => {
+            console.warn("⚠️ WebSocket disconnected");
             setIsConnected(false);
-
-            // Tự động kết nối lại
-            setTimeout(connect, 10000);
-        };
-
-        ws.current.onerror = (error) => {
-            console.error("WebSocket error:", error);
-            ws.current?.close();
-            ws.current = null;
-        };
+            retryConnection(); // Thử kết nối lại nếu bị mất kết nối
+        });
     };
 
-    const sendMessage = (message: string) => {
-        if (ws.current && isConnected) {
-            ws.current.send(message);
-        } else {
-            console.error("WebSocket is not connected");
-        }
+    const retryConnection = () => {
+        if (reconnectTimeout.current) return; // Nếu đã có timeout thì không tạo mới
+
+        reconnectTimeout.current = setTimeout(() => {
+            console.log("⏳ Retrying WebSocket connection...");
+            connectWebSocket();
+        }, 10000); // Thử lại sau 10 giây
     };
 
     useEffect(() => {
-        connect();
+        connectWebSocket();
 
         return () => {
-            ws.current?.close();
-            ws.current = null;
+            connectionRef.current?.stop();
         };
-    }, [url, token]); // Kết nối lại nếu token thay đổi
+    }, [url, token]);
+    useEffect(() => {
+        if(isConnected)
+        {
+            sendMessage("21882161-6b64-4f66-2600-08dd3cdbf3c9", "Hello")
+        }
+    }, [isConnected]);
+    const sendMessage = async (receiverUserId: string, message: string) => {
+
+        if (connectionRef.current && isConnected && userId && receiverUserId !== userId) {
+            try {
+            // public Guid ConversationId { get; set; }
+            // public Guid? ReplyMessageId { get; set; }
+            //
+            // public MessageType Type { get; set; } = MessageType.Text;
+            //
+            // public string Content { get; set; }
+                var body ={
+                    ConversationId: receiverUserId,
+                    ReplyMessageId: null,
+                    Content: message
+                }
+                var rs = await connectionRef.current.invoke("SendMessage", body);
+                console.log("Rs: ", rs)
+            } catch (err) {
+                console.error("❌ SendMessage failed:", err);
+            }
+        } else {
+            console.error("⚠️ Can not send message");
+        }
+    };
 
     return (
         <WebSocketContext.Provider value={{ isConnected, messages, sendMessage }}>
@@ -77,6 +124,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, child
     );
 };
 
+// Custom Hook để sử dụng WebSocket
 export const useWebSocketContext = (): WebSocketContextProps => {
     const context = useContext(WebSocketContext);
     if (!context) {

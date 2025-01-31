@@ -69,6 +69,22 @@ namespace Server.Services
                     ValidAudience = audience,
                     IssuerSigningKey = SecurityKey
                 };
+
+                // Cấu hình hỗ trợ SignalR khi xác thực bằng JWT
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+
+                        if (!string.IsNullOrEmpty(accessToken) &&
+                            (context.HttpContext.Request.Path.StartsWithSegments("/chatHub")))
+                        {
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
             return services;
