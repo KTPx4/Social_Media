@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Server.Configs;
 using Server.Data;
+using Server.Hubs;
 using Server.Services;
 
 namespace Server
@@ -14,14 +15,24 @@ namespace Server
             var builder = WebApplication.CreateBuilder(args);
 
             // config CORS
+            //builder.Services.AddCors(opts =>
+            //{
+            //    opts.AddDefaultPolicy(p =>
+            //    {
+            //        p.AllowAnyOrigin()
+            //        .AllowAnyHeader()
+            //        .AllowAnyMethod();
+            //    }); 
+            //});
             builder.Services.AddCors(opts =>
             {
-                opts.AddDefaultPolicy(p =>
+                opts.AddPolicy("AllowFrontend", p =>
                 {
-                    p.AllowAnyOrigin()
-                    .AllowAnyHeader()
-                    .AllowAnyMethod();
-                }); 
+                    p.WithOrigins("http://localhost:3000") // Chỉ định origin cụ thể
+                     .AllowCredentials() // Cho phép gửi credentials như cookies, headers có auth
+                     .AllowAnyHeader()
+                     .AllowAnyMethod();
+                });
             });
 
 
@@ -37,9 +48,13 @@ namespace Server
             // Sử dụng lớp cấu hình để đăng ký dịch vụ
             builder.Services.AddUserService();
 
+           
 
             // register middware jwt
             builder.Services.AddJwtAuthentication(builder.Configuration);
+         
+            // Thêm dịch vụ SignalR
+            builder.Services.AddSignalR();
 
             // config authorization
             //builder.Services.AddAuthorization(options =>
@@ -76,15 +91,17 @@ namespace Server
 
             app.UseHttpsRedirection();
 
-            app.UseCors();
+            app.UseCors("AllowFrontend");
             // Thêm middleware kiểm tra IsDeleted trước Authorization
             app.UseAuthentication();
 
             app.UseMiddleware<CheckUserIsDeletedMiddleware>();
 
             app.UseAuthorization();
-
+            
             app.MapControllers();
+
+            app.MapHub<ChatHub>("/chatHub");
 
             app.Run();
         }

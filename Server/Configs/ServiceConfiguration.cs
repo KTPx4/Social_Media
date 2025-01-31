@@ -1,4 +1,6 @@
-﻿using Server.Services;
+﻿using Server.Hubs;
+using Server.Services;
+using Server.Services.SCommunication;
 using Server.Services.SPosts;
 
 namespace Server.Configs
@@ -9,6 +11,10 @@ namespace Server.Configs
         {
             // Đăng ký TokenService 
             services.AddScoped<TokenService>();
+            services.AddSingleton<TokenService>();
+            services.AddScoped<ICommunicationService,CommunicationService>();
+            services.AddSingleton<ConnectionManager>();
+
 
             services.AddScoped<GmailSenderService>();
 

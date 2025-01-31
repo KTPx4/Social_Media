@@ -131,5 +131,17 @@ namespace Server.Services
             }
         }
 
+        public bool IsValidToken(string token)
+        {
+            try
+            {
+                var prin = ValidateToken(token);
+                return prin != null;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

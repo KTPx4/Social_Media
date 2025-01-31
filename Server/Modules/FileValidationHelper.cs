@@ -51,6 +51,20 @@ namespace Server.Modules
             return (size < MAXSIZE);
         }
 
+        public static bool IsValidAvatar(IFormFile file)
+        {
+
+            if (!FileValidationHelper.IsImage(file.ContentType))
+            {
+                throw new Exception($"File-File '{file.FileName}' is invalid type");
+            }
+            if (!FileValidationHelper.IsValidSize(file.Length))
+            {
+                throw new Exception($"File-File '{file.FileName}' is over size");
+            }
+            return true;
+        }
+
         public static bool IsValidListMedia(List<IFormFile> files)
         {
             foreach (var file in files)
@@ -90,6 +104,17 @@ namespace Server.Modules
             }
 
             return fileInfoList;
+        }
+
+        public static FileInfoDto GetFileInfo(IFormFile file)
+        {
+            return new FileInfoDto()
+            {
+                Name = file.FileName,
+                ContentType = file.ContentType,
+                Type = IsImage(file.ContentType) ? PostMedia.MediaType.Image : PostMedia.MediaType.Video,
+                File = file
+            };
         }
     }
 }
