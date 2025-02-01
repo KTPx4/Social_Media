@@ -34,6 +34,10 @@ const Layout: React.FC = () => {
   // @ts-ignore
   const captionColor = currentTheme.getCaption();
   const backgroundColor = currentTheme.getBackground();
+
+  const ToMessage = () =>{
+      navigate("/message")
+  }
   const ShowNotificationPage = () =>{
       navigate("/notifications");
   }
@@ -149,6 +153,7 @@ const Layout: React.FC = () => {
                 icon="pi pi-comments"
                 label="Messages"
                 className="navbar-item"
+                onClick={ToMessage}
                 style={{ color: textColor }}
               />
             </div>
@@ -259,6 +264,7 @@ const Layout: React.FC = () => {
         <Button
           icon="pi pi-comments"
           rounded
+          onClick={ToMessage}
           text
           className="horizontal-navbar-item"
         />
