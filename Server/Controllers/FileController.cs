@@ -9,7 +9,7 @@ namespace Server.Controllers
     [ApiController]
     public class FileController : ControllerBase
     {
-        private List<String> typeGet = new List<string> { "media", "message" };
+        private List<String> typeGet = new List<string> { "media", "message", "conversation" };
         private readonly FileService _fileService;
         private readonly TokenService _tokenService;
         private readonly IWebHostEnvironment _environment;
@@ -71,10 +71,11 @@ namespace Server.Controllers
                 {
                     result = await _fileService.GetPathMedia(userId, id);
                 }
-                else
+                else if(t == "conversation")
                 {
-
+                    result = await _fileService.GetPathMediaConversation(userId, id);
                 }
+
                 var path = result.GetValueOrDefault("path");
                 var contentType = result.GetValueOrDefault("contentType");
 

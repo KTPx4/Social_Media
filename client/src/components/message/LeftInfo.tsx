@@ -1,10 +1,11 @@
-import React, {useContext} from "react";
+import React, {useContext, useEffect, useState} from "react";
 import {Button} from "primereact/button";
 import {IconField} from "primereact/iconfield";
 import {InputIcon} from "primereact/inputicon";
 import {InputText} from "primereact/inputtext";
 import {ThemeContext} from "../../ThemeContext.tsx";
 import ConversationCard from "./ConversationCard.tsx";
+import apiClient from "../../utils/apiClient.tsx";
 
 
 const LeftInfo : React.FC = ()=>{
@@ -19,6 +20,32 @@ const LeftInfo : React.FC = ()=>{
     const textHintColor = currentTheme.getHint()
     const keyTheme = currentTheme.getKey()
 
+    // data
+    const [listConversation, setListConversation] = useState([])
+
+    useEffect(() => {
+        LoadData()
+    }, []);
+
+    const LoadData = async()=>{
+        try{
+            var rs = await apiClient.get("/chat/conversation")
+            console.log(rs)
+            var status = rs.status
+            if(status === 200)
+            {
+                var data = rs.data.data
+                data = data.map( (e : any) =>{
+                    return {...e, isSelected: false}
+                })
+                setListConversation(data)
+            }
+        }
+        catch (err)
+        {
+            console.log(err)
+        }
+    }
 
     // @ts-ignore
     return(
@@ -77,9 +104,11 @@ const LeftInfo : React.FC = ()=>{
                 height: "85%"
             }}>
 
-                {[...Array(10)].map((_, index) => (
-                    <ConversationCard key={index} />
-                ))}
+                {listConversation.map( (c : any) => {
+                    return(
+                        <ConversationCard key={c.id + c.isSelected} Conversation={c}/>
+                    )
+                })}
             </div>
         </>
     )

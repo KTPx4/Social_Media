@@ -5,6 +5,7 @@ using Server.DTOs.Posts;
 using Server.Models.Account;
 using Server.Models.Communication;
 using Server.Models.Community.Posts;
+using System.Drawing.Printing;
 using System.IO;
 
 namespace Server.Services.SCommunication
@@ -21,6 +22,7 @@ namespace Server.Services.SCommunication
         Task<RsProcessMessage> ProcessMessageAsync(string senderUserId, MessageModel messageModel);
         Task<ConversationResponse> CreateConversation(string userId, CreateGroupModel createGroupModel, FileInfoDto fileInfoDto);
         Task<List<ConversationResponse>> GetGroups(string userId);
+        Task<List<ConversationResponse>> GetConversation(string userId, int page = 0);
     }
 
     public class CommunicationService : ICommunicationService
@@ -30,6 +32,7 @@ namespace Server.Services.SCommunication
         private readonly string _RootImgGroup;
         private readonly string _ServerHost;
         private readonly string _AccessImgAccount;
+        private readonly int _LIMIT_CONVERSATION = 20;
 
         public CommunicationService(APIDbContext context, IConfiguration configuration)
         {
@@ -178,14 +181,24 @@ namespace Server.Services.SCommunication
                 Role = ConvMember.ConversationRole.Leader,
                 Notify = ConvMember.SettingNotify.Normal,
             });
-            
+            // message created group
+            var newMess = new Message()
+            {
+                ConversationId = conversation.Id,
+                Content = "Create group success. Let start your chat!",
+                IsSystem = true,
+                Type= Message.MessageType.Text,
+            };
+
             await _context.ConvSettings.AddAsync(setting);
             await _context.ConvMembers.AddRangeAsync(listConvMember);
+            await _context.Messages.AddAsync(newMess);
+
             await _context.SaveChangesAsync();
 
             var groupdId = conversation.Id.ToString();
 
-            var ConvResponse = new ConversationResponse(conversation, setting, $"{_ServerHost}/{_AccessImgAccount}");
+            var ConvResponse = new ConversationResponse(conversation,  _ServerHost , _AccessImgAccount);
 
 
             // copy avatar file to folder
@@ -231,8 +244,9 @@ namespace Server.Services.SCommunication
                .Include(c => c.Members)  // Load danh sách thành viên
                     .ThenInclude(m => m.User)  // 🛠️ Load thêm thông tin User
                .Include(c => c.ConvSetting)  // Load setting của conversation
-               .Select(c => new ConversationResponse(c, c.ConvSetting, $"{_ServerHost}/{_AccessImgAccount}")  // Chuyển dữ liệu sang DTO
+               .Select(c => new ConversationResponse(c, _ServerHost,_AccessImgAccount)  // Chuyển dữ liệu sang DTO
                {
+
                    Members = c.Members.Select(m => new MemberResponse
                    {
                        ConversationId = c.Id,
@@ -249,6 +263,36 @@ namespace Server.Services.SCommunication
 
             return conversations;
         }
+
+        public async Task<List<ConversationResponse>> GetConversation(string userId, int page = 0)
+        {
+            if(page < 1) page = 1;
+
+            var conversations = await _context.Conversations
+            .Where(c => _context.ConvMembers.Any(cm => cm.ConversationId == c.Id && cm.UserId.ToString() == userId))
+            .Include(c => c.Members)
+            .Include(c => c.ConvSetting)
+            .Select(c => new
+            {
+                Conversation = c,
+                LastMessage = _context.Messages
+                    .Where(m => m.ConversationId == c.Id)
+                    .Include(m => m.Sender)
+                    .OrderByDescending(m => m.CreatedAt)
+                    .FirstOrDefault()
+            })
+            .OrderByDescending(x => x.LastMessage != null ? x.LastMessage.CreatedAt : DateTime.MinValue)
+            .Skip((page - 1) * _LIMIT_CONVERSATION)
+            .Take(_LIMIT_CONVERSATION)
+            .ToListAsync();
+
+            var rs = conversations.Select(c => new ConversationResponse(c.Conversation, c.LastMessage, _ServerHost , _AccessImgAccount)).ToList();
+           
+            return rs; 
+
+        }
+
+
 
 
         /*
