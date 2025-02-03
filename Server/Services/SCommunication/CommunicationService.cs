@@ -279,14 +279,21 @@ namespace Server.Services.SCommunication
                     .Where(m => m.ConversationId == c.Id)
                     .Include(m => m.Sender)
                     .OrderByDescending(m => m.CreatedAt)
-                    .FirstOrDefault()
+                    .FirstOrDefault(),
+                UnreadCount = _context.Messages
+                    .Where(
+                        m => m.ConversationId == c.Id
+                        && m.SenderId.ToString() != userId // Tin nhắn không phải của user
+                        && !_context.MessagesSeens.Any(ms => ms.MessageId == m.Id && ms.UserId.ToString() == userId) // Chưa đọc
+                    )
+                    .Count()
             })
             .OrderByDescending(x => x.LastMessage != null ? x.LastMessage.CreatedAt : DateTime.MinValue)
             .Skip((page - 1) * _LIMIT_CONVERSATION)
             .Take(_LIMIT_CONVERSATION)
             .ToListAsync();
 
-            var rs = conversations.Select(c => new ConversationResponse(c.Conversation, c.LastMessage, _ServerHost , _AccessImgAccount)).ToList();
+            var rs = conversations.Select(c => new ConversationResponse(c.Conversation, c.LastMessage, c.UnreadCount, _ServerHost , _AccessImgAccount)).ToList();
            
             return rs; 
 

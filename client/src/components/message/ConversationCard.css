@@ -1,0 +1,5 @@
+.ConversationCard:hover{
+    .btn-card-more{
+        display: block !important;
+    }
+}

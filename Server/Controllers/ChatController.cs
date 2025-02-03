@@ -131,7 +131,7 @@ namespace Server.Controllers
                 {
                     return BadRequest(new { message = mess.Split("-")[1] });
                 }
-                Console.WriteLine("Create Posts:" + mess);
+                Console.WriteLine("Get conversation:" + mess);
                 return StatusCode(500, new { message = "Server Error. Try Again" });
             }
         }

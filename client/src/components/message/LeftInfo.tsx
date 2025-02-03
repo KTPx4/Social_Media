@@ -8,7 +8,7 @@ import ConversationCard from "./ConversationCard.tsx";
 import apiClient from "../../utils/apiClient.tsx";
 
 
-const LeftInfo : React.FC = ()=>{
+const LeftInfo : React.FC<any> = ({ClickCallBack, userId})=>{
     // theme
     const themeContext = useContext(ThemeContext);
     // @ts-ignore
@@ -47,13 +47,26 @@ const LeftInfo : React.FC = ()=>{
         }
     }
 
+    const ClickConversationCard = async(Conversation : any)=>{
+        var dt = listConversation.map((prev: any) => prev.id !== Conversation.id ? prev : {...prev, isSelected: true})
+        // @ts-ignore
+        setListConversation(dt)
+
+        ClickCallBack(Conversation)
+
+    }
+
     // @ts-ignore
     return(
-        <>
+        <div style={{
+            borderRadius: 10,
+            height: "99%",
+            border: `1px solid ${borderColor}`
+        }}>
             {/*Header*/}
             <div className={"header-info"} style={{
-                borderBottom: `1px solid ${borderColor}`,
-                padding: 10
+                // borderBottom: `1px solid ${borderColor}`,
+                padding: 15
             }}>
                 <div style={{
                     display: "flex",
@@ -106,11 +119,13 @@ const LeftInfo : React.FC = ()=>{
 
                 {listConversation.map( (c : any) => {
                     return(
-                        <ConversationCard key={c.id + c.isSelected} Conversation={c}/>
+                        <>
+                            <ConversationCard key={c.id + c.isSelected} Conversation={c} ClickCallback={ClickConversationCard} userId={userId}/>
+                        </>
                     )
                 })}
             </div>
-        </>
+        </div>
     )
 }
 

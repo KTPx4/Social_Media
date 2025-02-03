@@ -13,6 +13,7 @@ namespace Server.DTOs.Communication
         public DateTime CreatedAt { get; set; }
 
         public MessageResponse LastMessage { get; set; }
+        public int UnRead { get; set; } = 0;
 
         // setting
         public ConvPermission CanSend { get; set; }
@@ -28,10 +29,11 @@ namespace Server.DTOs.Communication
             initValue(conversation, serverHost, accessImg);
         }
 
-        public ConversationResponse(Conversation conversation, Message lastMessage,  string serverHost, string accessImg)
+        public ConversationResponse(Conversation conversation, Message lastMessage, int unRead,  string serverHost, string accessImg)
         {
             initValue(conversation, serverHost, accessImg);
             this.LastMessage = new MessageResponse(lastMessage);
+            this.UnRead = unRead;
         }
 
         private void initValue(Conversation conversation, string serverHost, string accessImg)
