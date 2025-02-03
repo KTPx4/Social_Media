@@ -26,6 +26,7 @@ import PostDetail from "./pages/Post/PostDetail.tsx";
 import UserRouter from "./routes/UserRouter.tsx";
 import UserProfilePage from "./pages/Profile/UserProfilePage.tsx";
 import NotificationPage from "./pages/Notification/NotificationPage.tsx";
+import MessagePage from "./pages/Message/MessagePage.tsx";
 
 axios.defaults.baseURL = "https://localhost:7212/api/";
 function App() {
@@ -44,7 +45,6 @@ function App() {
                 </UserRouter>
               }
             >
-
               <Route
                 path="profile/:userProfileString"
                 element={<UserProfilePage />}
@@ -53,6 +53,7 @@ function App() {
               <Route path="profile" element={<ProfilePage />}></Route>
             </Route>
 
+              {/*post by id*/}
             <Route
               path="/post/:id"
               element={
@@ -64,6 +65,7 @@ function App() {
               <Route index element={<PostDetail />} />
             </Route>
 
+              {/*notification*/}
             <Route
                 path="/notifications"
                 element={
@@ -74,6 +76,18 @@ function App() {
             >
               <Route index element={<NotificationPage />} />
             </Route>
+
+              {/*message*/}
+              <Route
+                  path="/message"
+                  element={
+                      <UserRouter>
+                          <Layout />
+                      </UserRouter>
+                  }
+              >
+                  <Route index element={<MessagePage />} />
+              </Route>
 
             <Route path="*" element={<NotFoundPage />}></Route>
           </Routes>

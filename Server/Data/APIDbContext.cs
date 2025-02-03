@@ -155,7 +155,8 @@ namespace Server.Data
                 entity.HasOne(m => m.Sender)
                 .WithMany()
                 .HasForeignKey(m => m.SenderId)
-                 .OnDelete(DeleteBehavior.Cascade);
+                 .OnDelete(DeleteBehavior.Cascade)
+                 .IsRequired(false);  // Quan trọng: Cho phép null
 
                 // 1-n reply message
                 entity.HasOne(m => m.ReplyMessage)

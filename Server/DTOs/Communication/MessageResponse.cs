@@ -6,7 +6,7 @@ namespace Server.DTOs.Communication
     public class MessageResponse
     {
         public Guid Id { get; set; }
-        public Guid SenderId { get; set; }
+        public Guid? SenderId { get; set; }
 
         public Guid ConversationId { get; set; }
 
@@ -24,6 +24,7 @@ namespace Server.DTOs.Communication
         public  MessageResponse(Message message)
         {
             this.Id = message.Id;
+             
             this.SenderId = message.SenderId;
             this.ConversationId = message.ConversationId;
             this.ReplyMessageId = message.ReplyMessageId;
