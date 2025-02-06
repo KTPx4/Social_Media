@@ -17,22 +17,31 @@ namespace Server.DTOs.Communication
         public string Content { get; set; }
         public bool IsSystem { get; set; } = false;
         public bool IsDeleted { get; set; } = false;
-        public DateTime CreatedAt { get; set; } 
+        public DateTime CreatedAt { get; set; }
+
+        public MessageResponse MessageReply { get; set; }
+
+        public List<MessageReactResponse> Reacts { get; set; }
+        public List<string> SeenIds { get; set; }
+
 
         public MessageResponse() { }
 
         public  MessageResponse(Message message)
         {
-            this.Id = message.Id;
-             
-            this.SenderId = message.SenderId;
-            this.ConversationId = message.ConversationId;
-            this.ReplyMessageId = message.ReplyMessageId;
-            this.Type = message.Type;
-            this.Content = message.Content;
-            this.IsSystem = message.IsSystem;
-            this.IsDeleted = message.IsDeleted;
-            this.CreatedAt = message.CreatedAt;
+            if(message != null)
+            {
+
+                this.Id = message.Id;
+                this.SenderId = message.SenderId;
+                this.ConversationId = message.ConversationId;
+                this.ReplyMessageId = message.ReplyMessageId;
+                this.Type = message.Type;
+                this.Content = message.Content;
+                this.IsSystem = message.IsSystem;
+                this.IsDeleted = message.IsDeleted;
+                this.CreatedAt = message.CreatedAt;
+            }
         }
     }
 }

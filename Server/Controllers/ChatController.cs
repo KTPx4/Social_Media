@@ -135,5 +135,31 @@ namespace Server.Controllers
                 return StatusCode(500, new { message = "Server Error. Try Again" });
             }
         }
+
+        [HttpGet("conversation/{id}")]
+        [Authorize]
+        public async Task<IActionResult> GetChat(string id,[FromQuery] int page = 1)
+        {
+            try
+            {
+                var userId = User.FindFirstValue("UserId");
+                var rs = await _communicationService.GetMessage(userId, id, page);
+                return Ok(new
+                {
+                    message = "Get groups chat success",
+                    data = rs
+                });
+            }
+            catch (Exception ex)
+            {
+                var mess = ex.Message;
+                if (mess.StartsWith("Chat-"))
+                {
+                    return BadRequest(new { message = mess.Split("-")[1] });
+                }
+                Console.WriteLine("Get conversation:" + mess);
+                return StatusCode(500, new { message = "Server Error. Try Again" });
+            }
+        }
     }
 }

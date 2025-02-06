@@ -1,0 +1,9 @@
+.message-system{
+    justify-self: center;
+}
+.message-me{
+    justify-self: flex-end;
+}
+.message-friend{
+    justify-self: flex-start;
+}
