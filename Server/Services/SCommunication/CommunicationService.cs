@@ -23,6 +23,7 @@ namespace Server.Services.SCommunication
         Task<ConversationResponse> CreateConversation(string userId, CreateGroupModel createGroupModel, FileInfoDto fileInfoDto);
         Task<List<ConversationResponse>> GetGroups(string userId);
         Task<List<ConversationResponse>> GetConversation(string userId, int page = 0);
+        Task<List<MessageResponse>> GetMessage(string userId, string convId, int page = 0);
     }
 
     public class CommunicationService : ICommunicationService
@@ -33,6 +34,7 @@ namespace Server.Services.SCommunication
         private readonly string _ServerHost;
         private readonly string _AccessImgAccount;
         private readonly int _LIMIT_CONVERSATION = 20;
+        private readonly int _LIMIT_MESSAGE = 15;
 
         public CommunicationService(APIDbContext context, IConfiguration configuration)
         {
@@ -271,6 +273,7 @@ namespace Server.Services.SCommunication
             var conversations = await _context.Conversations
             .Where(c => _context.ConvMembers.Any(cm => cm.ConversationId == c.Id && cm.UserId.ToString() == userId))
             .Include(c => c.Members)
+            .ThenInclude(c => c.User)
             .Include(c => c.ConvSetting)
             .Select(c => new
             {
@@ -297,6 +300,55 @@ namespace Server.Services.SCommunication
            
             return rs; 
 
+        }
+
+        public async Task<List<MessageResponse>> GetMessage(string userId, string convId, int page = 0)
+        {
+            if(page < 1) page = 1;
+            var Conversation = await _context.Conversations
+                .Where(c => c.Id.ToString() == convId)
+                .Include(c => c.Members)
+                .FirstOrDefaultAsync();
+
+            var Members = Conversation.Members;
+            if (!Members.Any(m =>m.UserId.ToString() == userId)) 
+            {
+                throw new Exception("Chat-You not allow to access data");
+            }
+
+            var Messages = await _context.Messages
+                .Where(m => m.ConversationId.ToString() == convId)
+                .Include(m => m.Reacts)
+                .Include(m => m.ReplyMessage)
+                .Include(m => m.Seens)
+                .OrderByDescending(m=> m.CreatedAt)
+                .Select(m => new MessageResponse()
+                {
+                    Id = m.Id,
+                    SenderId = m.SenderId,
+                    ConversationId = m.ConversationId,
+                    ReplyMessageId = m.ReplyMessageId,
+                    Type = m.Type,
+                    Content = m.Content,
+                    IsSystem = m.IsSystem,
+                    IsDeleted = m.IsDeleted,
+                    CreatedAt = m.CreatedAt,
+                    MessageReply = m.ReplyMessage == null ? null : new MessageResponse(m.ReplyMessage),
+                    Reacts = m.Reacts.Select(r => new MessageReactResponse()
+                    {
+                        MessageId = r.MessageId,
+                        CreatedAt = r.CreatedAt,
+                        React = r.React,
+                        UserId = r.UserId,
+                    }).ToList(),
+                    SeenIds = m.Seens.Select(s => s.UserId.ToString()).ToList()
+                })
+                .Skip((page -1)* _LIMIT_MESSAGE)
+                .Take(_LIMIT_MESSAGE)
+                .OrderBy(m => m.CreatedAt)
+                .ToListAsync();
+
+            return Messages;
         }
 
 

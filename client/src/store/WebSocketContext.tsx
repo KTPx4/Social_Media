@@ -6,7 +6,8 @@ import useStore from "./useStore.tsx";
 interface WebSocketContextProps {
     isConnected: boolean;
     messages: { sender: string; message: string }[];
-    sendMessage: (receiverUserId: string, message: string) => void;
+    sendMessage: (senderId: string, receiverUserId: string, message: string, type: number ) => any;
+    setNewMessages: any;
 }
 
 const WebSocketContext = createContext<WebSocketContextProps | undefined>(undefined);
@@ -86,13 +87,15 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, child
             connectionRef.current?.stop();
         };
     }, [url, token]);
+
     useEffect(() => {
         if(isConnected)
         {
-            sendMessage("21882161-6b64-4f66-2600-08dd3cdbf3c9", "Hello")
+            // sendMessage("21882161-6b64-4f66-2600-08dd3cdbf3c9", "Hello")
         }
     }, [isConnected]);
-    const sendMessage = async (receiverUserId: string, message: string) => {
+
+    const sendMessage = async (senderId: string, receiverUserId: string, message: string, type: number) => {
 
         if (connectionRef.current && isConnected && userId && receiverUserId !== userId) {
             try {
@@ -105,20 +108,24 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, child
                 var body ={
                     ConversationId: receiverUserId,
                     ReplyMessageId: null,
-                    Content: message
+                    Content: message,
+                    SenderId: senderId,
+                    Type: type
                 }
                 var rs = await connectionRef.current.invoke("SendMessage", body);
-                console.log("Rs: ", rs)
+                return rs
             } catch (err) {
                 console.error("❌ SendMessage failed:", err);
+                return null
             }
         } else {
             console.error("⚠️ Can not send message");
+            return null
         }
     };
 
     return (
-        <WebSocketContext.Provider value={{ isConnected, messages, sendMessage }}>
+        <WebSocketContext.Provider value={{ isConnected, messages, sendMessage , setNewMessages:{setMessages}}}>
             {children}
         </WebSocketContext.Provider>
     );

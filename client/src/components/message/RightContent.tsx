@@ -1,45 +1,168 @@
-import React, {useContext, useEffect, useState} from "react";
+import React, {useContext, useEffect, useRef, useState} from "react";
 import {ThemeContext} from "../../ThemeContext.tsx";
 import {Avatar} from "primereact/avatar";
 import {Button} from "primereact/button";
 import {IconField} from "primereact/iconfield";
-import {InputText} from "primereact/inputtext";
 import {InputIcon} from "primereact/inputicon";
 import {InputTextarea} from "primereact/inputtextarea";
+import MessageCard from "./MessageCard.tsx";
+import apiClient from "../../utils/apiClient.tsx";
+
+import "./RightCss.css"
+import {useWebSocketContext} from "../../store/WebSocketContext.tsx";
+import {InputText} from "primereact/inputtext";
+import {ProgressSpinner} from "primereact/progressspinner";
 
 
 enum ConversationType {
     Direct = 0,
     Group = 1
 }
-
-
+enum SendMessageType{
+    Text = 0,
+    Image = 1, Video = 2, File = 3
+}
+const FastMessage = {
+    Like: "👍",
+    Heart: "❤️",
+    Heart_2: "💘"
+}
 const RightContent : React.FC<any> = ({CurrentConversation, userId})=>{
     const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
 
-
+    // @ts-ignore
+    const {isConnected, messages, sendMessage, setNewMessages } = useWebSocketContext()
     // theme
     const themeContext = useContext(ThemeContext);
     // @ts-ignore
     const { currentTheme, changeTheme } = themeContext;
-    const textColor = currentTheme.getText()
-    const textHintColor = currentTheme.getHint()
-    const captionColor = currentTheme.getCaption()
+
     const  cardColor = currentTheme.getCard()
     const borderColor = currentTheme.getBorder()
 
     const [nameChat, setNameChat] = useState(null);
     const [oponentChat, setOponentChat] = useState(null);
     const [imgGroup, setImgGroup] = useState(null);
+    const [listMembers, setListMembers] = useState(null);
+    const [page , setPage] = useState(1);
+    const [listMessage, setListMessage] = useState([]);
+    const [inputMessage, setInputMessage] = useState("")
+    const [firtLoad, setFirstLoad] = useState(true);
+    const [isLoading,setLoading] = useState(true);
+    const messagesEndRef = useRef(null);
+    const bodyContentRef = useRef(null);
+    const [canLoad, setCanLoad] = useState(true);
+    const LoadMessages  = async()=>{
+        if(!canLoad) {
+            setTimeout(()=>{
+                setLoading(false)
+            }, 1000)
+            return
+        }
+        try{
+            var rs = await apiClient.get(`/chat/conversation/${CurrentConversation.id}?page=${page}`)
+            console.log("get message: ", rs)
+            var status = rs.status
+            if(status === 200)
+            {
+                var data = rs.data.data
+                if(data.length > 0)
+                {
+                    // @ts-ignore
+                    setListMessage((prev) => [...rs.data.data, ...prev])
+                }
+                else{
+                    setCanLoad(false)
+                }
+                setPage(page+1)
+                setLoading(false)
+            }
+        }
+        catch (err)
+        {
+            console.log(err)
+        }
+    }
+    const SendLike = async()=>{
+        if(!isConnected || !CurrentConversation) return;
+        var rs = await sendMessage(userId, CurrentConversation.id, FastMessage.Like, SendMessageType.Text)
+        // @ts-ignore
+        var success = rs.success
+        if(!success)
+        {
+            alert("Cannot send message. Try again!")
+        }else{
+            var newMess = rs.data
+            // @ts-ignore
+            setListMessage((prev) => [...prev, newMess])
+            setFirstLoad(true)
+        }
+    }
+    const SendMessage = async()=>{
+        if(!inputMessage.trim() || !isConnected || !CurrentConversation) return;
 
+        var rs = await sendMessage(userId, CurrentConversation.id, inputMessage.trim(), SendMessageType.Text)
+        // @ts-ignore
+        var success = rs.success
+        if(!success)
+        {
+            alert("Cannot send message. Try again!")
+        }else{
+            var newMess = rs.data
+            setInputMessage("")
+            // @ts-ignore
+            setListMessage((prev) => [...prev, newMess])
+            setFirstLoad(true)
+
+        }
+    }
+    const scrollEndMess = ()=>{
+        if(messagesEndRef && messagesEndRef.current)
+        {
+            // @ts-ignore
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+
+    const handleScroll = async() => {
+        if (!bodyContentRef.current) return;
+
+        const { scrollTop } = bodyContentRef.current;
+        if (scrollTop === 0) {
+            setLoading(true)
+            await LoadMessages();
+        }
+    };
+    useEffect(() => {
+        scrollEndMess()
+    }, [messages]);
+
+    useEffect(() => {
+        if(listMessage && listMessage.length > 0 && firtLoad)
+        {
+            setFirstLoad(false)
+            scrollEndMess()
+        }
+    }, [listMessage, firtLoad]);
 
     useEffect(() => {
         if(CurrentConversation)
         {
             setNameChat(CurrentConversation.name)
+            var members = CurrentConversation.members
+            var dict = {}
+            console.log("member:-",members)
+            // @ts-ignore
+            members.forEach((m)=>{
+                // @ts-ignore
+                dict[m.userId] = m
+            })
+            // @ts-ignore
+            setListMembers(dict)
 
             if(CurrentConversation.type === ConversationType.Group)
             {
+                // @ts-ignore
                 setImgGroup(CurrentConversation.imageUrl + token)
             }
             else if(CurrentConversation.type === ConversationType.Direct)
@@ -50,6 +173,9 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId})=>{
                 setNameChat(op.name)
                 setImgGroup(op.imageUrl)
             }
+
+            LoadMessages()
+
         }
 
     }, [CurrentConversation]);
@@ -88,6 +214,7 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId})=>{
                     flexDirection: "row",
                     alignItems: "center"
                 }}>
+                    {/*// @ts-ignore*/}
                     <Avatar style={{minWidth: 50, minHeight: 50}} image={imgGroup} size="normal" shape="circle"
                             className="p-mr-2"/>
                     <p style={{
@@ -104,13 +231,22 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId})=>{
             </div>
 
             {/*Content*/}
-            <div className="body-content" style={{
+            {isLoading && (
+                <ProgressSpinner style={{width: '30px', height: '30px'}} strokeWidth="4" fill="transparent" animationDuration=".5s" />
+            )}
+            <div  ref={bodyContentRef} onScroll={handleScroll} className="body-content" style={{
                 height: "80%",
                 padding: 10,
                 backgroundColor: "transparent",
+                overflow: "auto"
                 // borderBottom: `1px solid ${borderColor}`,
             }}>
-                <h1>Body</h1>
+                {listMessage.map((m)=>
+                    // @ts-ignore
+                    <MessageCard key={m.id} ListMembers={listMembers} Message={m}/>
+                )}
+                {/* Element dùng để cuộn xuống cuối */}
+                <div ref={messagesEndRef}/>
             </div>
 
             {/*footer*/}
@@ -136,13 +272,23 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId})=>{
                 }}>
                     <Button text icon={"pi pi-file-plus"} size={"large"}/>
 
-                    <IconField style={{
+                    <IconField
+                        style={{
                         width: "80%",
                         display: "flex",
                         alignItems: "center",
                     }}>
-                        <InputTextarea
-                            autoResize
+                        <InputText
+                            onChange={(e) => setInputMessage(e.target.value)}
+                            onKeyPress={(e) => {
+                                if(e.key === "Enter")
+                                {
+                                    SendMessage()
+                                }
+                            }}
+                            value={inputMessage}
+                            // autoResize
+                            // @ts-ignore
                             rows={1}
                             style={{
                                 width: "100%",
@@ -156,11 +302,9 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId})=>{
                             }}
                             placeholder="Send message"
                         />
-                        <InputIcon onClick={showIcon} style={{marginRight: 15}} className="pi pi-search"/>
+                        <InputIcon onClick={showIcon} style={{marginRight: 15}} className="pi pi-face-smile"/>
                     </IconField>
-
-                    <Button text icon={"pi pi-thumbs-up-fill"} size={"large"}/>
-
+                    <Button onClick={SendLike} text icon={"pi pi-thumbs-up-fill"} size={"large"}/>
                 </div>
             </div>
         </div>

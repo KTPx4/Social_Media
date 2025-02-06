@@ -30,7 +30,7 @@ const LeftInfo : React.FC<any> = ({ClickCallBack, userId})=>{
     const LoadData = async()=>{
         try{
             var rs = await apiClient.get("/chat/conversation")
-            console.log(rs)
+            console.log("get conversation: ", rs.data.data)
             var status = rs.status
             if(status === 200)
             {
@@ -119,9 +119,7 @@ const LeftInfo : React.FC<any> = ({ClickCallBack, userId})=>{
 
                 {listConversation.map( (c : any) => {
                     return(
-                        <>
                             <ConversationCard key={c.id + c.isSelected} Conversation={c} ClickCallback={ClickConversationCard} userId={userId}/>
-                        </>
                     )
                 })}
             </div>
