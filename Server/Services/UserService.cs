@@ -215,6 +215,7 @@ namespace Server.Services
 
             var profile = await context.Users
              .Where(u => u.UserProfile.ToLower().Trim() == userProfile.ToLower().Trim())
+             .Include(u => u.Followers)
              .Select(u => new UserResponse
              {
                  Id = u.Id,
@@ -228,7 +229,7 @@ namespace Server.Services
                  ImageUrl = $"{_PublicUrl}/{u.Id}/{u.ImageUrl}",
                  IsDeleted = u.IsDeleted,
                  CreatedAt = u.CreatedAt ,  
-
+                 isFollow = u.Followers.Any(f => f.FollowerId.ToString() == userId),
                  // Đếm Followers, Followings và Posts
                  CountFollowers = u.Followers.Count(),
                  CountFollowings = u.Following.Count(),
@@ -255,24 +256,11 @@ namespace Server.Services
                 throw new Exception("Account-You not allow to view this profile");
             }
 
-            //foreach (var post in profile.Posts)
-            //{
-            //    var Like = await context.PostLikes
-            //        .Where(l => l.PostId.ToString() == post.Id.ToString() && l.UserId.ToString() == userId)
-            //        .FirstOrDefaultAsync();
+            profile.isFriend = relation.IsFriend;
+            profile.FriendStatus = relation?.Status ?? FriendShip.FriendStatus.Normal;
+            profile.FriendType = relation?.Type ?? FriendShip.FriendType.None;
 
-            //    var Save = await context.PostSaves
-            //        .Where(l => l.PostId.ToString() == post.Id.ToString() && l.UserId.ToString() == userId)
-            //        .FirstOrDefaultAsync();
 
-            //    var isLike = Like != null;
-            //    var isSave = Save != null;
-            //    post.isLike = isLike;
-            //    post.isSave = isSave;
-            //    post.SumLike = await context.PostLikes.CountAsync(l => l.PostId == post.Id);
-            //    post.SumComment = await context.PostComments.CountAsync(c => c.PostId == post.Id);
-            //}
-            // Lấy danh sách ID các bài viết
             var postIds = profile.Posts.Select(p => p.Id).ToList();
 
             // Lấy thông tin Like, Save, và tổng Like/Comment cho tất cả bài viết
@@ -639,6 +627,199 @@ namespace Server.Services
             
             return notifies;
 
+        }
+
+        public async Task<bool> FollowUser(string userId, string profileId)
+        {
+            var profile = await _userManager.FindByIdAsync(profileId);
+            if (profile == null) throw new Exception("Account-Profile not exists to follow");
+
+            var follow = await context.Follows.Where(f => f.UserId.ToString() == profileId && f.FollowerId.ToString() == userId).FirstOrDefaultAsync();
+            if(follow == null)
+            {
+                follow = new Follow()
+                {
+                    FollowerId = new Guid(userId),
+                    UserId = new Guid(profileId),
+                };
+                await context.Follows.AddAsync(follow);
+                await context.SaveChangesAsync();
+            }
+
+            return true;
+        }
+        public async Task<bool> UnFollowUser(string userId, string profileId)
+        {
+            var profile = await _userManager.FindByIdAsync(profileId);
+            if (profile == null) throw new Exception("Account-Profile not exists to follow");
+
+            var follow = await context.Follows.Where(f => f.UserId.ToString() == profileId && f.FollowerId.ToString() == userId).FirstOrDefaultAsync();
+            if (follow != null)
+            {
+                
+                context.Follows.Remove(follow);
+                await context.SaveChangesAsync();
+            }
+
+            return true;
+        }
+
+        public async Task<bool> AddFriend(string userId, string profileId)
+        {
+            var myShip = await context.FriendShips
+                .Where(f => f.UserId.ToString() == userId && f.FriendId.ToString() == profileId)
+                .FirstOrDefaultAsync();
+
+            var friendShip = await context.FriendShips
+                .Where(f => f.UserId.ToString() == profileId && f.FriendId.ToString() == userId)
+                .FirstOrDefaultAsync();
+
+            if (myShip != null)
+            {
+                if(myShip.Status == FriendShip.FriendStatus.Obstructed) throw new Exception("Account-You have been blocked by this user");
+
+                else if(myShip.Status == FriendShip.FriendStatus.Prevented) throw new Exception("Account-You have blocked this user");
+
+                if (myShip.Type == FriendShip.FriendType.Response)
+                {
+                    myShip.IsFriend = true;
+                    myShip.Type = FriendShip.FriendType.None;
+
+                    friendShip.IsFriend = true;
+                    friendShip.Type = FriendShip.FriendType.None;
+                }
+                else if (myShip.Type == FriendShip.FriendType.Waiting) return true;
+                else
+                {
+                    myShip.Type = FriendShip.FriendType.Waiting;
+                    friendShip.Type = FriendShip.FriendType.Response;
+                }
+                await context.SaveChangesAsync();
+            }
+            else
+            {
+                myShip = new FriendShip()
+                {
+                    UserId = new Guid(userId),
+                    FriendId = new Guid(profileId),
+                    Status= FriendShip.FriendStatus.Normal,
+                    Type = FriendShip.FriendType.Waiting,
+                    IsFriend = false,
+                };
+                friendShip = new FriendShip()
+                {
+                    UserId = new Guid(profileId),
+                    FriendId = new Guid(userId),
+                    Status= FriendShip.FriendStatus.Normal,
+                    Type = FriendShip.FriendType.Response,
+                    IsFriend = false,
+                };
+                
+
+                await context.FriendShips.AddRangeAsync(new List<FriendShip>() { myShip, friendShip });
+                await context.SaveChangesAsync();
+            }
+
+            return true;
+        }
+        public async Task<bool> UnFriend(string userId, string profileId)
+        {
+            var myShip = await context.FriendShips
+                .Where(f => f.UserId.ToString() == userId && f.FriendId.ToString() == profileId)
+                .FirstOrDefaultAsync();
+
+            var friendShip = await context.FriendShips
+                .Where(f => f.UserId.ToString() == profileId && f.FriendId.ToString() == userId)
+                .FirstOrDefaultAsync();
+
+            if (myShip != null)
+            {
+                if (myShip.Status == FriendShip.FriendStatus.Obstructed) throw new Exception("Account-You have been blocked by this user");
+
+                else if (myShip.Status == FriendShip.FriendStatus.Prevented) throw new Exception("Account-You have blocked this user");
+
+                if (myShip.Type == FriendShip.FriendType.Response || myShip.Type == FriendShip.FriendType.Waiting || myShip.IsFriend)
+                {
+                    myShip.IsFriend = false;
+                    myShip.Type = FriendShip.FriendType.None;
+
+                    friendShip.IsFriend = false;
+                    friendShip.Type = FriendShip.FriendType.None;
+                }
+               
+                await context.SaveChangesAsync();
+            }
+             
+            return true;
+        }
+
+        public async Task<bool> BlockUser(string userId, string profileId)
+        {
+            var myShip = await context.FriendShips
+                .Where(f => f.UserId.ToString() == userId && f.FriendId.ToString() == profileId)
+                .FirstOrDefaultAsync();
+
+            var friendShip = await context.FriendShips
+                .Where(f => f.UserId.ToString() == profileId && f.FriendId.ToString() == userId)
+                .FirstOrDefaultAsync();
+
+            if (myShip != null)
+            {
+                if (myShip.Status == FriendShip.FriendStatus.Obstructed) throw new Exception("Account-You have been blocked by this user");
+
+                myShip.Status = FriendShip.FriendStatus.Prevented;
+                friendShip.Status = FriendShip.FriendStatus.Obstructed;
+
+               await context.SaveChangesAsync();
+            }
+            else
+            {
+                myShip = new FriendShip()
+                {
+                    UserId = new Guid(userId),
+                    FriendId = new Guid(profileId),
+                    Type = FriendShip.FriendType.None,
+                    Status = FriendShip.FriendStatus.Prevented,
+                    IsFriend = false,
+                };
+
+                friendShip = new FriendShip()
+                {
+                    UserId = new Guid(profileId),
+                    FriendId = new Guid(userId),
+                    Type = FriendShip.FriendType.None,
+                    Status = FriendShip.FriendStatus.Obstructed,
+                    IsFriend = false,
+                };
+
+
+                await context.FriendShips.AddRangeAsync(new List<FriendShip>() { myShip, friendShip });
+                await context.SaveChangesAsync();
+            }
+            return true;
+        }
+
+        public async Task<bool> UnBlockUser(string userId, string profileId)
+        {
+            var myShip = await context.FriendShips
+                .Where(f => f.UserId.ToString() == userId && f.FriendId.ToString() == profileId)
+                .FirstOrDefaultAsync();
+
+            var friendShip = await context.FriendShips
+                .Where(f => f.UserId.ToString() == profileId && f.FriendId.ToString() == userId)
+                .FirstOrDefaultAsync();
+
+            if (myShip != null)
+            {
+                if (myShip.Status == FriendShip.FriendStatus.Obstructed) throw new Exception("Account-You have been blocked by this user");
+
+                myShip.Status = FriendShip.FriendStatus.Normal;
+                friendShip.Status = FriendShip.FriendStatus.Normal;
+
+                await context.SaveChangesAsync();
+            }
+             
+            return true;
         }
     }
 }

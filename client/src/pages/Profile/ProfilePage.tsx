@@ -98,8 +98,10 @@ const ProfilePage = () => {
                 />
               </div>
             </div>
-            <div className="flex gap-4  ">
-              <p>3 Friends </p> <p>3 Posts</p>
+            <div className="flex gap-4 w-4" style={{}}>
+              <p style={{textAlign: "center"}}>{myAccount?.countFollowers} Followers </p>
+              <p style={{textAlign: "center"}}>{myAccount?.countFollowings} Followings </p>
+              <p style={{textAlign: "center"}}>{myAccount?.countPosts} Posts</p>
             </div>
             <p>Name: {myAccount?.name}</p>
             <p>

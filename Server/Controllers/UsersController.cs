@@ -106,7 +106,160 @@ namespace Server.Controllers
             }
         }
 
-       
+        [HttpPost("profile/{profile}/follow")]
+        [Authorize]
+        public async Task<IActionResult> FollowUser(string profile)
+        {
+            var userId = User.FindFirstValue("UserId");
+            try
+            {
+                if(userId == profile) return BadRequest(new {message = "Cant follow or unfollow  your selft" });
+                var rs = await _userService.FollowUser(userId, profile);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                if (message.StartsWith("Account-"))
+                {
+                    return BadRequest(new { message = message.Split("-")[1] });
+                }
+                Console.WriteLine("Get by profile: " + ex.Message);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
+            }
+        }
+
+        [HttpDelete("profile/{profile}/follow")]
+        [Authorize]
+        public async Task<IActionResult> UnFollowUser(string profile)
+        {
+            var userId = User.FindFirstValue("UserId");
+            try
+            {
+                if (userId == profile) return BadRequest(new { message = "Cant follow or unfollow your selft" });
+                
+                var rs = await _userService.UnFollowUser(userId, profile);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                if (message.StartsWith("Account-"))
+                {
+                    return BadRequest(new { message = message.Split("-")[1] });
+                }
+                Console.WriteLine("Get by profile: " + ex.Message);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
+            }
+        }
+        [HttpPost("profile/{profile}/friend")]
+        [Authorize]
+        public async Task<IActionResult> AddFriend(string profile)
+        {
+            var userId = User.FindFirstValue("UserId");
+            try
+            {
+                if (userId == profile) return BadRequest(new { message = "Cant follow or unfollow your selft" });
+
+                var rs = await _userService.AddFriend(userId, profile);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                if (message.StartsWith("Account-"))
+                {
+                    return BadRequest(new { message = message.Split("-")[1] });
+                }
+                Console.WriteLine("Get by profile: " + ex.Message);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
+            }
+        }
+
+        [HttpDelete("profile/{profile}/friend")]
+        [Authorize]
+        public async Task<IActionResult> UnFriend(string profile)
+        {
+            var userId = User.FindFirstValue("UserId");
+            try
+            {
+                if (userId == profile) return BadRequest(new { message = "Cant follow or unfollow your selft" });
+
+                var rs = await _userService.UnFriend(userId, profile);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                if (message.StartsWith("Account-"))
+                {
+                    return BadRequest(new { message = message.Split("-")[1] });
+                }
+                Console.WriteLine("Get by profile: " + ex.Message);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
+            }
+        }
+
+        [HttpPost("profile/{profile}/ban")]
+        [Authorize]
+        public async Task<IActionResult> BlockUser(string profile)
+        {
+            var userId = User.FindFirstValue("UserId");
+            try
+            {
+                if (userId == profile) return BadRequest(new { message = "Cant follow or unfollow your selft" });
+
+                var rs = await _userService.BlockUser(userId, profile);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                if (message.StartsWith("Account-"))
+                {
+                    return BadRequest(new { message = message.Split("-")[1] });
+                }
+                Console.WriteLine("Get by profile: " + ex.Message);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
+            }
+        }
+
+        [HttpDelete("profile/{profile}/ban")]
+        [Authorize]
+        public async Task<IActionResult> UnBanUser(string profile)
+        {
+            var userId = User.FindFirstValue("UserId");
+            try
+            {
+                if (userId == profile) return BadRequest(new { message = "Cant follow or unfollow your selft" });
+
+                var rs = await _userService.UnBlockUser(userId, profile);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                if (message.StartsWith("Account-"))
+                {
+                    return BadRequest(new { message = message.Split("-")[1] });
+                }
+                Console.WriteLine("Get by profile: " + ex.Message);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
+            }
+        }
+
         [HttpGet("profile/{profile}/saves")]
         [Authorize]
         public async Task<IActionResult> GetSaveByProfile(string profile, [FromQuery] int page = 1)
