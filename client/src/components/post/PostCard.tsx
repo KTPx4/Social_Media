@@ -19,13 +19,19 @@ import EditPostModal from "./EditPostModal.tsx";
 import HistoryUpdate from "./HistoryUpdate.tsx";
 import historyUpdate from "./HistoryUpdate.tsx";
 import {Image} from "primereact/image";
+import {Dialog} from "primereact/dialog";
+import {Dropdown} from "primereact/dropdown";
 interface PostCardProps {
     post: any,
-    isHideComment: boolean
+    isHideComment: boolean,
+    isShare: boolean
+}
+const PostType = {
+    Post: 0,
+    Share: 1
 }
 
-
-const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false}) => {
+const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare= false}) => {
     // @ts-ignore
     const [Post, setPost] = useState(post)
     const {userId, setId} = useStore()
@@ -33,10 +39,10 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false}) => {
     // var {id ,authorId,  createdAt, authorProfile, authorImg, content, listMedia} = Post
 
     //
-    const [isLike, setIsLike] = useState<boolean>(post.isLike);
-    const [isSave, setIsSave] = useState<boolean>(post.isSave);
-    const [countLike, setCountLike]= useState<number>(post.sumLike)
-    const [countComment, setCountComment]= useState<number>(post.sumComment)
+    const [isLike, setIsLike] = useState<boolean>(post?.isLike ?? false);
+    const [isSave, setIsSave] = useState<boolean>(post?.isSave?? false);
+    const [countLike, setCountLike]= useState<number>(post?.sumLike?? 0)
+    const [countComment, setCountComment]= useState<number>(post?.sumComment ?? 0)
 
     {/*<PostCard
     isHideComment={true}*/}
@@ -52,6 +58,9 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false}) => {
     const textColor = currentTheme.getText()
     const textHintColor = currentTheme.getHint()
     const captionColor = currentTheme.getCaption()
+    const keyTheme = currentTheme.getKey()
+    const borderColor = currentTheme.getBorder()
+    const cardColor = currentTheme.getCard()
 
     var token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
 
@@ -65,22 +74,56 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false}) => {
     const [visibleHistory, setVisibleHistory] = useState(false);
     const [listPostHistory, setHistory] = useState([])
 
+    const [visible, setVisible] = useState(false);
+    const [inputShareCaption, setInputShareCaption] = useState("")
+    const listStatus = [
+        { name: 'Public', code: '0' },
+        { name: 'Private', code: '1' },
+        { name: 'Friend', code: '2' }
+    ];
+    const [selectStatus, setSelectStatus] = useState(listStatus[0]);
+
+    const [postShare, setPostShare] = useState(null)
+
     useEffect(() => {
+        const loadPostShare = async (shareId) =>{
+            console.log("run")
+            try{
+                var rs = await  apiClient.get(`/post/${shareId}`)
+                console.log("rsrun:", rs)
+                var statusCode = rs.status
+                if(statusCode === 200)
+                {
+                    var data = rs.data.data
+                    setPostShare(data)
+                }
+            }
+            catch(e)
+            {
+                console.log(e)
+            }
+        }
         if(Post)
         {
             console.log(Post)
             setListInfoMedia(Post.listMedia.map((media: { mediaUrl: any; contentType: any; isDeleted: any;}) =>  {
                 return {mediaUrl: media.mediaUrl + token, contentType: media.contentType, isDeleted: media.isDeleted}
             }))
+            if(Post.type == PostType.Share && Post.postShareId)
+            {
+                console.log("--", Post.postShareId)
+                loadPostShare(Post.postShareId)
+            }
         }
     }, [Post]);
+
     // @ts-ignore
-    const isOwn = Post.authorId === userId
+    const isOwn = Post?.authorId === userId
 
     const menu = useRef(null);
     var items = []
 
-    if(Post.sumEdit > 0 )
+    if(Post?.sumEdit > 0 )
     {
         items = [...items, {
             label: 'View history edit',
@@ -107,7 +150,7 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false}) => {
         },
     ];
 
-    if(Post.authorId === userId)
+    if(Post?.authorId === userId)
     {
         items = [...items, {
             label: 'Delete',
@@ -120,7 +163,7 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false}) => {
 ////// load history
     const loadHistory = async() =>{
         try{
-            var rs = await  apiClient.get(`/post/${Post.id}/history`)
+            var rs = await  apiClient.get(`/post/${Post?.id}/history`)
             console.log("history:",rs)
             var statusCode = rs.status
             if(statusCode === 200)
@@ -245,8 +288,23 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false}) => {
         setIsSave(!isSave)
     }
 ////////////////send
-    const sendPostToMess = async()=>{
-
+    const sharePost = async()=>{
+        try{
+            var body ={
+                Content: inputShareCaption,
+                Status: selectStatus
+            }
+            var rs = await  apiClient.post(`/post/${Post.id}/share`, body)
+            var status = rs.status
+            if(status === 200)
+            {
+                toast.current?.show({ severity: 'info', summary: 'Info', detail: 'Share success' });
+            }
+        }
+        catch(e)
+        {
+            console.log(e)
+        }
     }
 //////////////// open modal
     const openModalPost = async()=>{
@@ -322,12 +380,11 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false}) => {
         const media = listInfoMedia[currentIndex];
         // console.log("MediaL ", media)
         if(media && media.isDeleted) {
-
             return (
                 <div
                     style={{
                         padding: 50,
-                        height: "200px",
+                        height: "150px",
                         backgroundColor: "grey",
                         maxWidth: 500,
                         objectFit: "cover",
@@ -390,7 +447,7 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false}) => {
             return (
                 <div
                     style={{
-                        width: "480px",
+                        width: "400px",
                         height: "200px",
                         backgroundColor: "grey",
                         maxWidth: 500,
@@ -401,187 +458,372 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false}) => {
             );
         }
     };
+    if(post?.type == PostType.Share && post.postShareId && !postShare) return <></>
+    if(post?.type == PostType.Share)
+    {
+        return (
+            <>
+                <HistoryUpdate toast={toast} listPost={listPostHistory} visible={visibleHistory}
+                               onHide={() => setVisibleHistory(false)}/>
+                <EditPostModal
+                    isShare={true}
+                    visible={modalVisible}
+                    onHide={() => setModalVisible(false)}
+                    post={Post}
+                    onSave={handleSave}
+                    toast={toast}
+                />
+                <ConfirmDialog
+                    className={keyTheme}
+                    visible={parentVisible}
+                    onHide={() => setParentVisible(false)}
+                    message="Are you sure???"
+                    header="Delete Post?"
+                    icon="pi pi-exclamation-triangle"
+                    accept={handleParentAccept}
+                />
+                <Toast ref={toast}/>
 
-    return (
-        <HelmetProvider>
-            <Helmet>
-                <link rel="stylesheet" href="/css/component/PostCard.css"/>
-            </Helmet>
-            <HistoryUpdate toast={toast} listPost={listPostHistory} visible={visibleHistory} onHide={()=> setVisibleHistory(false)}/>
-            <EditPostModal
-                visible={modalVisible}
-                onHide={() => setModalVisible(false)}
-                post={Post}
-                onSave={handleSave}
-                toast={toast}
-            />
-            <ConfirmDialog
-                visible={parentVisible}
-                onHide={() => setParentVisible(false)}
-                message="Are you sure???"
-                header="Delete Post?"
-                icon="pi pi-exclamation-triangle"
-                accept={handleParentAccept}
-            />
-            <Toast ref={toast}/>
-            <div className="p-card p-mb-3 p-shadow-4" style={{
-                backgroundColor: "transparent",
-                boxShadow: "none",
-                width: "100%",
-                maxWidth: "500px",
-                padding: 10,
-                marginTop: 10
-            }}>
-                {/* Header */}
-                <div className="post-header mx-2 my-3">
-                    <div className="post-header-profile">
-
-
-                        <Avatar image={Post.authorImg} size="large" shape="circle" className="p-mr-2"/>
-                        <div style={{marginLeft: 5}}>
-                            <small className="p-m-0 font-bold" style={{color: textColor}}>{Post.authorProfile}</small>
-                            <br></br>
-                            <small title={toHCMTime(Post.createdAt)} className="p-text-secondary" style={{fontSize: 12, color: textHintColor}}>{convertToHoChiMinhTime(Post.createdAt) + " ago"}</small>
+                <div className="p-card p-mb-3 p-shadow-4" style={{
+                    backgroundColor: "transparent",
+                    boxShadow: "none",
+                    width: "100%",
+                    maxWidth: "500px",
+                    padding: 10,
+                    marginTop: 10
+                }}>
+                    {/* Header */}
+                    <div className="post-header mx-2 my-3">
+                        <div className="post-header-profile">
+                            <Avatar image={Post.authorImg} size="large" shape="circle" className="p-mr-2"/>
+                            <div style={{marginLeft: 5}}>
+                                <small className="p-m-0 font-bold"
+                                       style={{color: textColor}}>{Post.authorProfile}</small>
+                                <br></br>
+                                <small title={toHCMTime(Post.createdAt)} className="p-text-secondary" style={{
+                                    fontSize: 12,
+                                    color: textHintColor
+                                }}>{convertToHoChiMinhTime(Post.createdAt) + " ago"}</small>
+                            </div>
                         </div>
-                    </div>
-                    <TieredMenu model={items} popup ref={menu} breakpoint="767px" />
-                    <Button icon="pi pi-ellipsis-h" className="p-button-rounded p-button-text"
-                            style={{color: textColor}}
+                        <TieredMenu model={items} popup ref={menu} breakpoint="767px"/>
+                        <Button icon="pi pi-ellipsis-h" className="p-button-rounded p-button-text"
+                                style={{color: textColor}}
                             // @ts-ignore
-                            onClick={(e) => menu.current.toggle(e)}
-                    />
-                </div>
+                                onClick={(e) => menu.current.toggle(e)}
+                        />
+                    </div>
 
-                {/* Caption */}
-                <div className="p-px-3 p-pb-2">
-                    <p
-                        style={{
-                            whiteSpace: isExpanded ? "normal" : "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            marginBottom: "5px",
-                            color: captionColor
-                        }}
-                    >
-
-                        {Post.content}
-                    </p>
-                    {Post.content.length > 50 && (
-                        <button
-                            onClick={toggleCaption}
+                    {/* Caption */}
+                    <div className="p-px-3 p-pb-2">
+                        <p
                             style={{
-                                margin: 3,
-                                padding: 0,
-                                border: "none",
-                                background: "transparent",
-                                color: textHintColor,
-                                cursor: "pointer",
-                                fontSize: "14px",
+                                whiteSpace: isExpanded ? "normal" : "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                marginBottom: "5px",
+                                color: captionColor
                             }}
                         >
-                            {isExpanded ? "hide" : "more"}
-                        </button>
+
+                            {Post.content}
+                        </p>
+                        {Post.content.length > 50 && (
+                            <button
+                                onClick={toggleCaption}
+                                style={{
+                                    margin: 3,
+                                    padding: 0,
+                                    border: "none",
+                                    background: "transparent",
+                                    color: textHintColor,
+                                    cursor: "pointer",
+                                    fontSize: "14px",
+                                }}
+                            >
+                                {isExpanded ? "hide" : "more"}
+                            </button>
+                        )}
+                    </div>
+
+                    {/*Content post share*/}
+                    <div style={{
+
+                        borderRadius: 10,
+                        border: `1px solid ${borderColor}`
+                    }}>
+                        {!post.postShareId && (
+                            <p style={{padding: 10}}>
+                                This post not exists
+                            </p>
+                        )}
+                        {post.postShareId !== null &&(
+                            <PostCard isShare={true}  post={postShare} isHideComment={true}/>
+                        )}
+                    </div>
+
+                    {/*Info*/}
+                    <div>
+                        <p style={{
+                            color: textHintColor,
+                            fontSize: 12,
+                            fontStyle: "italic"
+                        }}>{countLike} likes, {countComment} comments</p>
+                    </div>
+                    {/* Actions */}
+                    <div className="p-d-flex p-ai-center p-jc-between p-p-3">
+                        <div>
+                            <Button onClick={actionPost} title={isLike ? "Unlike" : "Like"}
+                                    icon={`pi ${isLike ? "pi-heart-fill" : "pi-heart"} `}
+                                    className="p-button-rounded p-button-text p-mr-2"/>
+                            {ButtonComment}
+
+
+                            <Button onClick={savePost} title={"Save"}
+                                    icon={`pi ${isSave ? "pi-bookmark-fill" : "pi-bookmark"}`}
+                                    className="p-button-rounded p-button-text"/>
+                        </div>
+                        {InputComponent}
+
+                    </div>
+                </div>
+            </>
+        )
+    } else {
+
+        return (
+            <HelmetProvider>
+                <Helmet>
+                    <link rel="stylesheet" href="/css/component/PostCard.css"/>
+                </Helmet>
+                {/* Modal Confirm */}
+
+                <div>
+                    <Dialog
+                        className={keyTheme}
+                        header="Share"
+                        visible={visible}
+                        onHide={() => setVisible(false)}
+                        style={{width: "350px"}}
+                        footer={
+                            <div>
+                                {/*<Button label="" icon="pi pi-times" onClick={() => setVisible(false)} className="p-button-text"/>*/}
+                                <Button
+                                    label="share"
+                                    icon="pi pi-share-alt"
+                                    onClick={sharePost}
+                                    autoFocus
+                                />
+                            </div>
+                        }
+                    >
+                        <div style={{marginTop: 5}}>
+                            <Dropdown style={{
+                                background: cardColor,
+                                border: `1px solid ${borderColor}`,
+                                maxWidth: 125,
+                                marginBottom: 10
+                            }} value={selectStatus} onChange={(e) => setSelectStatus(e.value)} options={listStatus}
+                                      optionLabel="name"
+                                      placeholder="Select status post" className="w-full md:w-14rem"/>
+
+                            <InputText onChange={(e) => setInputShareCaption(e.target.value)} style={{
+                                width: "100%",
+                                border: "none",
+                                background: "transparent",
+                                boxShadow: "none",
+                                color: textHintColor
+                            }} placeholder={"Write caption..."}/>
+
+                        </div>
+                    </Dialog>
+                </div>
+                <HistoryUpdate toast={toast} listPost={listPostHistory} visible={visibleHistory}
+                               onHide={() => setVisibleHistory(false)}/>
+                <EditPostModal
+                    visible={modalVisible}
+                    onHide={() => setModalVisible(false)}
+                    post={Post}
+                    onSave={handleSave}
+                    toast={toast}
+                />
+                <ConfirmDialog
+                    className={keyTheme}
+                    visible={parentVisible}
+                    onHide={() => setParentVisible(false)}
+                    message="Are you sure???"
+                    header="Delete Post?"
+                    icon="pi pi-exclamation-triangle"
+                    accept={handleParentAccept}
+                />
+                <Toast ref={toast}/>
+                <div className="p-card p-mb-3 p-shadow-4" style={{
+                    backgroundColor: "transparent",
+                    boxShadow: "none",
+                    width: "100%",
+                    maxWidth: "500px",
+                    padding: 10,
+                    marginTop: 10
+                }}>
+                    {/* Header */}
+                    <div className="post-header mx-2 my-3">
+                        <div className="post-header-profile">
+
+
+                            <Avatar image={Post?.authorImg} size="large" shape="circle" className="p-mr-2"/>
+                            <div style={{marginLeft: 5}}>
+                                <small className="p-m-0 font-bold"
+                                       style={{color: textColor}}>{Post?.authorProfile ?? ""}</small>
+                                <br></br>
+                                <small title={toHCMTime(Post?.createdAt)} className="p-text-secondary" style={{
+                                    fontSize: 12,
+                                    color: textHintColor
+                                }}>{convertToHoChiMinhTime(Post?.createdAt) + " ago"}</small>
+                            </div>
+                        </div>
+                        <TieredMenu model={items} popup ref={menu} breakpoint="767px"/>
+                        <Button icon="pi pi-ellipsis-h" className="p-button-rounded p-button-text"
+                                style={{color: textColor}}
+                            // @ts-ignore
+                                onClick={(e) => menu.current.toggle(e)}
+                        />
+                    </div>
+
+                    {/* Caption */}
+                    <div className="p-px-3 p-pb-2">
+                        <p
+                            style={{
+                                whiteSpace: isExpanded ? "normal" : "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                marginBottom: "5px",
+                                color: captionColor
+                            }}
+                        >
+
+                            {Post?.content}
+                        </p>
+                        {Post?.content?.length > 50 && (
+                            <button
+                                onClick={toggleCaption}
+                                style={{
+                                    margin: 3,
+                                    padding: 0,
+                                    border: "none",
+                                    background: "transparent",
+                                    color: textHintColor,
+                                    cursor: "pointer",
+                                    fontSize: "14px",
+                                }}
+                            >
+                                {isExpanded ? "hide" : "more"}
+                            </button>
+                        )}
+                    </div>
+
+                    {/*Image*/}
+                    <div style={{position: "relative", width: "100%", maxWidth: "500px"}}>
+                        {/* Image */}
+                        {renderMedia()}
+
+                        {/* Previous Button */}
+                        {listInfoMedia.length > 1 &&
+                            <button
+                                onClick={prevImage}
+                                style={{
+                                    position: "absolute",
+                                    left: "5px",
+                                    top: "50%",
+                                    transform: "translateY(-50%)",
+                                    zIndex: 10,
+                                    background: "transparent",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "50%",
+                                    padding: "0.5rem",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                <i className="pi pi-angle-left" style={{fontSize: "1.5rem"}}></i>
+                            </button>
+                        }
+                        {/* Next Button */}
+                        {listInfoMedia.length > 1 &&
+                            <button
+                                onClick={nextImage}
+                                style={{
+                                    position: "absolute",
+                                    right: "5px",
+                                    top: "50%",
+                                    transform: "translateY(-50%)",
+                                    zIndex: 10,
+                                    background: "transparent",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "50%",
+                                    padding: "0.5rem",
+                                    cursor: "pointer",
+                                }}
+                            >
+                            <i className="pi pi-angle-right" style={{fontSize: "1.5rem"}}></i>
+                            </button>
+                        }
+
+                        {/* Indicators */}
+                        {listInfoMedia.length > 1 &&
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    bottom: "10px",
+                                    width: "100%",
+                                    textAlign: "center",
+                                    display: "flex",
+                                    justifyContent: "center",
+                                    gap: "0.5rem",
+                                }}
+                            >
+                                {/*@ts-ignore*/}
+                                {listInfoMedia.map((_, index) => (
+                                    <span
+                                        key={index}
+                                        onClick={() => setCurrentIndex(index)}
+                                        style={{
+                                            width: "10px",
+                                            height: "10px",
+                                            borderRadius: "50%",
+                                            backgroundColor: currentIndex === index ? "white" : "rgba(255, 255, 255, 0.5)",
+                                            cursor: "pointer",
+                                            transition: "background-color 0.3s",
+                                        }}
+                                    ></span>
+                                ))}
+                            </div>
+                        }
+                    </div>
+
+                    {/*Info*/}
+                    {!isShare && (
+                        <>
+                            <div>
+                                <p style={{color: textHintColor, fontSize: 12, fontStyle: "italic"}}>{countLike} likes, {countComment} comments</p>
+                            </div>
+                            {/* Actions */}
+                            <div className="p-d-flex p-ai-center p-jc-between p-p-3">
+                                <div>
+                                    <Button onClick={actionPost} title={isLike ? "Unlike" : "Like"} icon={`pi ${isLike ?  "pi-heart-fill" : "pi-heart" } `} className="p-button-rounded p-button-text p-mr-2"/>
+                                    {ButtonComment}
+                                    <Button onClick={()=> setVisible(true)} icon="pi pi-share-alt" className="p-button-rounded p-button-text"/>
+                                    <Button onClick={savePost} title={"Save"} icon={`pi ${isSave ? "pi-bookmark-fill" : "pi-bookmark"}`} className="p-button-rounded p-button-text"/>
+                                </div>
+                                        {InputComponent}
+
+                            </div>
+                        </>
                     )}
                 </div>
-
-                {/*Image*/}
-                <div style={{position: "relative", width: "100%", maxWidth: "500px"}}>
-                    {/* Image */}
-                    {renderMedia()}
-
-                    {/* Previous Button */}
-                    {listInfoMedia.length > 1 &&
-                        <button
-                            onClick={prevImage}
-                            style={{
-                                position: "absolute",
-                                left: "5px",
-                                top: "50%",
-                                transform: "translateY(-50%)",
-                                zIndex: 10,
-                                background: "transparent",
-                                color: "white",
-                                border: "none",
-                                borderRadius: "50%",
-                                padding: "0.5rem",
-                                cursor: "pointer",
-                            }}
-                        >
-                            <i className="pi pi-angle-left" style={{fontSize: "1.5rem"}}></i>
-                        </button>
-                    }
-                    {/* Next Button */}
-                    {listInfoMedia.length > 1 &&
-                        <button
-                            onClick={nextImage}
-                            style={{
-                                position: "absolute",
-                                right: "5px",
-                                top: "50%",
-                                transform: "translateY(-50%)",
-                                zIndex: 10,
-                                background: "transparent",
-                                color: "white",
-                                border: "none",
-                                borderRadius: "50%",
-                                padding: "0.5rem",
-                                cursor: "pointer",
-                            }}
-                        >
-                            <i className="pi pi-angle-right" style={{fontSize: "1.5rem"}}></i>
-                        </button>
-                    }
-
-                    {/* Indicators */}
-                    {listInfoMedia.length > 1 &&
-                        <div
-                            style={{
-                                position: "absolute",
-                                bottom: "10px",
-                                width: "100%",
-                                textAlign: "center",
-                                display: "flex",
-                                justifyContent: "center",
-                                gap: "0.5rem",
-                            }}
-                        >
-                            {/*@ts-ignore*/}
-                            {listInfoMedia.map((_, index) => (
-                                <span
-                                    key={index}
-                                    onClick={() => setCurrentIndex(index)}
-                                    style={{
-                                        width: "10px",
-                                        height: "10px",
-                                        borderRadius: "50%",
-                                        backgroundColor: currentIndex === index ? "white" : "rgba(255, 255, 255, 0.5)",
-                                        cursor: "pointer",
-                                        transition: "background-color 0.3s",
-                                    }}
-                                ></span>
-                            ))}
-                        </div>
-                    }
-                </div>
-
-                {/*Info*/}
-                <div>
-                    <p style={{color: textHintColor, fontSize: 12, fontStyle: "italic"}}>{countLike} likes, {countComment} comments</p>
-                </div>
-                {/* Actions */}
-                <div className="p-d-flex p-ai-center p-jc-between p-p-3">
-                    <div>
-                        <Button onClick={actionPost} title={isLike ? "Unlike" : "Like"} icon={`pi ${isLike ?  "pi-heart-fill" : "pi-heart" } `} className="p-button-rounded p-button-text p-mr-2"/>
-                        {ButtonComment}
-                        <Button onClick={sendPostToMess} icon="pi pi-send" className="p-button-rounded p-button-text"/>
-                        <Button onClick={savePost} title={"Save"} icon={`pi ${isSave ? "pi-bookmark-fill" : "pi-bookmark"}`} className="p-button-rounded p-button-text"/>
-                    </div>
-                            {InputComponent}
-
-                </div>
-            </div>
-        </HelmetProvider>
-    );
+            </HelmetProvider>
+        );
+    }
 };
 
 export default PostCard;

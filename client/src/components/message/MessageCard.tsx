@@ -12,6 +12,7 @@ const MessageCard : React.FC<any> = ({ListMembers, Message}) => {
     const textColor = currentTheme.getText()
     const textHintColor = currentTheme.getHint()
     const captionColor = currentTheme.getCaption()
+    const borderColor = currentTheme.getBorder()
     const cardColor = currentTheme.getCard()
     const isMe = Message.senderId ===  userId ? "me" : "friend"
     const backMessColor = Message.senderId ===  userId ? "#4ba3e3" : cardColor
@@ -31,16 +32,18 @@ const MessageCard : React.FC<any> = ({ListMembers, Message}) => {
                     style={{
                         backgroundColor: Message.isSystem ? "transparent" : backMessColor,
                         color: Message.isSystem ? "aqua" : textColor,
-                        padding: 7,
+                        padding: 10,
                         width: "fit-content",
                         minWidth: 50,
                         maxWidth: 400,
-                        borderRadius: 30,
+                        borderRadius: 20,
                         display: "flex",
                         justifyContent: "center",
-                        fontStyle: Message.isSystem ? "italic" : "normal"
+                        fontSize: (Message.isSystem || Message.isDeleted) ? 12 : 16,
+                        fontStyle: (Message.isSystem || Message.isDeleted) ? "italic" : "normal",
+                        overflowWrap: "anywhere"
                     }}
-                >{Message.content}</p>
+                >{Message.isDeleted ? "Message has been deleted!": Message.content}</p>
             </div>
         </>
     )

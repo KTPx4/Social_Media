@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Azure;
+using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.DTOs.Communication;
 using Server.DTOs.Posts;
@@ -20,6 +21,8 @@ namespace Server.Services.SCommunication
     public interface ICommunicationService
     {
         Task<RsProcessMessage> ProcessMessageAsync(string senderUserId, MessageModel messageModel);
+        Task<RsProcessMessage> ProcessDirectMessageAsync(string senderUserId, MessageModel messageModel);
+
         Task<ConversationResponse> CreateConversation(string userId, CreateGroupModel createGroupModel, FileInfoDto fileInfoDto);
         Task<List<ConversationResponse>> GetGroups(string userId);
         Task<List<ConversationResponse>> GetConversation(string userId, int page = 0);
@@ -47,9 +50,13 @@ namespace Server.Services.SCommunication
             _AccessImgAccount = serverSettings["AccessImgHost"];
         }
 
-        public bool CanSendMessage(string userId, string conversationId)
+        public async Task<bool> CanSendDirectMessage(string userId1, string userId2)
         {
-            return false;
+            var relationship = await _context.FriendShips.Where(f => f.UserId.ToString() == userId1 && f.FriendId.ToString() == userId2).FirstOrDefaultAsync();
+
+            if (relationship == null) return true;
+
+            return relationship.Status == Models.RelationShip.FriendShip.FriendStatus.Normal;
         }
 
         public async Task<User> ExistsUser(string userId)
@@ -62,11 +69,7 @@ namespace Server.Services.SCommunication
             var userId1 = convMembers.ElementAt(0).UserId;
             var userId2 = convMembers.ElementAt(1).UserId;
 
-            var relationship = await _context.FriendShips.Where(f => f.UserId == userId1 && f.FriendId == userId2).FirstOrDefaultAsync();
-            
-            if (relationship == null) return true;
-
-            return relationship.Status == Models.RelationShip.FriendShip.FriendStatus.Normal;
+            return await CanSendDirectMessage(userId1.ToString(), userId2.ToString());
         }
 
         public async Task<RsProcessMessage> ProcessMessageAsync(string senderUserId, MessageModel messageModel)
@@ -131,6 +134,82 @@ namespace Server.Services.SCommunication
 
             return rs;
 
+        }
+        public  async Task<RsProcessMessage> ProcessDirectMessageAsync(string senderUserId, MessageModel messageModel)
+        {
+            var friendId = messageModel.ConversationId;
+            
+            var type = messageModel.Type;
+
+            var content = messageModel.Content;
+            var canSend = await CanSendDirectMessage(senderUserId, friendId.ToString());
+            if(!canSend) throw new Exception("ErrMess-Can not send message to this user");
+
+            var conversations = await _context.Conversations
+            .Include(c => c.Members)
+            .Where(c => c.Type == Conversation.ConversationType.Direct &&
+                        c.Members.Any(cm => cm.UserId.ToString() == senderUserId) &&
+                        c.Members.Any(cm => cm.UserId == friendId))
+            .FirstOrDefaultAsync();
+            
+            if(conversations == null)
+            {
+                conversations = new Conversation()
+                {
+                    Type = Conversation.ConversationType.Direct,
+                    Name = "Chat Direct",
+                };
+                await _context.Conversations.AddAsync(conversations);
+                await _context.SaveChangesAsync();
+
+                var setting = new ConvSetting()
+                {
+                    CanEdit = ConvSetting.ConvPermission.All,
+                    CanSend = ConvSetting.ConvPermission.All,
+                    ConversationId = conversations.Id
+                };
+                var members = new List<ConvMember>();
+                members.Add(new ConvMember()
+                {
+                    ConversationId = conversations.Id,
+                    UserId = new Guid(senderUserId),
+                    Role = ConvMember.ConversationRole.None,
+                    Notify = ConvMember.SettingNotify.Normal
+                });
+                members.Add(new ConvMember()
+                {
+                    ConversationId = conversations.Id,
+                    UserId = friendId,
+                    Role = ConvMember.ConversationRole.None,
+                    Notify = ConvMember.SettingNotify.Normal
+                });
+                await _context.ConvMembers.AddRangeAsync(members);
+                await _context.ConvSettings.AddAsync(setting);
+            }
+
+            var mess = new Message()
+            {
+                ConversationId = conversations.Id,
+                SenderId = new Guid(senderUserId),
+                ReplyMessageId = null,
+                Type = type,
+                Content = content
+            };
+
+            await _context.Messages.AddAsync(mess);
+            await _context.SaveChangesAsync();
+
+            var messResponse = new MessageResponse(mess);
+
+            List<Guid> listTo = new List<Guid> { friendId };
+            RsProcessMessage rs = new RsProcessMessage()
+            {
+                FromId = new Guid(senderUserId),
+                ToIds = listTo,
+                messageResponse = messResponse
+            };
+
+            return rs;
         }
 
         public async Task<ConversationResponse> CreateConversation(string userId, CreateGroupModel createGroupModel, FileInfoDto fileInfoDto)
@@ -351,6 +430,7 @@ namespace Server.Services.SCommunication
             return Messages;
         }
 
+        
 
 
 

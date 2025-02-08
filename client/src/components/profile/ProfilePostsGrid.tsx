@@ -66,6 +66,7 @@ const ProfilePostsGrid: React.FC<ProfileModalProps> = ({
       .catch((err) => console.log(err));
     setPage((prevIndex) => prevIndex + 1);
   };
+
   return (
     <InfiniteScroll
       dataLength={items.length}

@@ -27,7 +27,7 @@ const FastMessage = {
     Heart: "❤️",
     Heart_2: "💘"
 }
-const RightContent : React.FC<any> = ({CurrentConversation, userId})=>{
+const RightContent : React.FC<any> = ({CurrentConversation, userId , listConversation, setListConversation, showInfo})=>{
     const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
 
     // @ts-ignore
@@ -52,6 +52,7 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId})=>{
     const messagesEndRef = useRef(null);
     const bodyContentRef = useRef(null);
     const [canLoad, setCanLoad] = useState(true);
+    const [isScrollTop, setScrollTop] = useState(false);
     const LoadMessages  = async()=>{
         if(!canLoad) {
             setTimeout(()=>{
@@ -60,6 +61,7 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId})=>{
             return
         }
         try{
+           if(page > 1)  setScrollTop(true)
             var rs = await apiClient.get(`/chat/conversation/${CurrentConversation.id}?page=${page}`)
             console.log("get message: ", rs)
             var status = rs.status
@@ -85,6 +87,8 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId})=>{
     }
     const SendLike = async()=>{
         if(!isConnected || !CurrentConversation) return;
+        setScrollTop(false)
+
         var rs = await sendMessage(userId, CurrentConversation.id, FastMessage.Like, SendMessageType.Text)
         // @ts-ignore
         var success = rs.success
@@ -100,7 +104,7 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId})=>{
     }
     const SendMessage = async()=>{
         if(!inputMessage.trim() || !isConnected || !CurrentConversation) return;
-
+        setScrollTop(false)
         var rs = await sendMessage(userId, CurrentConversation.id, inputMessage.trim(), SendMessageType.Text)
         // @ts-ignore
         var success = rs.success
@@ -112,11 +116,15 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId})=>{
             setInputMessage("")
             // @ts-ignore
             setListMessage((prev) => [...prev, newMess])
-            setFirstLoad(true)
 
+            var newdata = listConversation.map( (e : any) =>{
+                return {...e,  lastMessage: newMess, time: Date.now()}
+            })
+            setListConversation(newdata)
         }
     }
     const scrollEndMess = ()=>{
+
         if(messagesEndRef && messagesEndRef.current)
         {
             // @ts-ignore
@@ -126,7 +134,7 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId})=>{
 
     const handleScroll = async() => {
         if (!bodyContentRef.current) return;
-
+        // setScrollTop(true)
         const { scrollTop } = bodyContentRef.current;
         if (scrollTop === 0) {
             setLoading(true)
@@ -134,16 +142,19 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId})=>{
         }
     };
     useEffect(() => {
-        scrollEndMess()
+        if(messages && CurrentConversation && messages.sender !== userId && messages.conversationId === CurrentConversation.id)
+        {
+            setListMessage(prev => [...prev, messages.message])
+        }
     }, [messages]);
 
     useEffect(() => {
-        if(listMessage && listMessage.length > 0 && firtLoad)
+        console.log("1 times", isScrollTop)
+        if(listMessage && listMessage.length > 0 && !isScrollTop)
         {
-            setFirstLoad(false)
             scrollEndMess()
         }
-    }, [listMessage, firtLoad]);
+    }, [listMessage]);
 
     useEffect(() => {
         if(CurrentConversation)
@@ -151,7 +162,6 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId})=>{
             setNameChat(CurrentConversation.name)
             var members = CurrentConversation.members
             var dict = {}
-            console.log("member:-",members)
             // @ts-ignore
             members.forEach((m)=>{
                 // @ts-ignore
@@ -224,7 +234,7 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId})=>{
                 </div>
                 <div>
                     <Button text icon={"pi pi-phone"}/>
-                    <Button text icon={"pi pi-ellipsis-h"}/>
+                    <Button text icon={"pi pi-ellipsis-h"} onClick={showInfo}/>
 
                 </div>
 
@@ -279,6 +289,7 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId})=>{
                         alignItems: "center",
                     }}>
                         <InputText
+                            maxLength={1000}
                             onChange={(e) => setInputMessage(e.target.value)}
                             onKeyPress={(e) => {
                                 if(e.key === "Enter")

@@ -8,7 +8,7 @@ import ConversationCard from "./ConversationCard.tsx";
 import apiClient from "../../utils/apiClient.tsx";
 
 
-const LeftInfo : React.FC<any> = ({ClickCallBack, userId})=>{
+const LeftInfo : React.FC<any> = ({ClickCallBack, userId, listConversation, setListConversation, ListMembers})=>{
     // theme
     const themeContext = useContext(ThemeContext);
     // @ts-ignore
@@ -20,32 +20,6 @@ const LeftInfo : React.FC<any> = ({ClickCallBack, userId})=>{
     const textHintColor = currentTheme.getHint()
     const keyTheme = currentTheme.getKey()
 
-    // data
-    const [listConversation, setListConversation] = useState([])
-
-    useEffect(() => {
-        LoadData()
-    }, []);
-
-    const LoadData = async()=>{
-        try{
-            var rs = await apiClient.get("/chat/conversation")
-            console.log("get conversation: ", rs.data.data)
-            var status = rs.status
-            if(status === 200)
-            {
-                var data = rs.data.data
-                data = data.map( (e : any) =>{
-                    return {...e, isSelected: false}
-                })
-                setListConversation(data)
-            }
-        }
-        catch (err)
-        {
-            console.log(err)
-        }
-    }
 
     const ClickConversationCard = async(Conversation : any)=>{
         var dt = listConversation.map((prev: any) => prev.id !== Conversation.id ? prev : {...prev, isSelected: true})
@@ -119,7 +93,7 @@ const LeftInfo : React.FC<any> = ({ClickCallBack, userId})=>{
 
                 {listConversation.map( (c : any) => {
                     return(
-                            <ConversationCard key={c.id + c.isSelected} Conversation={c} ClickCallback={ClickConversationCard} userId={userId}/>
+                            <ConversationCard key={c.id + c.isSelected + c.time} Conversation={c} ClickCallback={ClickConversationCard} userId={userId} ListMembers={ListMembers}/>
                     )
                 })}
             </div>

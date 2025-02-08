@@ -21,10 +21,8 @@ const UserRouter: React.FC<UserRouterProps> = ({ children }) => {
             </div>
         );
     }
-    else{
 
-    }
-    if(!isAuthenticated)
+    if(!isAuthenticated && !loading)
     {
         localStorage.removeItem("token")
         sessionStorage.removeItem("token")

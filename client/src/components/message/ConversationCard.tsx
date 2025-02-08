@@ -10,13 +10,14 @@ interface CardProps{
     Conversation: any;
     ClickCallback: any;
     userId: any;
+    ListMembers:any;
 }
 enum ConversationType {
     Direct = 0,
     Group = 1
 }
 
-const ConversationCard : React.FC<CardProps> = ({Conversation, ClickCallback, userId}) => {
+const ConversationCard : React.FC<CardProps> = ({Conversation, ClickCallback, userId, ListMembers}) => {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
 
     // theme
@@ -35,10 +36,21 @@ const ConversationCard : React.FC<CardProps> = ({Conversation, ClickCallback, us
     const [lastMessage, setLastMessage] = useState(Conversation.lastMessage)
     const [timeMessage, setTimeMessage] = useState(ToHCMLite(Conversation.lastMessage.createdAt));
     const [countUnRead, setCountUnRead] = useState(Conversation.unRead);
+    const [currentMembers, setCurrentMembers] = useState([]);
 
     useEffect(() => {
         if(Conversation)
         {
+
+            var members = ListMembers[Conversation.id].members
+            var dict = {}
+            members.forEach((d)=>{
+                // @ts-ignore
+                dict[d.userId] = d
+            })
+
+            setCurrentMembers(dict)
+
             if(Conversation.unRead > 99) setCountUnRead("99+");
 
             if(Conversation.type === ConversationType.Group)
@@ -91,7 +103,8 @@ const ConversationCard : React.FC<CardProps> = ({Conversation, ClickCallback, us
                             overflow: "hidden",
                             textOverflow: "ellipsis"
                         }}>
-                            {lastMessage.senderId === userId ? "You:" : ""}{lastMessage.content}
+                            {/*// @ts-ignore*/}
+                           <span  style={{fontSize: 12, fontWeight: "bold"}}> {lastMessage.senderId === userId ? "You:" : (`${currentMembers[lastMessage.senderId]?.name}: ` ?? "")}</span> {lastMessage.content}
                         </p>
 
                         <p style={{ margin: 0,fontSize: 12, color: textHintColor, marginLeft: "10px", whiteSpace: "nowrap"}}>

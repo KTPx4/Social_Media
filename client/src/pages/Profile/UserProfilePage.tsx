@@ -14,6 +14,7 @@ import apiClient from "../../utils/apiClient";
 import ResourcesErrorCard from "../../components/ResourcesErrorCard";
 import { ThemeContext } from "../../ThemeContext";
 import ProfilePostsGrid from "../../components/profile/ProfilePostsGrid";
+import ListPostComponent from "../../components/profile/ListPostComponent.tsx";
 
 const UserProfilePage = () => {
   const themeContext = useContext(ThemeContext);
@@ -73,13 +74,13 @@ const UserProfilePage = () => {
     {
       separator: true,
     },
-    {
-      label: "TAGGED",
-      icon: "pi pi-tag",
-    },
-    {
-      separator: true,
-    },
+    // {
+    //   label: "TAGGED",
+    //   icon: "pi pi-tag",
+    // },
+    // {
+    //   separator: true,
+    // },
   ];
 
   if (!userProfile)
@@ -98,54 +99,63 @@ const UserProfilePage = () => {
         setVisible={setVisible}
         visible={visible}
       ></EditProfileModal> */}
-      <div className="flex w-full h-auto">
-        <div className="w-4 h-full flex justify-content-center align-items-center p-4 ">
+      <div style={{display: "flex", justifyContent: "center"}}>
+
+        <div className="flex h-auto" style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          marginTop: 10
+        }}>
+          {/*<div className="w-4 h-full flex justify-content-center align-items-center p-4 ">*/}
+          {/*</div>*/}
           <Avatar
             shape="circle"
             image={userProfile?.data.imageUrl}
             style={{
-              width: "40vh",
-              height: "40vh",
+              minWidth: "100px",
+              minHeight: "100px",
               marginRight: "auto",
               marginLeft: "auto",
             }}
           />
-        </div>
-        <div className="h-auto w-full flex-column pl-8 pb-4 pt-4 w-11">
-          <div className="flex gap-4">
-            <p>Username: {userProfile?.data.userName}</p>
-            <div className="flex gap-2">
-              <Button icon="pi pi-user-plus" rounded text aria-label="Filter" />
-              <Button icon="pi pi-ban" rounded text aria-label="Filter" />
-              <Button icon="pi pi-flag" rounded text aria-label="Filter" />
-              <Button
-                icon="pi pi-spin pi-cog"
-                rounded
-                text
-                aria-label="Filter"
-              />
+          <div className="h-auto w-full flex-column pl-8 pb-4 pt-4 w-11">
+            <div className="flex gap-4">
+              <p>Username: {userProfile?.data.userName}</p>
+              <div className="flex gap-2">
+                <Button icon="pi pi-user-plus" rounded text aria-label="Filter" />
+                <Button icon="pi pi-ban" rounded text aria-label="Filter" />
+                <Button icon="pi pi-flag" rounded text aria-label="Filter" />
+                <Button
+                  icon="pi pi-spin pi-cog"
+                  rounded
+                  text
+                  aria-label="Filter"
+                />
+              </div>
             </div>
+            <div className="flex gap-4 w-4">
+              <p>3 Friends </p> <p>3 Posts</p>
+            </div>
+            <p>Name: {userProfile?.data.name}</p>
+            <p>
+              Email:{" "}
+              <a href={`mailto:${userProfile?.data.email}`}>
+                {userProfile?.data.email}
+              </a>
+            </p>
+            <p>{userProfile?.data.bio}</p>
           </div>
-          <div className="flex gap-4 w-4">
-            <p>3 Friends </p> <p>3 Posts</p>
-          </div>
-          <p>Name: {userProfile?.data.name}</p>
-          <p>
-            Email:{" "}
-            <a href={`mailto:${userProfile?.data.email}`}>
-              {userProfile?.data.email}
-            </a>
-          </p>
-          <p>{userProfile?.data.bio}</p>
         </div>
       </div>
 
       <div className="w-full h-auto ">
-        <Menubar model={items} />
-        <ProfilePostsGrid
-          postType={postType}
-          userProfile={userProfile?.data.userProfile}
-        ></ProfilePostsGrid>
+        <Menubar model={items} style={{background: "transparent", border: "none"}}/>
+        {/*<ProfilePostsGrid*/}
+        {/*  postType={postType}*/}
+        {/*  userProfile={userProfile?.data.userProfile}*/}
+        {/*></ProfilePostsGrid>*/}
+        <ListPostComponent userProfile={userProfile?.data.userProfile} postType={postType}/>
       </div>
     </div>
   );

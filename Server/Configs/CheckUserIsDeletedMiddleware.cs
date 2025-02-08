@@ -25,7 +25,7 @@ namespace Server.Configs
                 {
                     // Tìm user trong database
                     var user = await userManager.FindByIdAsync(userId);
-                    if (user != null && user.IsDeleted)
+                    if (user != null && user.IsDeleted || (user == null))
                     {
                         context.Response.StatusCode = StatusCodes.Status403Forbidden;
                         await context.Response.WriteAsJsonAsync(new {message = "User account is deactivated!" });

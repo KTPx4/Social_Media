@@ -71,22 +71,24 @@ namespace Server.Services
                 .Skip((page - 1) * LIMIT_PAGE_POST)
                 .Take(LIMIT_PAGE_POST)
                 .Include(p => p.Medias)
+                //.Include(p => p.PostShare)
+                //.ThenInclude(s => s.Medias)
                 .Select(post => new PostResponse
                 {
-                        Id = post.Id,
-                        CreatedAt = post.CreatedAt,
-                        AuthorId = post.AuthorId,
-                        Content = post.Content,
-                        PostShareId = post.PostShareId,
-                        IsHide = post.IsHide,
-                        Status = post.Status,
-                        Type = post.Type,
-                        AuthorImg = $"{_ServerHost}/public/account/{post.Author.Id.ToString()}/{post.Author.ImageUrl}",
-                        AuthorProfile = post.Author.UserProfile,
-                        SumComment = post.Comments.Count,
-                        SumLike = post.Likes.Count,
-                        ListMedia = post.Medias
-                                .Select( m => new MediaResponse()
+                    Id = post.Id,
+                    CreatedAt = post.CreatedAt,
+                    AuthorId = post.AuthorId,
+                    Content = post.Content,
+                    PostShareId = post.PostShareId,
+                    IsHide = post.IsHide,
+                    Status = post.Status,
+                    Type = post.Type,
+                    AuthorImg = $"{_ServerHost}/public/account/{post.Author.Id.ToString()}/{post.Author.ImageUrl}",
+                    AuthorProfile = post.Author.UserProfile,
+                    SumComment = post.Comments.Count,
+                    SumLike = post.Likes.Count,
+                    ListMedia = post.Medias
+                                .Select(m => new MediaResponse()
                                 {
                                     Id = m.Id,
                                     Content = m.Content,
@@ -96,7 +98,8 @@ namespace Server.Services
                                     PostId = m.PostId,
                                     Type = m.Type
                                 })
-                                .ToList()
+                                .ToList(),
+                    //PostShare = new PostResponse(post.PostShare, _ServerHost)
                 })
                 .ToListAsync();
 
@@ -145,6 +148,8 @@ namespace Server.Services
             var listPost = await context.PostSaves
                 .Where(p => p.UserId == profile.Id)
                 .Include(p => p.Post)
+                //.ThenInclude(p => p.PostShare)
+                //.ThenInclude(s => s.Medias)
                 .OrderByDescending(p => p.Post.CreatedAt) // Sắp xếp bài viết theo ngày đăng mới nhất
                 .Skip((page - 1) * LIMIT_PAGE_POST)
                 .Take(LIMIT_PAGE_POST)
@@ -175,7 +180,9 @@ namespace Server.Services
                                     PostId = m.PostId,
                                     Type = m.Type
                                 })
-                                .ToList()
+                                .ToList(),
+                    //PostShare = new PostResponse(post.Post.PostShare, _ServerHost)
+
                 })
                 .ToListAsync();
 
