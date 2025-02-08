@@ -241,6 +241,7 @@ namespace Server.Data
                 entity.HasOne(p => p.PostShare)
                 .WithMany()
                 .HasForeignKey(p => p.PostShareId)
+                 .IsRequired(false)             // Cho phép null
                 .OnDelete(DeleteBehavior.NoAction);
 
                 // 1-n Users

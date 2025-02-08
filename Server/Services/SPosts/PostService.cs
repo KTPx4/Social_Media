@@ -133,6 +133,34 @@ namespace Server.Services.SPosts
             return rs;
         }
 
+        public async Task<PostResponse> SharePost(string userID, string postId, SharePostModel sharePostModel)
+        {
+            var post = await _context.Posts.Where(p => p.Id.ToString() == postId).FirstOrDefaultAsync();
+            if (post == null) throw new Exception("Post-Post not exists");
+
+            if(post.Status == Post.PostStatus.Private && post.AuthorId.ToString() != userID) throw new Exception("Post-You not allow to share this post");
+            else if(post.Status == Post.PostStatus.Friend)
+            {
+                var relation = await _context.FriendShips
+                    .Where(f => f.UserId.ToString() == userID && f.FriendId == post.AuthorId)
+                    .FirstOrDefaultAsync();
+                if(relation != null && (!relation.IsFriend || relation.Status != FriendStatus.Normal)) throw new Exception("Post-You not allow to share this post");
+            }
+
+            var sharePost = new Post()
+            {
+                AuthorId = new Guid(userID),
+                Content = sharePostModel.Content,
+                Status = sharePostModel.Status,
+                PostShareId = post.Id,
+                Type = Post.PostType.Share,
+            };
+            await _context.Posts.AddAsync(sharePost);
+            await _context.SaveChangesAsync();
+            return new PostResponse(sharePost, _ServerHost);
+
+        }
+
         public async Task<PostResponse> DeletePost(string userId, string postId)
         {
             var post = await _context.Posts
@@ -142,6 +170,13 @@ namespace Server.Services.SPosts
 
             if (post == null) throw new Exception("Post-Post not exists");
             if (post.AuthorId.ToString() != userId) throw new Exception("Post-You not allow to delete");
+            
+            var listShare = await _context.Posts.Where(p => p.PostShareId == post.Id).ToListAsync();
+
+            foreach (var p in listShare)
+            {
+                post.PostShareId = null;
+            }
 
             //var listMedia = await _context.PostMedias.Where(m => m.PostId.ToString() == postId).ToListAsync();
             var rootPath = $"{_RootImgPost}/{postId}";
@@ -200,6 +235,14 @@ namespace Server.Services.SPosts
 
                 post.Content = updateModel.Content;
                 post.Status = updateModel.Status;
+
+                // if share only update content
+                if(post.Type == Post.PostType.Share)
+                {
+                    _context.Posts.Update(post);
+                    await _context.SaveChangesAsync();
+                    return new PostResponse(post, _ServerHost);
+                }
 
                 // create history for old version
                 var rootPath = $"{_RootImgPost}/{postId}";

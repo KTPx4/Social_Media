@@ -22,13 +22,14 @@ namespace Server.DTOs.Posts
         public bool isSave { get; set; } = false;
         public int SumEdit { get; set; } = 0;
         public List<MediaResponse> ListMedia { get; set; } = new List<MediaResponse>();
-
+        public PostResponse? PostShare { get; set; }
         public PostResponse()
         {
             
         }
-        public PostResponse(Post post, string host)
+        public PostResponse(Post? post, string host)
         {
+            if (post == null) return;
             this.Id = post.Id;
             this.CreatedAt = post.CreatedAt;
             this.AuthorId = post.AuthorId;
@@ -43,7 +44,10 @@ namespace Server.DTOs.Posts
             
             this.SumLike = post.Likes?.Count ?? 0;
             this.SumComment = post.Comments?.Count ?? 0;
-           
+            if(post.PostShare != null)
+            {
+                this.PostShare = new PostResponse(post.PostShare, host);
+            }
             if (post.Updates?.Count > 0) 
             {
                 this.SumEdit = post.Updates?.Count ?? 0;

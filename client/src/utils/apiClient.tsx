@@ -26,6 +26,7 @@ apiClient.interceptors.response.use(
   },
   (error) => {
     if (error.response) {
+        console.log(error)
       throw new Error(error.response.data.message);
       // switch (error.response.status) {
       //   case 400:

@@ -86,6 +86,52 @@ namespace Server.Hubs
 
             return ResponseModel<MessageResponse>.Ok(RsProcessMessage.messageResponse);
 
+
+        }
+
+        public async Task<ResponseModel<MessageResponse>> SendDirectMessage(MessageModel messageModel)
+        {
+            var senderUserId = messageModel.SenderId;
+            var processedMessage = messageModel.Content;
+            var conversationId = messageModel.ConversationId.ToString();
+
+
+            if (string.IsNullOrEmpty(senderUserId) || string.IsNullOrEmpty(conversationId))
+            {
+                return ResponseModel<MessageResponse>.BadRequest("Sender id not exists");
+            }
+
+            RsProcessMessage RsProcessMessage = null;
+
+            try
+            {
+                RsProcessMessage = await _communicationService.ProcessDirectMessageAsync(senderUserId, messageModel);
+
+            }
+            catch (Exception ex)
+            {
+                var mess = ex.Message;
+                var rsMess = "Error. Try again!";
+
+                if (mess.StartsWith("ErrMess-"))
+                {
+                    rsMess = mess.Substring("ErrMess-".Length);
+                }
+
+                return ResponseModel<MessageResponse>.BadRequest(rsMess);
+
+            }
+
+
+            // find id of user in list online
+            var receiverConnections = _connectionManager.GetConnections(RsProcessMessage.ToIds);
+            foreach (var connectionId in receiverConnections)
+            {
+                await _hubContext.Clients.Client(connectionId).SendAsync("ReceiveMessage", RsProcessMessage.FromId, RsProcessMessage.messageResponse);
+            }
+
+            return ResponseModel<MessageResponse>.Ok(RsProcessMessage.messageResponse);
+
         }
     }
 }

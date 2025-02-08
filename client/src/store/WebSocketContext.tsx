@@ -8,6 +8,7 @@ interface WebSocketContextProps {
     messages: { sender: string; message: string }[];
     sendMessage: (senderId: string, receiverUserId: string, message: string, type: number ) => any;
     setNewMessages: any;
+    sendDirectMessage: any;
 }
 
 const WebSocketContext = createContext<WebSocketContextProps | undefined>(undefined);
@@ -49,7 +50,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, child
                 // Lắng nghe tin nhắn từ server
                 connection.on("ReceiveMessage", (sender: string, message: string) => {
                     console.log("📩 Message received:", { sender, message });
-                    setMessages((prev) => [...prev, { sender, message }]);
+                    // @ts-ignore
+                    setMessages({ sender, conversationId: message.conversationId, message });
                 });
 
                 // Xóa timeout nếu kết nối thành công
@@ -123,9 +125,30 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, child
             return null
         }
     };
+    const sendDirectMessage = async (senderId: string, receiverUserId: string, message: string, type: number) => {
 
+        if (connectionRef.current && isConnected && userId && receiverUserId !== userId) {
+            try {
+                var body ={
+                    ConversationId: receiverUserId,
+                    ReplyMessageId: null,
+                    Content: message,
+                    SenderId: senderId,
+                    Type: type
+                }
+                var rs = await connectionRef.current.invoke("SendDirectMessage", body);
+                return rs
+            } catch (err) {
+                console.error("❌ SendMessage failed:", err);
+                return null
+            }
+        } else {
+            console.error("⚠️ Can not send message");
+            return null
+        }
+    };
     return (
-        <WebSocketContext.Provider value={{ isConnected, messages, sendMessage , setNewMessages:{setMessages}}}>
+        <WebSocketContext.Provider value={{ isConnected, messages, sendMessage, sendDirectMessage , setNewMessages:{setMessages}}}>
             {children}
         </WebSocketContext.Provider>
     );

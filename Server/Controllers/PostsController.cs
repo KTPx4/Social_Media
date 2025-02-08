@@ -138,30 +138,47 @@ namespace Server.Controllers
         [Authorize]
         public async Task<IActionResult> UpdatePost(string id,[FromForm] UpdatePostModel updatePostModel)
         {
+
             var userId = User.FindFirstValue("UserId");
-            try
+            var post = await _context.Posts.Where(p => p.Id.ToString() == id).FirstOrDefaultAsync();
+            if(post == null)
             {
-                if (updatePostModel.files != null && updatePostModel.files.Count > 0) 
-                {
-                    FileValidationHelper.IsValidListMedia(updatePostModel.files);
-                }
+                return BadRequest(new { message = "Post not exists" });
             }
-            catch (Exception ex)
+            if(post.AuthorId.ToString() != userId)
             {
-                var mess = ex.Message;
-                if (mess.StartsWith("File-"))
-                {
-                    var rmess = mess.Split("File-")[1];
-                    return BadRequest(new { message = rmess });
-                }
+                return BadRequest(new { message = "You not allow to access" });
 
-                Console.WriteLine(mess);
-                return StatusCode(500, new { message = "Server error. Try again!" });
             }
 
+            var listFileInfo = new List<FileInfoDto>();
+           
+            if (post.Type == Post.PostType.Post)
+            {
+                try
+                {
+                    if (updatePostModel.files != null && updatePostModel.files.Count > 0) 
+                    {
+                        FileValidationHelper.IsValidListMedia(updatePostModel.files);
+                    }
+                    listFileInfo = FileValidationHelper.GetFilesInfo(updatePostModel.files);
+                }
+                catch (Exception ex)
+                {
+                    var mess = ex.Message;
+                    if (mess.StartsWith("File-"))
+                    {
+                        var rmess = mess.Split("File-")[1];
+                        return BadRequest(new { message = rmess });
+                    }
+
+                    Console.WriteLine(mess);
+                    return StatusCode(500, new { message = "Server error. Try again!" });
+                }
+            }  
+
             try
             {
-                var listFileInfo = FileValidationHelper.GetFilesInfo(updatePostModel.files);
                 var rs = await _postService.UpdatePost(userId, id, updatePostModel, listFileInfo);
 
                 return Ok(new
@@ -251,6 +268,36 @@ namespace Server.Controllers
                     return BadRequest(new { message = message.Split("-")[1] });
                 }
                 Console.WriteLine("Like post: " + ex.Message);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
+            }
+        }
+        // share post
+        [HttpPost("{id}/share")]
+        [Authorize]
+        public async Task<IActionResult> SharePost(string id, [FromBody] SharePostModel sharePostModel)
+        {
+            try
+            {
+                var userId = User.FindFirstValue("UserId");
+
+                var rsPost = await _postService.SharePost(userId, id, sharePostModel);
+
+                return Ok(new
+                {
+                    message = "Create post success",
+                    data = rsPost
+                });
+
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                if (message.StartsWith("Post-"))
+                {
+                    return BadRequest(new { message = message.Split("-")[1] });
+                }
+                Console.WriteLine("Share post: " + ex.Message);
 
                 return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
             }

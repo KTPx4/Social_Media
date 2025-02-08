@@ -29,9 +29,21 @@ button:focus{
 .Img-History img{
     border-radius: 10px;
 }
-.p-dialog-header , .p-dialog-content, .p-dialog-footer{
-    background: transparent;
+.theme_dark {
+    .p-dialog-header , .p-dialog-content,  .p-dialog-footer
+    {
+        background: #1e1e1e;
+        color: white
+    }
 }
+.theme_light{
+    .p-dialog-header , .p-dialog-content,  .p-dialog-footer
+    {
+        background: #ececec;
+        color: black;
+    }
+}
+
 .p-dialog{
     border: 1px solid #979797;
 }

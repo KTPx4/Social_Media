@@ -1,5 +1,6 @@
 ﻿using Server.DTOs.Posts;
 using Server.Models.Account;
+using Server.Models.RelationShip;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
@@ -28,6 +29,10 @@ namespace Server.DTOs.Account
         public int CountFollowings { get; set; } = 0;
         public int CountPosts {  get; set; } = 0;
         public int CountNotifies { get; set; } = 0;
+        public bool isFollow { get; set; }
+        public bool isFriend { get; set; }
+        public FriendShip.FriendStatus FriendStatus { get; set; }
+        public FriendShip.FriendType FriendType { get; set; }
 
         public List<PostResponse> Posts { get; set; } = new List<PostResponse> { };
 
