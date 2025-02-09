@@ -348,9 +348,9 @@ namespace Server.Services.SCommunication
         public async Task<List<ConversationResponse>> GetConversation(string userId, int page = 0)
         {
             if(page < 1) page = 1;
-
+            var convId = await _context.ConvMembers.Where(c => c.UserId == new Guid(userId)).Select(c => c.ConversationId).ToListAsync();
             var conversations = await _context.Conversations
-            .Where(c => _context.ConvMembers.Any(cm => cm.ConversationId == c.Id && cm.UserId.ToString() == userId))
+            .Where(c => convId.Contains(c.Id))
             .Include(c => c.Members)
             .ThenInclude(c => c.User)
             .Include(c => c.ConvSetting)

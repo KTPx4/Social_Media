@@ -6,6 +6,7 @@ import apiClient from "../../utils/apiClient.tsx";
 import {useWebSocketContext} from "../../store/WebSocketContext.tsx";
 import InfoChatDirect from "../../components/message/InfoChatDirect.tsx";
 import InfoChatGroup from "../../components/message/InfoChatGroup.tsx";
+import { IndexedDBService } from "../../store/IndexedDBService.ts"; // Import helper
 
 enum ConversationType {
     Direct = 0,
@@ -13,7 +14,7 @@ enum ConversationType {
 }
 const MessagePage : React.FC = () =>{
     const {userId} = useStore()
-
+    const db = new IndexedDBService("ChatDB", "messages");
     // data
     const [listConversation, setListConversation] = useState([])
 
@@ -23,7 +24,7 @@ const MessagePage : React.FC = () =>{
     const {isConnected, messages, sendMessage, setNewMessages } = useWebSocketContext()
 
     const [showInfo, setShowInfo] = useState<boolean>(false)
-
+    const [isLoading, setIsLoading] = useState(true)
     useEffect(() => {
         if(messages)
         {
@@ -43,6 +44,7 @@ const MessagePage : React.FC = () =>{
     }, [messages]);
 
     useEffect(() => {
+        LoadFromLocal()
         LoadData()
     }, []);
 
@@ -51,6 +53,33 @@ const MessagePage : React.FC = () =>{
     }
     const CloseInfo = () =>{
         setShowInfo(false)
+    }
+    const LoadFromLocal = async() =>{
+        try{
+            const saveConversation = await db.getItem<{id: string; conversations: any }[]>("conversations");
+
+            if(!saveConversation) return
+            var dict = {}
+
+    // @ts-ignore
+            var data = saveConversation?.conversations
+
+            data.forEach((d)=>{
+                // @ts-ignore
+                dict[d.id] = d
+            })
+
+            setListMembers(dict)
+
+            data = data?.map( (e : any) =>{
+                return {...e, isSelected: false, time: Date.now()}
+            })
+            setListConversation(data)
+        }
+        catch (e)
+        {
+            console.log(e)
+        }
     }
     const LoadData = async()=>{
         try{
@@ -61,7 +90,7 @@ const MessagePage : React.FC = () =>{
             {
                 var dict = {}
                 var data = rs.data.data
-
+                await db.addItem({ id: "conversations", conversations: data }); // Lưu vào IndexedDB
                 data.forEach((d)=>{
                     // @ts-ignore
                     dict[d.id] = d
@@ -74,10 +103,13 @@ const MessagePage : React.FC = () =>{
                 })
                 setListConversation(data)
             }
+            setIsLoading(false)
         }
         catch (err)
         {
             console.log(err)
+            setIsLoading(false)
+
         }
     }
     const InfoContent = currentConversation === null ? null : (currentConversation.type === ConversationType.Direct ? <InfoChatDirect /> : <InfoChatGroup />)
@@ -94,7 +126,7 @@ const MessagePage : React.FC = () =>{
                 minWidth: 250,
                 backgroundColor: "transparent",
             }}>
-                <LeftInfo ClickCallBack={ClickConversation} userId={userId} listConversation={listConversation} setListConversation={setListConversation} ListMembers={listMembers}/>
+                <LeftInfo isLoading={isLoading} ClickCallBack={ClickConversation} userId={userId} listConversation={listConversation} setListConversation={setListConversation} ListMembers={listMembers}/>
             </div>
 
             <div className={"right-message"} style={{
@@ -102,7 +134,7 @@ const MessagePage : React.FC = () =>{
                 width: showInfo  ? "50%" : "75%",
                 backgroundColor: "transparent"
             }}>
-                <RightContent CurrentConversation={currentConversation} userId={userId} listConversation={listConversation} setListConversation={setListConversation} showInfo={()=>setShowInfo(!showInfo)}/>
+                <RightContent key={currentConversation?.id +Date.now()} DbContext={db} CurrentConversation={currentConversation} userId={userId} listConversation={listConversation} setListConversation={setListConversation} showInfo={()=>setShowInfo(!showInfo)}/>
             </div>
 
             <div className={"right-setting"} style={{

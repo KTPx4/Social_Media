@@ -17,7 +17,10 @@ interface WebSocketProviderProps {
     url: string;
     children: React.ReactNode;
 }
-
+enum MessageType
+{
+    Text = 0, Image = 1, Video = 2, File = 3
+}
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, children }) => {
     const [isConnected, setIsConnected] = useState(false);
     const [messages, setMessages] = useState<{ sender: string; message: string }[]>([]);
@@ -125,13 +128,13 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, child
             return null
         }
     };
-    const sendDirectMessage = async (senderId: string, receiverUserId: string, message: string, type: number) => {
+const sendDirectMessage = async (senderId: string, receiverUserId: string, message: string, type: number = MessageType.Text) => {
 
         if (connectionRef.current && isConnected && userId && receiverUserId !== userId) {
             try {
                 var body ={
                     ConversationId: receiverUserId,
-                    ReplyMessageId: null,
+                ReplyMessageId: null,
                     Content: message,
                     SenderId: senderId,
                     Type: type

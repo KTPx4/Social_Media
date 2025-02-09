@@ -6,9 +6,10 @@ import {InputText} from "primereact/inputtext";
 import {ThemeContext} from "../../ThemeContext.tsx";
 import ConversationCard from "./ConversationCard.tsx";
 import apiClient from "../../utils/apiClient.tsx";
+import {ProgressSpinner} from "primereact/progressspinner";
 
 
-const LeftInfo : React.FC<any> = ({ClickCallBack, userId, listConversation, setListConversation, ListMembers})=>{
+const LeftInfo : React.FC<any> = ({isLoading,ClickCallBack, userId, listConversation, setListConversation, ListMembers})=>{
     // theme
     const themeContext = useContext(ThemeContext);
     // @ts-ignore
@@ -21,8 +22,9 @@ const LeftInfo : React.FC<any> = ({ClickCallBack, userId, listConversation, setL
     const keyTheme = currentTheme.getKey()
 
 
+
     const ClickConversationCard = async(Conversation : any)=>{
-        var dt = listConversation.map((prev: any) => prev.id !== Conversation.id ? prev : {...prev, isSelected: true})
+        var dt = listConversation.map((prev: any) => prev.id !== Conversation.id ? {...prev, isSelected: false} : {...prev, isSelected: true})
         // @ts-ignore
         setListConversation(dt)
 
@@ -90,7 +92,10 @@ const LeftInfo : React.FC<any> = ({ClickCallBack, userId, listConversation, setL
                 overflow: "auto",
                 height: "85%"
             }}>
-
+                {isLoading && (
+                    <ProgressSpinner style={{width: '30px', height: '30px'}} strokeWidth="4" fill="transparent"
+                                     animationDuration=".5s"/>
+                )}
                 {listConversation.map( (c : any) => {
                     return(
                             <ConversationCard key={c.id + c.isSelected + c.time} Conversation={c} ClickCallback={ClickConversationCard} userId={userId} ListMembers={ListMembers}/>

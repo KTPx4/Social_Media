@@ -27,7 +27,7 @@ const FastMessage = {
     Heart: "❤️",
     Heart_2: "💘"
 }
-const RightContent : React.FC<any> = ({CurrentConversation, userId , listConversation, setListConversation, showInfo})=>{
+const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , listConversation, setListConversation, showInfo})=>{
     const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
 
     // @ts-ignore
@@ -48,11 +48,35 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId , listConvers
     const [listMessage, setListMessage] = useState([]);
     const [inputMessage, setInputMessage] = useState("")
     const [firtLoad, setFirstLoad] = useState(true);
-    const [isLoading,setLoading] = useState(true);
+    const [isLoading,setLoading] = useState(false);
     const messagesEndRef = useRef(null);
     const bodyContentRef = useRef(null);
     const [canLoad, setCanLoad] = useState(true);
     const [isScrollTop, setScrollTop] = useState(false);
+
+    const LoadLocal = async () =>{
+        try{
+            var id = CurrentConversation.id
+
+            // @ts-ignore
+            const saveMessage = await DbContext.getItem<{id: string; messages: any }[]>(id);
+
+            if(!saveMessage) return
+
+            // @ts-ignore
+            var data = saveMessage?.messages
+
+            if(data.length > 0)
+            {
+                setListMessage(data)
+
+            }
+        }
+        catch (e)
+        {
+            console.log(e)
+        }
+    }
     const LoadMessages  = async()=>{
         if(!canLoad) {
             setTimeout(()=>{
@@ -60,10 +84,11 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId , listConvers
             }, 1000)
             return
         }
+        setLoading(true)
         try{
            if(page > 1)  setScrollTop(true)
             var rs = await apiClient.get(`/chat/conversation/${CurrentConversation.id}?page=${page}`)
-            console.log("get message: ", rs)
+            console.log("get message: ", rs, page)
             var status = rs.status
             if(status === 200)
             {
@@ -71,7 +96,14 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId , listConvers
                 if(data.length > 0)
                 {
                     // @ts-ignore
-                    setListMessage((prev) => [...rs.data.data, ...prev])
+                   if(page === 1)
+                   {
+                       setListMessage(data)
+                       await DbContext.addItem({ id: CurrentConversation.id, messages: data }); // Lưu vào IndexedDB
+                   }
+                   else{
+                      await UpdateListMess(rs.data.data)
+                   }
                 }
                 else{
                     setCanLoad(false)
@@ -83,6 +115,21 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId , listConvers
         catch (err)
         {
             console.log(err)
+        }
+    }
+    const UpdateListMess = async(data) =>{
+        data = [...data, ...listMessage]
+        setListMessage(data)
+
+        var id = CurrentConversation.id
+        // @ts-ignore
+        const saveMessage = await DbContext.getItem<{id: string; messages: any }[]>(id);
+
+        const listOld = saveMessage.messages.map(ms => ms.id)
+        data.filter((m)=> !listOld.includes(m.id))
+        if(saveMessage.length > 0)
+        {
+            await DbContext.addItem({ id: CurrentConversation.id, messages: data }); // Lưu vào IndexedDB
         }
     }
     const SendLike = async()=>{
@@ -141,6 +188,8 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId , listConvers
             await LoadMessages();
         }
     };
+
+
     useEffect(() => {
         if(messages && CurrentConversation && messages.sender !== userId && messages.conversationId === CurrentConversation.id)
         {
@@ -150,15 +199,20 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId , listConvers
 
     useEffect(() => {
         console.log("1 times", isScrollTop)
-        if(listMessage && listMessage.length > 0 && !isScrollTop)
+        if(listMessage && listMessage.length > 0 )
         {
-            scrollEndMess()
+            if( !isScrollTop)scrollEndMess()
+
         }
+
     }, [listMessage]);
 
     useEffect(() => {
         if(CurrentConversation)
         {
+            LoadLocal()
+            setPage(1)
+            setListMessage(CurrentConversation.listMessage ?? [])
             setNameChat(CurrentConversation.name)
             var members = CurrentConversation.members
             var dict = {}
@@ -183,8 +237,10 @@ const RightContent : React.FC<any> = ({CurrentConversation, userId , listConvers
                 setNameChat(op.name)
                 setImgGroup(op.imageUrl)
             }
+            setTimeout(()=>{
+                LoadMessages()
 
-            LoadMessages()
+            }, 400)
 
         }
 
