@@ -5,10 +5,8 @@ start
 repeat: Fill In Login Credential ; 
 : Click Login;  
 |#lightgray|System|
-backward:Show Error Message
-Promt User To Re-Enter Credentials;
+backward:Show Error Message;
 repeat while(Info  Is Valid) is (No) not (Yes)
-:Redirected To User Homepage 
-Promt User To Re-Enter Credentials; 
+:Redirected To User Homepage;
 stop
 @enduml
