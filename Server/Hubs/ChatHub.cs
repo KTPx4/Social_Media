@@ -98,7 +98,7 @@ namespace Server.Hubs
 
             if (string.IsNullOrEmpty(senderUserId) || string.IsNullOrEmpty(conversationId))
             {
-                return ResponseModel<MessageResponse>.BadRequest("Sender id not exists");
+                return ResponseModel<MessageResponse>.BadRequest("Sender or conversation id not exists");
             }
 
             RsProcessMessage RsProcessMessage = null;
@@ -132,6 +132,48 @@ namespace Server.Hubs
 
             return ResponseModel<MessageResponse>.Ok(RsProcessMessage.messageResponse);
 
+        }
+        
+        public async Task<ResponseModel<MessageResponse>> SendReactMessage(ReactMessageModel reactMessageModel)
+        {
+            var senderUserId = reactMessageModel.SenderId;
+            var messageId = reactMessageModel.MessageId;
+            var react = reactMessageModel.React;
+
+
+            if (string.IsNullOrEmpty(senderUserId.ToString()) || string.IsNullOrEmpty(messageId.ToString()))
+            {
+                return ResponseModel<MessageResponse>.BadRequest("Sender or message id not exists");
+            }
+
+            RsProcessReactMessage RsProcessMessage = null;
+
+            try
+            {
+                RsProcessMessage = await _communicationService.ProcessReactMessageAsync( reactMessageModel);
+            }
+            catch (Exception ex)
+            {
+                var mess = ex.Message;
+                var rsMess = "Error. Try again!";
+
+                if (mess.StartsWith("ErrMess-"))
+                {
+                    rsMess = mess.Substring("ErrMess-".Length);
+                }
+
+                return ResponseModel<MessageResponse>.BadRequest(rsMess);
+
+            }
+
+            // find id of user in list online
+            var receiverConnections = _connectionManager.GetConnections(RsProcessMessage.ToIds);
+            foreach (var connectionId in receiverConnections)
+            {
+                await _hubContext.Clients.Client(connectionId).SendAsync("ReactMessage", RsProcessMessage.FromId, RsProcessMessage.reactResponse);
+            }
+
+            return ResponseModel<MessageResponse>.Ok(null);
         }
     }
 }

@@ -7,3 +7,8 @@
 .message-friend{
     justify-self: flex-start;
 }
+.message:hover {
+    .btn-more{
+        display: block !important;
+    }
+}

@@ -27,7 +27,7 @@ const FastMessage = {
     Heart: "❤️",
     Heart_2: "💘"
 }
-const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , listConversation, setListConversation, showInfo})=>{
+const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , listConversation, setListConversation, showInfo,   onSelectMessageForReaction })=>{
     const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
 
     // @ts-ignore
@@ -309,7 +309,9 @@ const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , 
             }}>
                 {listMessage.map((m)=>
                     // @ts-ignore
-                    <MessageCard key={m.id} ListMembers={listMembers} Message={m}/>
+                    <MessageCard key={m.id} ListMembers={listMembers} Message={m}
+                                 // onSelectReaction={onSelectMessageForReaction}
+                    />
                 )}
                 {/* Element dùng để cuộn xuống cuối */}
                 <div ref={messagesEndRef}/>
