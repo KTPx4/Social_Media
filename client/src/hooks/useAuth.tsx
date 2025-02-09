@@ -43,11 +43,12 @@ const useAuth = (token: string): UseAuthReturn => {
                     } else {
                         setIsAuthenticated(false);
                     }
+                    setLoading(false);
                 }
             } catch (err) {
                 if (isMounted) setIsAuthenticated(false);
             } finally {
-                if (isMounted) setLoading(false);
+
             }
         };
 

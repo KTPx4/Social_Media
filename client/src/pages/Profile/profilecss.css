@@ -1,0 +1,10 @@
+.theme_dark{
+    .menu-active{
+        background-color: #1e1e1e;
+    }
+}
+.theme_light{
+    .menu-active{
+        background-color: #ececec;
+    }
+}

@@ -256,7 +256,7 @@ namespace Server.Services
                 throw new Exception("Account-You not allow to view this profile");
             }
 
-            profile.isFriend = relation.IsFriend;
+            profile.isFriend = relation?.IsFriend ?? false;
             profile.FriendStatus = relation?.Status ?? FriendShip.FriendStatus.Normal;
             profile.FriendType = relation?.Type ?? FriendShip.FriendType.None;
 

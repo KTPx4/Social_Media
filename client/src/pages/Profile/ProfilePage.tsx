@@ -7,30 +7,115 @@ import { Button } from "primereact/button";
 import { data, useNavigate } from "react-router-dom";
 
 import { Menubar } from "primereact/menubar";
-import { useContext, useRef, useState } from "react";
+import React, {useContext, useEffect, useRef, useState} from "react";
 import EditProfileModal from "../../components/profile/EditProfileModal";
 import useStore from "../../store/useStore";
 import ProfilePostsGrid from "../../components/profile/ProfilePostsGrid";
 import { Toast } from "primereact/toast";
 import ListPostComponent from "../../components/profile/ListPostComponent.tsx";
-
+import apiClient from "../../utils/apiClient.tsx";
+import {ProgressSpinner} from "primereact/progressspinner";
+import PostCard from "../../components/post/PostCard.tsx";
+import "./profilecss.css"
+import {ThemeContext} from "../../ThemeContext.tsx";
 const ProfilePage = () => {
   const { myAccount } = useStore();
   const navigate = useNavigate(); //  const username = queryParams.get("username"); //  const token = queryParams.get("token"); //  const [passwordError, setPasswordError] = useState(""); //  const [NewPass, setPassword] = useState(""); //  async function handleResetPassword() { //   let error = ""; //   if (!NewPass) { //    error = "This field can not be empty"; //   } else if (NewPass.length < 6 || NewPass.length > 30) { //    error = "Password must be between  6 to 30  characters long"; //   } //   if (!error) { //    try { //     await apiClient.get("/user/reset", { //      params: { username, token, NewPass }, //     }); //     navigate("/"); //    } catch (err) { //     if (err instanceof Error) { //      error = err.message; //     } //    } //   } //   setPasswordError(error); //  }
   const [visible, setVisible] = useState(false);
   const [postType, setPostType] = useState("posts");
+  const [callBackProps, setCallBackProps] = useState(null)
+  const refBody = useRef(null);
+  const[page, setPage]= useState(1)
+  const [listPost, setListPost] = useState([])
+  const [canLoad, setCanLoad] = useState(true)
+  const [loading, setLoading] = useState(true)
+  const [listComponentPost, setListComponentPost] = useState([])
+  // theme
+  const themeContext = useContext(ThemeContext);
+  // @ts-ignore
+  const { currentTheme, changeTheme } = themeContext;
+  const keyTheme = currentTheme.getKey()
+
   const handleSetPostType = (type: string) => {
     return () => {
-      setPostType(type);
+      if(type === postType) return
+      setPage(1)
+      setListPost([])
+      setListComponentPost([])
+      setLoading(true)
+      setTimeout(()=>{
+        setPostType(type);
+      }, 400)
+
     };
   };
 
+  useEffect(() => {
+    if(postType)
+    {
+        setTimeout(()=>{
+          loadPost()
+        }, 400)
+    }
+  }, [postType]);
+
+  const loadPost = async()=>{
+    if(!canLoad ) return
+    setLoading(true)
+    console.log(postType)
+    try{
+      var rs = await apiClient.get(`/user/profile/${myAccount?.userProfile}/${postType}?page=${page}`)
+      var status = rs.status
+      if(status === 200)
+      {
+
+        var dt = rs.data.data
+        if(!dt || dt.length < 1) setCanLoad(false)
+        else {
+          var newData = dt.filter(p => !listPost.map(post => post.id).includes(p.id))
+          var dataSource = page === 1 ? dt : newData
+          var newComponents = dataSource.map((p) => <PostCard post={p} isHideComment={true} key={p.id+Date.now()}/>)
+
+          if(page === 1)
+          {
+            setListPost(dt)
+
+            setListComponentPost(newComponents)
+          }
+          else{
+            setListPost((prev) => [...prev, ...newData])
+
+            setListComponentPost((prev) => [...prev, ...newComponents])
+          }
+          setPage(page+1)
+        }
+
+      }
+    }
+    catch (e)
+    {
+      console.log(e)
+    }
+    setLoading(false)
+
+  }
+
+  const onScrollPost = async()=>{
+    if(!refBody.current || loading) return
+    const { scrollTop, scrollHeight, clientHeight } = refBody.current;
+
+    if (scrollTop + clientHeight >= scrollHeight - 1) {
+
+      await loadPost()
+    }
+  }
 
   const items = [
     {
       label: "POSTS",
       icon: "pi pi-table",
       command: handleSetPostType("posts"),
+      className: postType === "posts" ? "menu-active" : "menu-default",
     },
     {
       separator: true,
@@ -39,6 +124,7 @@ const ProfilePage = () => {
       label: "SAVED",
       icon: "pi pi-bookmark",
       command: handleSetPostType("saves"),
+      className: postType === "saves" ? "menu-active" : "menu-default",
     },
     {
       separator: true,
@@ -53,7 +139,7 @@ const ProfilePage = () => {
   ];
 
   return (
-    <div className="flex-column h-screen w-screen " style={{
+    <div ref={refBody} onScroll={onScrollPost} className="flex-column h-screen w-screen " style={{
       height: "100vh",
       overflow: "auto"
     }}>
@@ -112,14 +198,26 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      <div className="w-full h-auto ">
+      <div className={"w-full h-auto " +keyTheme}>
         <Menubar model={items} style={{background: "transparent", border: "none"}}/>
-        {/*<Toast ref={toast} /> */}
-        {/*<ProfilePostsGrid*/}
-        {/*  postType={postType}*/}
-        {/*  userProfile={myAccount?.userProfile}*/}
-        {/*></ProfilePostsGrid>*/}
-        <ListPostComponent userProfile={myAccount?.userProfile} postType={postType}/>
+        <div style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center"
+        }}>
+
+          {listComponentPost?.map((post)=>{
+            return post
+          })}
+          {(!listComponentPost || listComponentPost?.length < 1) && !loading && (
+              <h1>Nothing to show here</h1>
+          )}
+          {loading && (
+              <ProgressSpinner style={{width: '30px', height: '30px'}} strokeWidth="4" fill="transparent"
+                               animationDuration=".5s"/>
+          )}
+        </div>
       </div>
     </div>
   );
