@@ -21,6 +21,7 @@ import historyUpdate from "./HistoryUpdate.tsx";
 import {Image} from "primereact/image";
 import {Dialog} from "primereact/dialog";
 import {Dropdown} from "primereact/dropdown";
+import {useNavigate} from "react-router-dom";
 interface PostCardProps {
     post: any,
     isHideComment: boolean,
@@ -34,9 +35,10 @@ const PostType = {
 const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare= false}) => {
     // @ts-ignore
     const [Post, setPost] = useState(post)
-    const {userId, setId} = useStore()
+    const {userId, setId, myAccount} = useStore()
 
     // var {id ,authorId,  createdAt, authorProfile, authorImg, content, listMedia} = Post
+    const navigate = useNavigate();
 
     //
     const [isLike, setIsLike] = useState<boolean>(post?.isLike ?? false);
@@ -204,7 +206,15 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
 
     }
 
-
+    const toProfile = ()=>{
+        if(Post.authorProfile === myAccount.userProfile)
+        {
+            navigate(`/home/profile`)
+        }
+        else{
+            navigate(`/home/profile/${Post.authorProfile}`)
+        }
+    }
 
 //////////////// like/unlike post
     const actionPost = async( ) =>{
@@ -495,9 +505,9 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
                     {/* Header */}
                     <div className="post-header mx-2 my-3">
                         <div className="post-header-profile">
-                            <Avatar image={Post.authorImg} size="large" shape="circle" className="p-mr-2"/>
+                            <Avatar onClick={toProfile} image={Post.authorImg} size="large" shape="circle" className="p-mr-2"/>
                             <div style={{marginLeft: 5}}>
-                                <small className="p-m-0 font-bold"
+                                <small onClick={toProfile} className="p-m-0 font-bold"
                                        style={{color: textColor}}>{Post.authorProfile}</small>
                                 <br></br>
                                 <small title={toHCMTime(Post.createdAt)} className="p-text-secondary" style={{
@@ -670,9 +680,9 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
                         <div className="post-header-profile">
 
 
-                            <Avatar image={Post?.authorImg} size="large" shape="circle" className="p-mr-2"/>
+                            <Avatar onClick={toProfile} image={Post?.authorImg} size="large" shape="circle" className="p-mr-2"/>
                             <div style={{marginLeft: 5}}>
-                                <small className="p-m-0 font-bold"
+                                <small onClick={toProfile} className="p-m-0 font-bold"
                                        style={{color: textColor}}>{Post?.authorProfile ?? ""}</small>
                                 <br></br>
                                 <small title={toHCMTime(Post?.createdAt)} className="p-text-secondary" style={{

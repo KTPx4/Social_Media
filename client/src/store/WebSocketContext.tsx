@@ -6,9 +6,11 @@ import useStore from "./useStore.tsx";
 interface WebSocketContextProps {
     isConnected: boolean;
     messages: { sender: string; message: string }[];
+    reactMessage: any;
     sendMessage: (senderId: string, receiverUserId: string, message: string, type: number ) => any;
     setNewMessages: any;
     sendDirectMessage: any;
+    sendReact: any;
 }
 
 const WebSocketContext = createContext<WebSocketContextProps | undefined>(undefined);
@@ -17,10 +19,14 @@ interface WebSocketProviderProps {
     url: string;
     children: React.ReactNode;
 }
-
+enum MessageType
+{
+    Text = 0, Image = 1, Video = 2, File = 3
+}
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, children }) => {
     const [isConnected, setIsConnected] = useState(false);
     const [messages, setMessages] = useState<{ sender: string; message: string }[]>([]);
+    const [reactMessage, setReactMessage] = useState<{ sender: string; message: string }[]>([]);
     const connectionRef = useRef<HubConnection | null>(null);
     const reconnectTimeout = useRef<NodeJS.Timeout | null>(null); // Lưu timeout để reconnect
     const {userId} = useStore()
@@ -49,9 +55,14 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, child
 
                 // Lắng nghe tin nhắn từ server
                 connection.on("ReceiveMessage", (sender: string, message: string) => {
-                    console.log("📩 Message received:", { sender, message });
+
                     // @ts-ignore
                     setMessages({ sender, conversationId: message.conversationId, message });
+                });
+
+                connection.on("ReactMessage", (sender: string, message: string) => {
+                    // @ts-ignore
+                    setReactMessage({ sender, conversationId: message.conversationId, message });
                 });
 
                 // Xóa timeout nếu kết nối thành công
@@ -101,12 +112,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, child
 
         if (connectionRef.current && isConnected && userId && receiverUserId !== userId) {
             try {
-            // public Guid ConversationId { get; set; }
-            // public Guid? ReplyMessageId { get; set; }
-            //
-            // public MessageType Type { get; set; } = MessageType.Text;
-            //
-            // public string Content { get; set; }
+
                 var body ={
                     ConversationId: receiverUserId,
                     ReplyMessageId: null,
@@ -125,13 +131,13 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, child
             return null
         }
     };
-    const sendDirectMessage = async (senderId: string, receiverUserId: string, message: string, type: number) => {
+    const sendDirectMessage = async (senderId: string, receiverUserId: string, message: string, type: number = MessageType.Text) => {
 
         if (connectionRef.current && isConnected && userId && receiverUserId !== userId) {
             try {
                 var body ={
                     ConversationId: receiverUserId,
-                    ReplyMessageId: null,
+                ReplyMessageId: null,
                     Content: message,
                     SenderId: senderId,
                     Type: type
@@ -147,8 +153,28 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, child
             return null
         }
     };
+    const sendReactMessage = async (senderId: string, messageId: string, react: string) => {
+
+        if (connectionRef.current && isConnected && userId) {
+            try {
+                var body ={
+                    SenderId: senderId,
+                    MessageId: messageId,
+                    React: react,
+                }
+                var rs = await connectionRef.current.invoke("SendReactMessage", body);
+                return rs
+            } catch (err) {
+                console.error("❌ SendMessage failed:", err);
+                return null
+            }
+        } else {
+            console.error("⚠️ Can not send message");
+            return null
+        }
+    };
     return (
-        <WebSocketContext.Provider value={{ isConnected, messages, sendMessage, sendDirectMessage , setNewMessages:{setMessages}}}>
+        <WebSocketContext.Provider value={{ isConnected, messages, reactMessage, sendMessage, sendDirectMessage , setNewMessages:{setMessages} , sendReact:{sendReactMessage}}}>
             {children}
         </WebSocketContext.Provider>
     );

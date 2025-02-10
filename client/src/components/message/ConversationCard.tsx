@@ -73,7 +73,7 @@ const ConversationCard : React.FC<CardProps> = ({Conversation, ClickCallback, us
         <>
             <div
 
-                onClick={()=>ClickCallback(Conversation)}
+
                 className="ConversationCard"
                 style={{
                     marginTop: 3,
@@ -86,12 +86,12 @@ const ConversationCard : React.FC<CardProps> = ({Conversation, ClickCallback, us
                 }}
             >
 
-                <Avatar style={{minWidth: 30, minHeight: 30}}  image={imgGroup} size="normal" shape="circle" className="p-mr-2">
+                <Avatar   onClick={()=>ClickCallback(Conversation)} style={{minWidth: 30, minHeight: 30}}  image={imgGroup} size="normal" shape="circle" className="p-mr-2">
 
                 </Avatar>
 
-                <div style={{flexGrow: 1, width:"60%"}}>
-                    <span style={{fontWeight: "bold", color: textColor}}>{nameChat}</span>
+                <div   onClick={()=>ClickCallback(Conversation)} style={{flexGrow: 1, width:"60%"}}>
+                    <span  style={{fontWeight: "bold", color: textColor}}>{nameChat}</span>
 
                     <div style={{marginTop: 5,display: "flex", alignItems: "center", width: "100%"}}>
                         <p style={{

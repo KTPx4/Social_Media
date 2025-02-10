@@ -17,11 +17,17 @@ namespace Server.Services.SCommunication
         public Guid FromId;
         public List<Guid> ToIds;
     }
-
+    public class RsProcessReactMessage
+    {
+        public ReactMessageResponse reactResponse;
+        public Guid FromId;
+        public List<Guid> ToIds;
+    }
     public interface ICommunicationService
     {
         Task<RsProcessMessage> ProcessMessageAsync(string senderUserId, MessageModel messageModel);
         Task<RsProcessMessage> ProcessDirectMessageAsync(string senderUserId, MessageModel messageModel);
+        Task<RsProcessReactMessage> ProcessReactMessageAsync(ReactMessageModel reactMessageModel);
 
         Task<ConversationResponse> CreateConversation(string userId, CreateGroupModel createGroupModel, FileInfoDto fileInfoDto);
         Task<List<ConversationResponse>> GetGroups(string userId);
@@ -134,6 +140,66 @@ namespace Server.Services.SCommunication
 
             return rs;
 
+        }
+        public async Task<RsProcessReactMessage> ProcessReactMessageAsync(ReactMessageModel reactMessageModel)
+        {
+            var senderUserId = reactMessageModel.SenderId;
+            var messageId = reactMessageModel.MessageId;
+            var react = reactMessageModel.React;
+
+            var Message = await _context.Messages.Where(m => m.Id == messageId)
+                .Include(m => m.Conversation)
+                .ThenInclude(c => c.Members)
+                .FirstOrDefaultAsync();
+               
+            if(Message == null) throw new Exception("ErrMess-Message not exists");
+            var React = await _context.MessagesReactions.Where(r => r.UserId == senderUserId).FirstOrDefaultAsync();
+            var isDeleted = false;
+            if(React == null)
+            {
+                React = new MessageReaction()
+                {
+                    UserId = senderUserId,
+                    MessageId = messageId,
+                    React = react
+                };
+                await _context.MessagesReactions.AddAsync(React);
+            }
+            else
+            {
+                if(React.React.Equals(react))
+                {
+                    _context.MessagesReactions.Remove(React);
+                    isDeleted = true;
+                }
+                else
+                {
+                    React.React = react;
+                }
+            }
+            await _context.SaveChangesAsync();
+
+            var listMember = Message.Conversation?.Members ?? [];
+
+            List<Guid> listTo = listMember.Where(m => m.UserId != senderUserId).Select(m => m.UserId).ToList();
+
+            var messResponse = new ReactMessageResponse()
+            {
+                ConversationId = Message.Conversation?.Id ?? new Guid(),
+                MessageId = messageId,
+                React = react,
+                SenderId = senderUserId,
+                isDelete= isDeleted
+            };
+
+            RsProcessReactMessage rs = new RsProcessReactMessage()
+            {
+                FromId = senderUserId,
+                ToIds = listTo,
+                reactResponse = messResponse
+            };
+
+            return rs;
         }
         public  async Task<RsProcessMessage> ProcessDirectMessageAsync(string senderUserId, MessageModel messageModel)
         {
@@ -348,9 +414,9 @@ namespace Server.Services.SCommunication
         public async Task<List<ConversationResponse>> GetConversation(string userId, int page = 0)
         {
             if(page < 1) page = 1;
-
+            var convId = await _context.ConvMembers.Where(c => c.UserId == new Guid(userId)).Select(c => c.ConversationId).ToListAsync();
             var conversations = await _context.Conversations
-            .Where(c => _context.ConvMembers.Any(cm => cm.ConversationId == c.Id && cm.UserId.ToString() == userId))
+            .Where(c => convId.Contains(c.Id))
             .Include(c => c.Members)
             .ThenInclude(c => c.User)
             .Include(c => c.ConvSetting)

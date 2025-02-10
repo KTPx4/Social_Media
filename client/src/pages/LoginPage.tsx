@@ -65,11 +65,13 @@ const LoginPage = () => {
     if (isValid) {
       try {
         const data = await apiClient.post("/user/login", userInformation);
-        if (rememberMe) {
-          localStorage.setItem("token", data.data.token);
-        } else {
-          sessionStorage.setItem("token", data.data.token);
-        }
+        // if (rememberMe) {
+        //   localStorage.setItem("token", data.data.token);
+        // } else {
+        //   sessionStorage.setItem("token", data.data.token);
+        // }
+        localStorage.setItem("token", data.data.token);
+
         console.log("Set id: ",data.data.data.id)
         // setUserId(data.data.data.id);
         // You can add a success message or navigate to another page here

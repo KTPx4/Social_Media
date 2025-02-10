@@ -216,7 +216,8 @@ namespace Server.Services
             var profile = await context.Users
              .Where(u => u.UserProfile.ToLower().Trim() == userProfile.ToLower().Trim())
              .Include(u => u.Followers)
-             .Select(u => new UserResponse
+             .Include(u => u.Following)
+             .Select(u => new UserResponse()
              {
                  Id = u.Id,
                  UserName = u.UserName,
@@ -229,7 +230,7 @@ namespace Server.Services
                  ImageUrl = $"{_PublicUrl}/{u.Id}/{u.ImageUrl}",
                  IsDeleted = u.IsDeleted,
                  CreatedAt = u.CreatedAt ,  
-                 isFollow = u.Followers.Any(f => f.FollowerId.ToString() == userId),
+                 isFollow = u.Followers.Select(f => f.FollowerId.ToString()).Contains(userId),
                  // Đếm Followers, Followings và Posts
                  CountFollowers = u.Followers.Count(),
                  CountFollowings = u.Following.Count(),
@@ -244,19 +245,19 @@ namespace Server.Services
              })
              .FirstOrDefaultAsync();
 
-
+    
             if (profile == null) return null;
 
             var relation = await context.FriendShips
                 .Where(f => f.UserId.ToString() == userId && f.FriendId == profile.Id)
                 .FirstOrDefaultAsync();
 
-            if(relation != null && relation.Status != FriendShip.FriendStatus.Normal)
+            if(relation != null && relation.Status == FriendShip.FriendStatus.Obstructed)
             {
                 throw new Exception("Account-You not allow to view this profile");
             }
 
-            profile.isFriend = relation.IsFriend;
+            profile.isFriend = relation?.IsFriend ?? false;
             profile.FriendStatus = relation?.Status ?? FriendShip.FriendStatus.Normal;
             profile.FriendType = relation?.Type ?? FriendShip.FriendType.None;
 
@@ -597,14 +598,38 @@ namespace Server.Services
 
         public async Task<UserResponse> GetMyInfo(string userId)
         {
-            var rs = await context.Users.FirstOrDefaultAsync(u => u.Id.ToString() == userId);
+            var rs = await context.Users
+                .Where(u => u.Id.ToString() == userId)
+                .Include(u => u.Followers)
+                .Include(u=>u.Following)
+                .Select(u => new UserResponse
+                {
+                    Id = u.Id,
+                    UserName = u.UserName,
+                    UserProfile = u.UserProfile,
+                    Bio = u.Bio,
+                    Name = u.Name,
+                    Gender = u.Gender,
+                    Email = u.Email,
+                    Phone = u.Phone,
+                    ImageUrl = $"{_PublicUrl}/{u.Id}/{u.ImageUrl}",
+                    IsDeleted = u.IsDeleted,
+                    CreatedAt = u.CreatedAt,
+                    // Đếm Followers, Followings và Posts
+                    CountFollowers = u.Followers.Count(),
+                    CountFollowings = u.Following.Count(),
+                    CountPosts = u.MyPosts.Count(),
+
+                     
+                })
+                .FirstOrDefaultAsync();
             
             if (rs != null)
             {
-                var res = new UserResponse(rs, _ServerHost, $"{_ServerHost}/{_AccessImgAccount}");
+                
                 var notifies = await context.UserNotifies.Where(n => n.UserId == rs.Id && n.IsSeen == false).CountAsync();
-                res.CountNotifies = notifies;
-                return res;
+                rs.CountNotifies = notifies;
+                return rs;
             }
             return null;
         }
