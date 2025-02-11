@@ -33,6 +33,10 @@ namespace Server.DTOs.Communication
         {
             initValue(conversation, serverHost, accessImg);
             this.LastMessage = new MessageResponse(lastMessage);
+            if (lastMessage.Seens != null && lastMessage.Seens.Count > 0)
+            {
+                this.LastMessage.SeenIds = lastMessage.Seens.Select(s => s.UserId.ToString()).ToList();
+            }
             this.UnRead = unRead;
         }
 

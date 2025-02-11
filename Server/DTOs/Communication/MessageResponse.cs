@@ -41,6 +41,7 @@ namespace Server.DTOs.Communication
                 this.IsSystem = message.IsSystem;
                 this.IsDeleted = message.IsDeleted;
                 this.CreatedAt = message.CreatedAt;
+               
             }
         }
     }

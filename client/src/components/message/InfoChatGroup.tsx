@@ -1,10 +1,19 @@
-import React from "react";
+import React, {useContext} from "react";
 import {Avatar} from "primereact/avatar";
 import {Button} from "primereact/button";
 import {PanelMenu} from "primereact/panelmenu";
 import {MenuItem} from "primereact/menuitem";
+import {ThemeContext} from "../../ThemeContext.tsx";
 
 const  InfoChatGroup : React.FC = () =>{
+    // theme
+    const themeContext = useContext(ThemeContext);
+    // @ts-ignore
+    const { currentTheme, changeTheme } = themeContext;
+    const  cardColor = currentTheme.getCard()
+    const keyTheme = currentTheme.getKey()
+    const textHintColor = currentTheme.getHint()
+
     const items: MenuItem[] = [
         {
             label: 'Media, File',
@@ -23,38 +32,34 @@ const  InfoChatGroup : React.FC = () =>{
             ]
         },
         {
-            label: 'Cloud',
+            label: 'Customize chat',
             icon: 'pi pi-cloud',
             items: [
                 {
-                    label: 'Upload',
-                    icon: 'pi pi-cloud-upload'
+                    label: 'Edit name',
+                    icon: <img src="/svg/text_icon.svg" alt="create" style={{width: 20, height: 20, marginRight: 5}}/>
                 },
                 {
-                    label: 'Download',
-                    icon: 'pi pi-cloud-download'
+                    label: 'Change picture',
+                    icon: 'pi pi-image'
                 },
                 {
-                    label: 'Sync',
-                    icon: 'pi pi-refresh'
+                    label: 'View members',
+                    icon: 'pi pi-users'
                 }
             ]
         },
         {
-            label: 'Devices',
+            label: 'Privacy',
             icon: 'pi pi-desktop',
             items: [
                 {
-                    label: 'Phone',
-                    icon: 'pi pi-mobile'
+                    label: 'Report',
+                    icon: 'pi pi-exclamation-triangle'
                 },
                 {
-                    label: 'Desktop',
-                    icon: 'pi pi-desktop'
-                },
-                {
-                    label: 'Tablet',
-                    icon: 'pi pi-tablet'
+                    label: 'Leave',
+                    icon: 'pi pi-sign-out'
                 }
             ]
         }
@@ -64,6 +69,7 @@ const  InfoChatGroup : React.FC = () =>{
         <div style={{
             display: "flex",
             flexDirection: "column",
+            alignItems:"center",
             padding: 10,
             marginTop: 10
         }}>
@@ -73,7 +79,7 @@ const  InfoChatGroup : React.FC = () =>{
                 minWidth: 70
             }} shape={"circle"} size={"large"} />
             {/*name*/}
-            <h1 style={{alignSelf: "center", width: "fit-content", maxWidth: 250, textOverflow: "ellipsis",overflow: "hidden",}}>Namedddddddddddddddddddddddddddddddddddddddddd</h1>
+            <h1 style={{  width: "fit-content", maxWidth: 250, textOverflow: "ellipsis",overflow: "hidden",}}>Namedddddddddddddddddddddddddddddddddddddddddd</h1>
 
             <div style={{
                 display: "flex",
@@ -90,7 +96,7 @@ const  InfoChatGroup : React.FC = () =>{
                 </div>
             </div>
 
-            <PanelMenu model={items} className="w-full md:w-20rem" />
+            <PanelMenu  style={{marginTop: 10, backgroundColor: "transparent", width: "100% !important"}} model={items} className={`w-full md:w-20rem ${keyTheme}`} />
 
         </div>
     )

@@ -15,6 +15,33 @@ a{
   color: magenta;
   text-decoration: none;
 }
+.p-panelmenu{
+  width: 100% !important;
+}
+.theme_dark {
+  .p-dialog-header , .p-dialog-content,  .p-dialog-footer, .p-panelmenu-content , .p-panelmenu-header-content
+  {
+    background: #1e1e1e !important;
+    border: none;
+    color: white !important;
+  }
+  .p-panelmenu-header-content a{
+    color: white !important;
+  }
+}
+.theme_light{
+  .p-dialog-header , .p-dialog-content,  .p-dialog-footer, .p-panelmenu-content,  .p-panelmenu-header-content
+  {
+    background: #ececec !important;
+    border: none;
+    color: black !important;
+  }
+  .p-panelmenu-header-content a{
+    color: black !important;
+  }
+}
+
+
 ::-webkit-scrollbar {
   width: 3px; /* Chiều rộng thanh cuộn */
 }

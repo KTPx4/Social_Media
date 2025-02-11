@@ -6,6 +6,7 @@ using Server.DTOs.Communication;
 using Server.DTOs.Posts;
 using Server.Hubs;
 using Server.Models.Account;
+using Server.Models.Communication;
 using Server.Modules;
 using Server.Services.SCommunication;
 using Server.Services.SPosts;
@@ -149,6 +150,107 @@ namespace Server.Controllers
                     message = "Get groups chat success",
                     data = rs
                 });
+            }
+            catch (Exception ex)
+            {
+                var mess = ex.Message;
+                if (mess.StartsWith("Chat-"))
+                {
+                    return BadRequest(new { message = mess.Split("-")[1] });
+                }
+                Console.WriteLine("Get conversation:" + mess);
+                return StatusCode(500, new { message = "Server Error. Try Again" });
+            }
+        }
+
+        [HttpGet("conversation/{id}/media")]
+        [Authorize]
+        public async Task<IActionResult> GetMedia(string id, [FromQuery] int page = 1)
+        {
+            try
+            {
+                var userId = User.FindFirstValue("UserId");
+                var rs = await _communicationService.GetMedia(userId, id, page);
+                return Ok(new
+                {
+                    message = "Get groups chat success",
+                    data = rs
+                });
+            }
+            catch (Exception ex)
+            {
+                var mess = ex.Message;
+                if (mess.StartsWith("Chat-"))
+                {
+                    return BadRequest(new { message = mess.Split("-")[1] });
+                }
+                Console.WriteLine("Get conversation:" + mess);
+                return StatusCode(500, new { message = "Server Error. Try Again" });
+            }
+        }
+
+        [HttpPost("conversation/{id}/file")]
+        [Authorize]
+        public async Task<IActionResult> SendFile(string id, SendFileModel sendFileModel)        
+        {
+            try
+            {
+                var file = sendFileModel.file;
+                // Kiểm tra file
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest(new { message = "File is required" });
+                }
+
+                // Chuyển conversationId sang Guid
+                if (!Guid.TryParse(id, out Guid convId))
+                {
+                    return BadRequest(new { message = "Invalid conversation id" });
+                }
+                // Lấy userId từ claims và chuyển sang Guid
+                var userIdString = User.FindFirstValue("UserId");
+                if (!Guid.TryParse(userIdString, out Guid userId))
+                {
+                    return Unauthorized(new { message = "Invalid user id" });
+                }
+                var rs = await _communicationService.SendFile(userIdString, id, file);
+
+                //await _hubContext.Clients.User(receiverUserId).SendAsync("ReceiveMessage", messageModel.SenderId, messageModel.Content);
+
+
+                return Ok(new
+                {
+                    message = "Send file success",
+                    data = rs
+                });
+
+            }
+            catch (Exception ex)
+            {
+                var mess = ex.Message;
+                if (mess.StartsWith("Chat-"))
+                {
+                    return BadRequest(new { message = mess.Split("-")[1] });
+                }
+                Console.WriteLine("Get conversation:" + mess);
+                return StatusCode(500, new { message = "Server Error. Try Again" });
+            }
+        }
+
+        [HttpPost("conversation/{id}/seen")]
+        [Authorize]
+        public async Task<IActionResult> SetSeenMessage(string id)
+        {
+            try
+            {
+                var userId = User.FindFirstValue("UserId");
+               
+                var rs = await _communicationService.SetSeen(userId, id);
+
+                //await _hubContext.Clients.User(receiverUserId).SendAsync("ReceiveMessage", messageModel.SenderId, messageModel.Content);
+
+                return NoContent();
+
             }
             catch (Exception ex)
             {

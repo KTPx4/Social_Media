@@ -42,14 +42,17 @@ const ConversationCard : React.FC<CardProps> = ({Conversation, ClickCallback, us
         if(Conversation)
         {
 
-            var members = ListMembers[Conversation.id].members
-            var dict = {}
-            members.forEach((d)=>{
-                // @ts-ignore
-                dict[d.userId] = d
-            })
+            var members = ListMembers[Conversation.id]?.members
+            if(members)
+            {
+                var dict = {}
+                members.forEach((d)=>{
+                    // @ts-ignore
+                    dict[d.userId] = d
+                })
 
-            setCurrentMembers(dict)
+                setCurrentMembers(dict)
+            }
 
             if(Conversation.unRead > 99) setCountUnRead("99+");
 
@@ -91,7 +94,7 @@ const ConversationCard : React.FC<CardProps> = ({Conversation, ClickCallback, us
                 </Avatar>
 
                 <div   onClick={()=>ClickCallback(Conversation)} style={{flexGrow: 1, width:"60%"}}>
-                    <span  style={{fontWeight: "bold", color: textColor}}>{nameChat}</span>
+                    <span  style={{fontWeight: "bold", color: Conversation.type === ConversationType.Group? "magenta" : textColor}}>{nameChat}</span>
 
                     <div style={{marginTop: 5,display: "flex", alignItems: "center", width: "100%"}}>
                         <p style={{
@@ -104,7 +107,7 @@ const ConversationCard : React.FC<CardProps> = ({Conversation, ClickCallback, us
                             textOverflow: "ellipsis"
                         }}>
                             {/*// @ts-ignore*/}
-                           <span  style={{fontSize: 12, fontWeight: "bold"}}> {lastMessage.senderId === userId ? "You:" : (`${currentMembers[lastMessage.senderId]?.name}: ` ?? "")}</span> {lastMessage.content}
+                           <span  style={{fontSize: 12, fontWeight: "bold"}}> {lastMessage.isSystem ? "" : lastMessage.senderId === userId ? "You:" : (`${currentMembers[lastMessage.senderId]?.name }: ` ?? "")}</span> {lastMessage.content}
                         </p>
 
                         <p style={{ margin: 0,fontSize: 12, color: textHintColor, marginLeft: "10px", whiteSpace: "nowrap"}}>
@@ -112,16 +115,17 @@ const ConversationCard : React.FC<CardProps> = ({Conversation, ClickCallback, us
                         </p>
                     </div>
                 </div>
-
-                <p style={{
-                    margin : 0,
-                    padding: "2px 4px",
-                    fontSize: 10,
-                    backgroundColor: "red",
-                    borderRadius: "100%",
-                    color: "white"
-                }}>{countUnRead}</p>
-                <Button style={{display: "none"}} icon="pi pi-ellipsis-h" className="p-button-text btn-card-more"/>
+                {countUnRead > 0 && (
+                    <p style={{
+                        margin : 0,
+                        padding: "2px 4px",
+                        fontSize: 10,
+                        backgroundColor: "red",
+                        borderRadius: "100%",
+                        color: "white"
+                    }}>{countUnRead}</p>
+                )}
+                {/*<Button style={{display: "none"}} icon="pi pi-ellipsis-h" className="p-button-text btn-card-more"/>*/}
             </div>
 
         </>

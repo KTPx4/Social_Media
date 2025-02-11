@@ -33,6 +33,10 @@ namespace Server.Services.SCommunication
         Task<List<ConversationResponse>> GetGroups(string userId);
         Task<List<ConversationResponse>> GetConversation(string userId, int page = 0);
         Task<List<MessageResponse>> GetMessage(string userId, string convId, int page = 0);
+
+        Task<List<MessageResponse>> GetMedia(string userId, string convId,int page = 0);
+        Task<MessageResponse> SendFile(string userId, string convId, IFormFile file);
+        Task<bool> SetSeen(string userId, string convId);
     }
 
     public class CommunicationService : ICommunicationService
@@ -44,6 +48,7 @@ namespace Server.Services.SCommunication
         private readonly string _AccessImgAccount;
         private readonly int _LIMIT_CONVERSATION = 20;
         private readonly int _LIMIT_MESSAGE = 15;
+        private readonly int _LIMIT_MEDIA = 20;
 
         public CommunicationService(APIDbContext context, IConfiguration configuration)
         {
@@ -91,7 +96,9 @@ namespace Server.Services.SCommunication
                 .Include(c => c.Members)
                 .Include(c => c.ConvSetting)
                 .FirstOrDefaultAsync();
-            
+
+            Message replyMess = null;
+
             var listMember = Conversation.Members;
             var convSetting = Conversation.ConvSetting;
 
@@ -99,7 +106,12 @@ namespace Server.Services.SCommunication
           
             if (Conversation == null) throw new Exception("ErrMess-Conversation not exists");
             if (SenderUser == null) throw new Exception("ErrMess-You not have permission to send message");
+            if(replyId != null)
+            {
+                replyMess = await _context.Messages.Where(m => m.Id == replyId).FirstOrDefaultAsync();
+                if(replyMess == null) throw new Exception("ErrMess-Reply message not found");
 
+            }
             // Check can send
             //type group
             if (
@@ -129,6 +141,11 @@ namespace Server.Services.SCommunication
             await _context.SaveChangesAsync();
 
             var messResponse = new MessageResponse(mess);
+            if(replyMess != null)
+            {
+                var rep = new MessageResponse(replyMess);
+                messResponse.MessageReply = rep;
+            }
 
             List<Guid> listTo = listMember.Where(m=> m.UserId != SenderUser.UserId).Select(m => m.UserId).ToList();
             RsProcessMessage rs = new RsProcessMessage()
@@ -153,7 +170,7 @@ namespace Server.Services.SCommunication
                 .FirstOrDefaultAsync();
                
             if(Message == null) throw new Exception("ErrMess-Message not exists");
-            var React = await _context.MessagesReactions.Where(r => r.UserId == senderUserId).FirstOrDefaultAsync();
+            var React = await _context.MessagesReactions.Where(r => r.UserId == senderUserId && r.MessageId  == messageId).FirstOrDefaultAsync();
             var isDeleted = false;
             if(React == null)
             {
@@ -378,7 +395,7 @@ namespace Server.Services.SCommunication
             {
                 Console.WriteLine($"Copy media to folder post id '{groupdId}': {ex.ToString()}");
             }
-
+            ConvResponse.LastMessage = new MessageResponse(newMess);
             return ConvResponse;
         }
 
@@ -426,8 +443,10 @@ namespace Server.Services.SCommunication
                 LastMessage = _context.Messages
                     .Where(m => m.ConversationId == c.Id)
                     .Include(m => m.Sender)
+                    .Include(m => m.Seens)
                     .OrderByDescending(m => m.CreatedAt)
-                    .FirstOrDefault(),
+                    .FirstOrDefault()
+                    ,
                 UnreadCount = _context.Messages
                     .Where(
                         m => m.ConversationId == c.Id
@@ -442,12 +461,12 @@ namespace Server.Services.SCommunication
             .ToListAsync();
 
             var rs = conversations.Select(c => new ConversationResponse(c.Conversation, c.LastMessage, c.UnreadCount, _ServerHost , _AccessImgAccount)).ToList();
-           
+            
             return rs; 
 
         }
 
-        public async Task<List<MessageResponse>> GetMessage(string userId, string convId, int page = 0)
+        public async Task<List<MessageResponse>> GetMessage(string userId, string convId, int page = 1)
         {
             if(page < 1) page = 1;
             var Conversation = await _context.Conversations
@@ -496,7 +515,111 @@ namespace Server.Services.SCommunication
             return Messages;
         }
 
-        
+        public async Task<List<MessageResponse>> GetMedia(string userId,string convId, int page = 1)
+        {   
+            if (page < 1) page = 1;
+            var files = await _context.Messages
+                .Where(m => m.ConversationId.ToString() == convId && !m.IsDeleted && (m.Type == Message.MessageType.Image || m.Type == Message.MessageType.Video))
+                .Skip((page-1) * _LIMIT_MEDIA)
+                .Take(_LIMIT_MEDIA)
+                .Select(m => new MessageResponse()
+                {
+                    Id = m.Id,
+                    Content = $"{_ServerHost}/api/file/src?t=message&id={m.Id}&token=",
+                    CreatedAt= m.CreatedAt,
+                    Type = m.Type,
+                    
+                })
+                .ToListAsync();
+            return files;
+ 
+        }
+
+        public async Task<MessageResponse> SendFile(string userId, string convId, IFormFile file)
+        {
+
+            // Kiểm tra xem user có phải là thành viên của conversation không
+            bool isMember = await _context.ConvMembers.AnyAsync(cm => cm.ConversationId.ToString() == convId && cm.UserId.ToString() == userId);
+            if (!isMember)
+            {
+                throw new Exception("Chat-You are not a member of this conversation or not exists");
+            }
+
+            var messageType = Message.MessageType.File;
+
+            if (file.ContentType.StartsWith("image/"))
+            {
+                messageType = Message.MessageType.Image;
+            }
+            else if (file.ContentType.StartsWith("video/"))
+            {
+                messageType = Message.MessageType.Video;
+            }
+            
+            string fileName = Path.GetFileName(file.FileName);
+            
+            var newMess = new Message()
+            {
+                Content = fileName,
+                Type = messageType,
+                ConversationId = new Guid(convId),
+                SenderId = new Guid(userId),
+            };
+            _context.Messages.Add(newMess);
+            await _context.SaveChangesAsync(); // Để có được message.Id
+
+            // Xác định đường dẫn lưu file: /wwwroot/group/{conversationId}/{messageId}/
+            string folderPath = Path.Combine(_RootImgGroup, convId, newMess.Id.ToString());
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+
+            string filePath = Path.Combine(folderPath, fileName);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+            var rs = new MessageResponse(newMess);
+          
+            rs.Content = $"{_ServerHost}/api/file/src?t=message&id={rs.Id}&token=";
+
+            return rs;
+        }
+
+        public async Task<bool> SetSeen(string userId, string convId)
+        {
+            bool isMember = await _context.ConvMembers.AnyAsync(cm => cm.ConversationId.ToString() == convId && cm.UserId.ToString() == userId);
+            if (!isMember)
+            {
+                throw new Exception("Chat-You are not a member of this conversation or not exists");
+            }
+            var listSeen = new List<MessageSeen>();
+            
+            var listMessId = await _context.Messages            
+                .Where(m => m.ConversationId.ToString() == convId && m.SenderId.ToString() != userId && !m.Seens.Any(s => s.UserId.ToString() == userId))
+                .Select(m => m.Id)
+                .ToListAsync();
+
+            foreach(var id in listMessId)
+            {
+                listSeen.Add(new MessageSeen()
+                {
+                    MessageId = id,
+                    UserId = new Guid(userId),
+                    Status = MessageSeen.SeenStatus.Seen,
+
+                });
+            }
+
+            await _context.MessagesSeens.AddRangeAsync(listSeen);
+            await _context.SaveChangesAsync();
+
+           return true;
+        }
+
+
+
 
 
 

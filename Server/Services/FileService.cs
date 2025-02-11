@@ -113,5 +113,39 @@ namespace Server.Services
 
 
         }
+        public async Task<Dictionary<string, string>> GetPathMediaMessage(string userId, string mediaId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) throw new Exception("File-User not exists");
+
+            var message = await _context.Messages
+                .Where(c => c.Id.ToString() == mediaId)
+                .Include(c => c.Conversation)
+                .ThenInclude(c =>c.Members)
+                .FirstOrDefaultAsync();
+
+
+            if (message == null) throw new Exception("File-Media or file not exists");
+            var conv = message.Conversation;
+            var Members = conv.Members;
+            var type = message.Type == Models.Communication.Message.MessageType.Image ? "image/jpeg" :
+                    (message.Type == Models.Communication.Message.MessageType.Video ? "video/mp4" : "file");
+
+
+            // check post status
+            if (!Members.Select(m => m.UserId.ToString()).Contains(userId)) throw new Exception("File-Can not access this media");
+            else
+            {
+                string path = $"group/{conv.Id.ToString()}/{message.Id.ToString()}/{message.Content}";
+                var rs = new Dictionary<string, string>()
+                {
+                    {"path" , path },
+                    {"contentType", type}
+                };
+                return rs;
+            }
+
+
+        }
     }
 }

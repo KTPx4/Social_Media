@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import LeftInfo from "../../components/message/LeftInfo.tsx";
 import RightContent from "../../components/message/RightContent.tsx";
 import useStore from "../../store/useStore.tsx";
@@ -22,36 +22,16 @@ const MessagePage : React.FC = () => {
     const [currentConversation, setConversation] = useState(null);
     const [listMembers, setListMembers] = useState([]);
 
-    // @ts-ignore
-    const { isConnected, messages, sendMessage, setNewMessages } = useWebSocketContext();
+
 
     const [showInfo, setShowInfo] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState(true);
 
-    // 🎉 State quản lý Reaction Picker
-    const [selectedMessage, setSelectedMessage] = useState<any>(null);
-    const [showEmojiPicker, setShowEmojiPicker] = useState<boolean>(false);
-// Emoji reactions mặc định
-    const defaultReactions = ["👍", "❤️", "😆", "😢", "🙏", "👎", "😡"];
-    const [reactions, setReactions] = useState<string[]>(defaultReactions);
-    const [reactionPosition, setReactionPosition] = useState<{ top: number, left: number } | null>(null);
+    const callBackRef = useRef(null);
+
+    const [showModalCreate, setShowModalCreate] = useState(false);
 
 
-
-    useEffect(() => {
-        if (messages) {
-            var convId = messages.conversationId;
-            var newList = listConversation.map((c) => {
-                if (c.id === convId) {
-                    c.time = Date.now();
-                    c.lastMessage = messages.message;
-                    if (!currentConversation || currentConversation.id !== convId) c.unRead = c.unRead + 1;
-                }
-                return c;
-            });
-            setListConversation(newList);
-        }
-    }, [messages]);
 
     useEffect(() => {
         LoadFromLocal();
@@ -60,7 +40,19 @@ const MessagePage : React.FC = () => {
 
     const ClickConversation = async (Conversation: any) => {
         if (currentConversation && currentConversation.id === Conversation.id) return;
+        setListConversation((prev)=> {
+            var newList = prev.map((c) => c.id === Conversation.id ? {...c, unRead: 0} : c)
+            return newList
+        })
         setConversation(Conversation);
+        if(Conversation.unRead < 1) return
+        try{
+            var rs = await apiClient.post(`/chat/conversation/${Conversation.id}/seen`)
+
+        }
+        catch(error){
+            console.log(error)
+        }
     };
 
     const CloseInfo = () => {
@@ -121,30 +113,24 @@ const MessagePage : React.FC = () => {
     const InfoContent = currentConversation === null ? null : (
         currentConversation.type === ConversationType.Direct ? <InfoChatDirect /> : <InfoChatGroup />
     );
-
-    // 🎉 Khi chọn emoji, gửi vào tin nhắn
-    const handleEmojiSelect = (emoji: any) => {
-        if (!reactions.includes(emoji.emoji)) {
-            // setReactions([...reactions, emoji.emoji]); // Thêm vào danh sách reactions
-            var  newReact = reactions.map((e, index) => index === (reactions.length -1) ? emoji.emoji : e)
-            setReactions(newReact)
+    const HandleChangeLastMess = (newMess)=>{
+        console.log(newMess)
+        if(callBackRef?.current)
+        {
+            const func = callBackRef.current
+            func(newMess)
         }
+    }
 
-        setShowEmojiPicker(false); // Ẩn picker
-    };
-    const handleSelectMessageForReaction = (message: any, event: React.MouseEvent) => {
-        const rect = (event.target as HTMLElement).getBoundingClientRect();
-        setSelectedMessage(message);
-        setReactionPosition({
-            top: rect.bottom + window.scrollY, // Lấy vị trí phía dưới tin nhắn
-            left: rect.left + window.scrollX   // Căn chỉnh ngang theo tin nhắn
-        });
+    const CallBackUpdateLastMess = (callBack)=>{
+        callBackRef.current = callBack
+    }
 
-    };
+
     return (
         <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "row" }}>
             <div className="left-info" style={{ height: "100vh", width: "25%", minWidth: 250, backgroundColor: "transparent" }}>
-                <LeftInfo isLoading={isLoading} ClickCallBack={ClickConversation} userId={userId} listConversation={listConversation} setListConversation={setListConversation} ListMembers={listMembers} />
+                <LeftInfo showModalCreate={()=>setShowModalCreate(true)} CallBackUpdateLastMess={CallBackUpdateLastMess} isLoading={isLoading} ClickCallBack={ClickConversation} userId={userId} listConversation={listConversation} setListConversation={setListConversation} ListMembers={listMembers} />
             </div>
 
             <div className={"right-message"} style={{ height: "100%", width: showInfo ? "50%" : "75%", backgroundColor: "transparent" }}>
@@ -156,7 +142,9 @@ const MessagePage : React.FC = () => {
                     listConversation={listConversation}
                     setListConversation={setListConversation}
                     showInfo={() => setShowInfo(!showInfo)}
-                    // onSelectMessageForReaction={handleSelectMessageForReaction} // 📌 Truyền hàm callback xuống RightContent
+                    ListMembers={listMembers}
+                    HandleChangeLastMess={HandleChangeLastMess}
+
                 />
             </div>
 
