@@ -163,6 +163,122 @@ namespace Server.Controllers
             }
         }
 
+        [HttpPut("conversation/{id}/members")]
+        [Authorize]
+        public async Task<IActionResult> EditMembers(string id, EditGroupModel editGroupModel)
+        {
+            try
+            {
+                var userId = User.FindFirstValue("UserId");
+
+                if (editGroupModel.Members == null || editGroupModel.Members.Count < 1)
+                {
+                    return BadRequest(new { message = "List members group must not null and > 0" });
+                }
+
+                var rs = await _communicationService.EditMembers(userId, id, editGroupModel.Members);
+
+                return Ok(new
+                {
+                    message = "Edit group success",
+                    data = rs
+                });
+            }
+            catch (Exception ex)
+            {
+                var mess = ex.Message;
+                if (mess.StartsWith("Chat-"))
+                {
+                    return BadRequest(new { message = mess.Split("-")[1] });
+                }
+                Console.WriteLine("Create Posts:" + mess);
+                return StatusCode(500, new { message = "Server Error. Try Again" });
+            }
+        }
+        [HttpPost("conversation/{id}/leave")]
+        [Authorize]
+        public async Task<IActionResult> LeaveGroup(string id)
+        {
+            try
+            {
+                var userId = User.FindFirstValue("UserId"); 
+
+                var rs = await _communicationService.LeaveGroup(userId, id);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                var mess = ex.Message;
+                if (mess.StartsWith("Chat-"))
+                {
+                    return BadRequest(new { message = mess.Split("-")[1] });
+                }
+                Console.WriteLine("Create Posts:" + mess);
+                return StatusCode(500, new { message = "Server Error. Try Again" });
+            }
+        }
+
+
+        [HttpPut("conversation/{id}/info")]
+        [Authorize]
+        public async Task<IActionResult> EditInfo(string id, EditGroupModel editGroupModel)
+        {
+            var userId = User.FindFirstValue("UserId");
+            if(editGroupModel.Name == null || string.IsNullOrEmpty(editGroupModel.Name))
+            {
+                return BadRequest(new { message = "Name group cant null" });
+            }
+            if (editGroupModel.Image != null)
+            {
+                try
+                {
+                    FileValidationHelper.IsValidAvatar(editGroupModel.Image);
+                }
+                catch (Exception ex)
+                {
+                    var mess = ex.Message;
+                    if (mess.StartsWith("File-"))
+                    {
+                        var rmess = mess.Split("File-")[1];
+                        return BadRequest(new { message = rmess });
+                    }
+
+                    Console.WriteLine(mess);
+                    return StatusCode(500, new { message = "Server error. Try again!" });
+                }
+            }
+
+            try
+            {
+                FileInfoDto fileInfo = null;
+                if (editGroupModel.Image != null)
+                {
+                    fileInfo = FileValidationHelper.GetFileInfo(editGroupModel.Image);
+
+                }
+
+                var rs = await _communicationService.EditGroup(userId, id, fileInfo, editGroupModel.Name);
+
+                return Ok(new
+                {
+                    message = "Edit group success",
+                    data = rs
+                });
+            }
+            catch (Exception ex)
+            {
+                var mess = ex.Message;
+                if (mess.StartsWith("Chat-"))
+                {
+                    return BadRequest(new { message = mess.Split("-")[1] });
+                }
+                Console.WriteLine("Create Posts:" + mess);
+                return StatusCode(500, new { message = "Server Error. Try Again" });
+            }
+        }
+
+
         [HttpGet("conversation/{id}/media")]
         [Authorize]
         public async Task<IActionResult> GetMedia(string id, [FromQuery] int page = 1)

@@ -65,8 +65,8 @@ const ConversationCard : React.FC<CardProps> = ({Conversation, ClickCallback, us
                 var members = Conversation.members
                 var op = members.filter((i: any) => i.userId !==  userId)[0]
                 setOponentChat(op)
-                setNameChat(op.name)
-                setImgGroup(op.imageUrl)
+                setNameChat(op?.name ?? "")
+                setImgGroup(op?.imageUrl ?? "")
             }
         }
 

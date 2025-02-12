@@ -6,6 +6,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Google.Apis.Gmail.v1.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -99,6 +100,31 @@ namespace Server.Controllers
                     return BadRequest(new { message = message.Split("-")[1] });
                 }
                 Console.WriteLine("Get notifies: " + ex.Message);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
+            }
+        }
+        [HttpGet("search/{id}")]
+        [Authorize]
+        public async Task<IActionResult> GetById(string id)
+        {
+            var userId = User.FindFirstValue("UserId");
+            try
+            {
+                var rs = await _userService.FindById(userId, id);
+
+                if (rs == null) return NotFound(new { message = "Account not exists or user profile has been changed" });
+
+                return Ok(new { message = "Get success", data = rs });
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                if (message.StartsWith("Account-"))
+                {
+                    return BadRequest(new { message = message.Split("-")[1] });
+                }
+                Console.WriteLine("Get by profile: " + ex.Message);
 
                 return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
             }

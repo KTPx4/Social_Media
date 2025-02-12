@@ -151,15 +151,15 @@ const LeftInfo : React.FC<any> = ({isLoading,ClickCallBack, userId, listConversa
                 <div style={{
                     width: "100%", marginTop: 15, marginBottom: 0, padding: "0 15px"
                 }}>
-                    <IconField  style={{}}>
-                        <InputText style={{
-                            width: "100%",
-                            borderRadius: 40,
-                            height: 35
-                        }} placeholder="Search name..."/>
-                        <InputIcon style={{marginRight: 15,}} className="pi pi-search"> </InputIcon>
+                    {/*<IconField  style={{}}>*/}
+                    {/*    <InputText style={{*/}
+                    {/*        width: "100%",*/}
+                    {/*        borderRadius: 40,*/}
+                    {/*        height: 35*/}
+                    {/*    }} placeholder="Search name..."/>*/}
+                    {/*    <InputIcon style={{marginRight: 15,}} className="pi pi-search"> </InputIcon>*/}
 
-                    </IconField>
+                    {/*</IconField>*/}
                 </div>
 
             </div>

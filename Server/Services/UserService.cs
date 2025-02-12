@@ -300,6 +300,44 @@ namespace Server.Services
 
             return profile;
         }
+        public async Task<UserResponse> FindById(string userId, string id)
+        {
+            var myAccount = _userManager.FindByIdAsync(userId);
+            if (myAccount == null) throw new Exception("Account-Your account not exists");
+
+            var profile = await context.Users
+             .Where(u => u.Id.ToString() == id)
+        
+             .Select(u => new UserResponse()
+             {
+                 Id = u.Id,
+                 UserName = u.UserName,
+                 UserProfile = u.UserProfile,
+                 Bio = u.Bio,
+                 Name = u.Name,
+                 Gender = u.Gender,
+                 Email = u.Email,
+                 Phone = u.Phone,
+                 ImageUrl = $"{_PublicUrl}/{u.Id}/{u.ImageUrl}",
+                 IsDeleted = u.IsDeleted,
+                 CreatedAt = u.CreatedAt,
+             })
+             .FirstOrDefaultAsync();
+
+
+            if (profile == null) return null;
+
+            var relation = await context.FriendShips
+                .Where(f => f.UserId.ToString() == userId && f.FriendId == profile.Id)
+                .FirstOrDefaultAsync();
+
+            if (relation != null && relation.Status == FriendShip.FriendStatus.Obstructed)
+            {
+                throw new Exception("Account-You not allow to view this profile");
+            }
+
+            return profile;
+        }
         public async Task<User?> ResetPassword(string userName, string token, string newPPassword)
         {
             if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(newPPassword) || string.IsNullOrEmpty(token)) return null;

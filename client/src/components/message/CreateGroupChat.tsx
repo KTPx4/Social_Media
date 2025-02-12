@@ -8,6 +8,7 @@ import apiClient from "../../utils/apiClient.tsx";
 import FriendCard from "./FriendCard.tsx";
 import {ProgressSpinner} from "primereact/progressspinner";
 
+const maxSize = 10 * 1024 * 1024
 const CreateGroupChat : React.FC<any> = ({isShow, setIsShow, CreateSuccessCall}) => {
 
     // theme
@@ -49,7 +50,19 @@ const CreateGroupChat : React.FC<any> = ({isShow, setIsShow, CreateSuccessCall})
     // Xử lý chọn file avatar nhóm
     const handleAvatarChange = (e) => {
         if (e.target.files && e.target.files[0]) {
-            setGroupAvatar(e.target.files[0]);
+            const file = e.target.files[0];
+            const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+
+            if (!allowedTypes.includes(file.type)) {
+                alert("Only access image (JPEG, PNG, GIF, WEBP)!");
+                return;
+            }
+            if (file.size > maxSize) {
+                alert("Image must less than 10mb");
+                return;
+            }
+
+            setGroupAvatar(file);
         }
     };
 
@@ -74,7 +87,7 @@ const CreateGroupChat : React.FC<any> = ({isShow, setIsShow, CreateSuccessCall})
 
         // Tạo FormData để gửi file và các trường khác lên API
         const formData = new FormData();
-        formData.append('Name', groupName);
+        formData.append('Name', groupName.trim());
         formData.append('Image', groupAvatar);
         listAdded.map((f) => {
             formData.append("Members", f.id)
@@ -178,44 +191,44 @@ const CreateGroupChat : React.FC<any> = ({isShow, setIsShow, CreateSuccessCall})
 
                     {/*list friend*/}
 
-                    <div  style={{
-                        width: 400,
-                        height: 300,
-                        display: "flex",
-                        flexDirection: "row"
-                    }}>
-                        {/*suggest*/}
-                        <div style={{
-                            width: "50%",
-                            overflow: "auto",
+                        <div  style={{
+                            width: 400,
+                            height: 300,
                             display: "flex",
-                            flexDirection: "column",
-                            padding: 10
+                            flexDirection: "row"
                         }}>
-                            <h2>Suggest</h2>
-                            <div style={{overflow: "auto"}}>
-                                {listSuggestFriend.map((f) => (
-                                    <FriendCard isAdd={false} key={f.id} Friend={f} Name={f.name} Profile={f.userProfile} Image={f.imageUrl}
-                                                ClickAdd={HandleAddFriend}/>
-                                ))}
+                            {/*suggest*/}
+                            <div style={{
+                                width: "50%",
+                                overflow: "auto",
+                                display: "flex",
+                                flexDirection: "column",
+                                padding: 10
+                            }}>
+                                <h2>Suggest</h2>
+                                <div style={{overflow: "auto"}}>
+                                    {listSuggestFriend.map((f) => (
+                                        <FriendCard isAdd={false} key={f.id} Friend={f} Name={f.name} Profile={f.userProfile} Image={f.imageUrl}
+                                                    ClickAdd={HandleAddFriend}/>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
 
-                        {/*list added*/}
-                        <div style={{
-                            width: "50%",
-                            display: "flex",
-                            flexDirection: "column",
-                            padding: 10
-                        }}>
-                            <h2>Members</h2>
-                            <div style={{overflow: "auto"}}>
-                                {listAdded.map((f) => (
-                                    <FriendCard isAdd={true} key={f.id} Friend={f} Name={f.name} Profile={f.userProfile} Image={f.imageUrl}
-                                                ClickAdd={HandleAddFriend}/>
-                                ))}
+                            {/*list added*/}
+                            <div style={{
+                                width: "50%",
+                                display: "flex",
+                                flexDirection: "column",
+                                padding: 10
+                            }}>
+                                <h2>Members</h2>
+                                <div style={{overflow: "auto"}}>
+                                    {listAdded.map((f) => (
+                                        <FriendCard isAdd={true} key={f.id} Friend={f} Name={f.name} Profile={f.userProfile} Image={f.imageUrl}
+                                                    ClickAdd={HandleAddFriend}/>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
                     </div>
 
                     {/* Submit */}

@@ -10,6 +10,7 @@ import {useWebSocketContext} from "../../store/WebSocketContext.tsx";
 import {Messages} from "primereact/messages";
 import {Tooltip} from "primereact/tooltip";
 import {toHCMTime} from "../../utils/Convertor.tsx";
+import apiClient from "../../utils/apiClient.tsx";
 
 const MessageCard : React.FC<any> = ({ListMembers, Message, sendReact, showReactions, ReplyMessage}) => {
     const {userId, setId} = useStore()
@@ -55,20 +56,46 @@ const MessageCard : React.FC<any> = ({ListMembers, Message, sendReact, showReact
     const [myReact, setMyReact] = useState("")
     const { subscribeToMessages } = useWebSocketContext()
     const MessageIdRef = useRef(null);
+    const [sender, setSender] = useState(ListMembers[Message.senderId] ?? null)
 
     useEffect(() => {
         subscribeToMessages(HandleGetReact)
+
     }, []);
 
     useEffect(() => {
         if(Message)
         {
+            console.log(Message)
+            if(!ListMembers[Message.senderId] )
+            {
+                LoadUser(Message.senderId)
+            }
             MessageIdRef.current = Message.id
             setListReact(Message.reacts)
             SetListUniqueIcon(Message.reacts)
 
         }
     }, [Message]);
+
+
+
+    const LoadUser = async(id) =>{
+        try{
+            if(!id) return
+            var rs = await  apiClient.get(`/user/search/${id}`)
+            var status = rs.status
+            if(status === 200)
+            {
+                var data= rs.data.data
+                setSender(data)
+            }
+        }
+        catch (e)
+        {
+            console.log(e)
+        }
+    }
 
     const HandleGetReact = (react) =>{
         var type = react.type
@@ -171,9 +198,9 @@ const MessageCard : React.FC<any> = ({ListMembers, Message, sendReact, showReact
                 <Tooltip target=".avatar-user" />
                 {!Message.isSystem ?
                     <Avatar
-                        data-pr-tooltip={ListMembers[Message.senderId].name}
+                        data-pr-tooltip={sender?.name}
                         data-pr-position={"top"}
-                        className={"mx-1 avatar-user"} size="normal" shape="circle" image={ListMembers[Message.senderId].imageUrl}/> : <></>}
+                        className={"mx-1 avatar-user"} size="normal" shape="circle" image={sender?.imageUrl}/> : <></>}
                 <div style={{display: "flex", flexDirection: "column", alignItems: "flex-end"}}>
 
                     <div style={{

@@ -103,11 +103,11 @@ const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , 
             LoadLocal()
             setPage(1)
             setListMessage(CurrentConversation.listMessage ?? [])
-            setNameChat(CurrentConversation.name)
-            var members = CurrentConversation.members
+            setNameChat(CurrentConversation?.name ?? "")
+            var members = CurrentConversation?.members ?? []
             var dict = {}
             // @ts-ignore
-            members.forEach((m)=>{
+            members?.forEach((m)=>{
                 // @ts-ignore
                 dict[m.userId] = m
             })
@@ -196,7 +196,7 @@ const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , 
         }
         catch (err)
         {
-            console.log(err)
+           alert(err)
         }
     }
     const UpdateListMess = async(data) =>{
