@@ -12,6 +12,9 @@ import "./RightCss.css"
 import {useWebSocketContext} from "../../store/WebSocketContext.tsx";
 import {InputText} from "primereact/inputtext";
 import {ProgressSpinner} from "primereact/progressspinner";
+import {Dialog} from "primereact/dialog";
+import FooterRightContent from "./FooterRightContent.tsx";
+import {Message} from "primereact/message";
 
 
 enum ConversationType {
@@ -27,16 +30,19 @@ const FastMessage = {
     Heart: "❤️",
     Heart_2: "💘"
 }
-const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , listConversation, setListConversation, showInfo,   onSelectMessageForReaction })=>{
+const FriendStatus = {
+    Normal: 0, Prevented : 1, Obstructed :2
+}
+const RightContent : React.FC<any> = ({DirectUser, CurrentConversation, DbContext, userId , listConversation, setListConversation, showInfo, ListMembers, HandleChangeLastMess })=>{
     const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
 
     // @ts-ignore
-    const {isConnected, messages, sendMessage, setNewMessages } = useWebSocketContext()
+    const {isConnected, subscribeToMessages, sendMessage, setNewMessages,sendReactMessage } = useWebSocketContext()
     // theme
     const themeContext = useContext(ThemeContext);
     // @ts-ignore
     const { currentTheme, changeTheme } = themeContext;
-
+    const keyTheme = currentTheme.getKey()
     const  cardColor = currentTheme.getCard()
     const borderColor = currentTheme.getBorder()
 
@@ -47,12 +53,99 @@ const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , 
     const [page , setPage] = useState(1);
     const [listMessage, setListMessage] = useState([]);
     const [inputMessage, setInputMessage] = useState("")
+    const [replyMessage, setReplyMess] = useState(null)
     const [firtLoad, setFirstLoad] = useState(true);
     const [isLoading,setLoading] = useState(false);
     const messagesEndRef = useRef(null);
     const bodyContentRef = useRef(null);
     const [canLoad, setCanLoad] = useState(true);
     const [isScrollTop, setScrollTop] = useState(false);
+    const [isShowReactions, setShowReactions] = useState(false)
+
+    const [listReactions, setListReactions] = useState([]);
+
+    const CallBackReplyMessRef = useRef(null);
+    const [infoDicrectUser, setInfoDicrect] = useState(null)
+
+    useEffect(() => {
+        const handleNewMessage = (message) => {
+            var type =message.type
+            if(type === "message")
+            {
+                var newMessage = message.message
+                if(newMessage && CurrentConversation && message.sender !== userId && message.conversationId === CurrentConversation.id)
+                {
+                    newMessage.reacts = []
+                    setListMessage( (prev) => {
+                        var newList = [...prev, newMessage]
+                        return newList
+                    })
+                }
+            }
+            else if(type === "react")
+            {
+
+            }
+            // console.log("📩 New message received: ", message);
+            // Xử lý thông báo tin nhắn mà không rerender
+        };
+
+        subscribeToMessages(handleNewMessage);
+    }, []);
+
+    useEffect(() => {
+
+        if(listMessage && listMessage.length > 0 )
+        {
+            if( !isScrollTop) scrollEndMess()
+        }
+
+    }, [listMessage]);
+
+    useEffect(() => {
+        if(CurrentConversation)
+        {
+            LoadLocal()
+            setPage(1)
+            setListMessage(CurrentConversation.listMessage ?? [])
+            setNameChat(CurrentConversation?.name ?? "")
+            var members = CurrentConversation?.members ?? []
+            var dict = {}
+            // @ts-ignore
+            members?.forEach((m)=>{
+                // @ts-ignore
+                dict[m.userId] = m
+            })
+            // @ts-ignore
+            setListMembers(dict)
+
+            if(CurrentConversation.type === ConversationType.Group)
+            {
+                // @ts-ignore
+                setImgGroup(CurrentConversation.imageUrl + token)
+            }
+            else if(CurrentConversation.type === ConversationType.Direct)
+            {
+                var members = CurrentConversation.members
+                var op = members.filter((i: any) => i.userId !==  userId)[0]
+                setOponentChat(op)
+                setNameChat(op.name)
+                setImgGroup(op.imageUrl)
+
+            }
+            setTimeout(()=>{
+                LoadMessages()
+
+            }, 400)
+
+        }
+        if(DirectUser && CurrentConversation.type === ConversationType.Direct)
+        {
+            setInfoDicrect(DirectUser)
+        }
+        else  setInfoDicrect(null)
+
+    }, [CurrentConversation, DirectUser]);
 
     const LoadLocal = async () =>{
         try{
@@ -87,8 +180,8 @@ const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , 
         setLoading(true)
         try{
            if(page > 1)  setScrollTop(true)
-            var rs = await apiClient.get(`/chat/conversation/${CurrentConversation.id}?page=${page}`)
-            console.log("get message: ", rs, page)
+            var rs = await apiClient.get(`/chat/conversation/${CurrentConversation.id}/chat?page=${page}`)
+
             var status = rs.status
             if(status === 200)
             {
@@ -114,7 +207,7 @@ const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , 
         }
         catch (err)
         {
-            console.log(err)
+           alert(err)
         }
     }
     const UpdateListMess = async(data) =>{
@@ -147,12 +240,19 @@ const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , 
             // @ts-ignore
             setListMessage((prev) => [...prev, newMess])
             setFirstLoad(true)
+            HandleChangeLastMess(newMess)
         }
     }
+
     const SendMessage = async()=>{
         if(!inputMessage.trim() || !isConnected || !CurrentConversation) return;
         setScrollTop(false)
-        var rs = await sendMessage(userId, CurrentConversation.id, inputMessage.trim(), SendMessageType.Text)
+        var rs = await sendMessage(userId, CurrentConversation.id, inputMessage.trim(), SendMessageType.Text, replyMessage)
+        if(!rs)
+        {
+            alert("Error when send message")
+            return
+        }
         // @ts-ignore
         var success = rs.success
         if(!success)
@@ -160,14 +260,16 @@ const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , 
             alert("Cannot send message. Try again!")
         }else{
             var newMess = rs.data
+            newMess.reacts = []
             setInputMessage("")
             // @ts-ignore
             setListMessage((prev) => [...prev, newMess])
-
-            var newdata = listConversation.map( (e : any) =>{
-                return {...e,  lastMessage: newMess, time: Date.now()}
-            })
-            setListConversation(newdata)
+            setFirstLoad(true)
+            HandleChangeLastMess(newMess)
+            // var newdata = listConversation.map( (e : any) =>{
+            //     return {...e,  lastMessage: newMess, time: Date.now()}
+            // })
+            // setListConversation(newdata)
         }
     }
     const scrollEndMess = ()=>{
@@ -190,64 +292,26 @@ const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , 
     };
 
 
-    useEffect(() => {
-        if(messages && CurrentConversation && messages.sender !== userId && messages.conversationId === CurrentConversation.id)
-        {
-            setListMessage(prev => [...prev, messages.message])
-        }
-    }, [messages]);
-
-    useEffect(() => {
-        console.log("1 times", isScrollTop)
-        if(listMessage && listMessage.length > 0 )
-        {
-            if( !isScrollTop)scrollEndMess()
-
-        }
-
-    }, [listMessage]);
-
-    useEffect(() => {
-        if(CurrentConversation)
-        {
-            LoadLocal()
-            setPage(1)
-            setListMessage(CurrentConversation.listMessage ?? [])
-            setNameChat(CurrentConversation.name)
-            var members = CurrentConversation.members
-            var dict = {}
-            // @ts-ignore
-            members.forEach((m)=>{
-                // @ts-ignore
-                dict[m.userId] = m
-            })
-            // @ts-ignore
-            setListMembers(dict)
-
-            if(CurrentConversation.type === ConversationType.Group)
-            {
-                // @ts-ignore
-                setImgGroup(CurrentConversation.imageUrl + token)
-            }
-            else if(CurrentConversation.type === ConversationType.Direct)
-            {
-                var members = CurrentConversation.members
-                var op = members.filter((i: any) => i.userId !==  userId)[0]
-                setOponentChat(op)
-                setNameChat(op.name)
-                setImgGroup(op.imageUrl)
-            }
-            setTimeout(()=>{
-                LoadMessages()
-
-            }, 400)
-
-        }
-
-    }, [CurrentConversation]);
 
     const showIcon = ()=>{
 
+    }
+    const ShowReactions = (listReactions) =>{
+        setListReactions(listReactions)
+        setTimeout(()=>{
+            setShowReactions(true)
+        },300)
+    }
+
+    const HandleReplyMess= async (Mess) =>{
+        if(!CallBackReplyMessRef?.current) return;
+        var func = CallBackReplyMessRef.current
+        setReplyMess(Mess.id)
+        func(Mess)
+    }
+
+    const subriceCallBack = (callback) =>{
+        CallBackReplyMessRef.current = callback
     }
 
     if(!CurrentConversation){
@@ -262,6 +326,25 @@ const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , 
             padding: "0",
             justifyContent: "space-between"
         }}>
+            <Dialog
+                className={keyTheme}
+                header="Reactions"
+                visible={isShowReactions}
+                onHide={()=>setShowReactions(false)}
+            >
+                {listReactions.map((e)=>
+                    {
+
+                        return (
+                            <div key={e.userId} style={{display: "flex", flexDirection: "row", alignItems: "center"}}>
+                                <Avatar className={"mx-1"} size="normal" shape="circle" image={listMembers[e.userId]?.imageUrl}/>
+                                <p style={{width: 200, margin: "0 5px", textOverflow: "ellipsis"}}>{listMembers[e.userId]?.name}</p>
+                                <span>{e.react}</span>
+                            </div>
+                        )
+                    }
+                )}
+            </Dialog>
             {/*Header*/}
             <div className="header-content" style={{
                 top: 0,
@@ -289,7 +372,7 @@ const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , 
                     }}>{nameChat}</p>
                 </div>
                 <div>
-                    <Button text icon={"pi pi-phone"}/>
+                    {/*<Button text icon={"pi pi-phone"}/>*/}
                     <Button text icon={"pi pi-ellipsis-h"} onClick={showInfo}/>
 
                 </div>
@@ -310,72 +393,37 @@ const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , 
                 {listMessage.map((m)=>
                     // @ts-ignore
                     <MessageCard key={m.id} ListMembers={listMembers} Message={m}
+                                 sendReact={sendReactMessage}
+                                 showReactions={ShowReactions}
+                                 ReplyMessage={HandleReplyMess}
                                  // onSelectReaction={onSelectMessageForReaction}
                     />
                 )}
                 {/* Element dùng để cuộn xuống cuối */}
                 <div ref={messagesEndRef}/>
+                <div style={{
+                    width: "100%",
+                    display: "flex",
+                    flexDirection: "row-reverse"
+                }}>
+                    { CurrentConversation.lastMessage?.senderId === userId &&  CurrentConversation.lastMessage?.seenIds && (
+                        <Button tooltip={"Seen"} style={{marginLeft: "auto", width: 30, height: 30}} text rounded icon={"pi pi-eye"}/>
+                    )}
+                    {  CurrentConversation.lastMessage?.senderId === userId &&  CurrentConversation.lastMessage?.seenIds === null && (
+                        <Button tooltip={"Sent"} style={{marginLeft: "auto", width: 30, height: 30}} text rounded icon={"pi pi-check\n"}/>
+                    )}
+                </div>
             </div>
 
             {/*footer*/}
-            <div className="footer-content" style={{
-                // borderRadius: 5,
-                backgroundColor: cardColor,
-                display: "flex",
-                flexDirection: "column-reverse", // Giúp input mở rộng lên trên
-                alignItems: "center",
-                height: "auto",
-                minHeight: "40px",
-                // maxHeight: "150px",
-                paddingTop: 10,
-                marginBottom: 7,
-            }}>
-                <div>
-                </div>
-                <div style={{
-                    width:"100%",
-                    display: "flex",
-                    flexDirection:"row",
-                    justifyContent: "space-evenly"
-                }}>
-                    <Button text icon={"pi pi-file-plus"} size={"large"}/>
-
-                    <IconField
-                        style={{
-                        width: "80%",
-                        display: "flex",
-                        alignItems: "center",
-                    }}>
-                        <InputText
-                            maxLength={1000}
-                            onChange={(e) => setInputMessage(e.target.value)}
-                            onKeyPress={(e) => {
-                                if(e.key === "Enter")
-                                {
-                                    SendMessage()
-                                }
-                            }}
-                            value={inputMessage}
-                            // autoResize
-                            // @ts-ignore
-                            rows={1}
-                            style={{
-                                width: "100%",
-                                borderRadius: 15,
-                                // marginTop: 10,
-                                padding: "10px",
-                                border: "1px solid #ccc",
-                                maxHeight: "100px",
-                                overflow: "auto",
-                                resize: "none",
-                            }}
-                            placeholder="Send message"
-                        />
-                        <InputIcon onClick={showIcon} style={{marginRight: 15}} className="pi pi-face-smile"/>
-                    </IconField>
-                    <Button onClick={SendLike} text icon={"pi pi-thumbs-up-fill"} size={"large"}/>
-                </div>
-            </div>
+            {(!infoDicrectUser || (infoDicrectUser && infoDicrectUser.friendStatus ===  FriendStatus.Normal)) && (
+                <FooterRightContent CurrConvID={CurrentConversation?.id} setReplyMess={setReplyMess} ListMembers={listMembers} SendMessage={SendMessage} SendLike={SendLike} showIcon={showIcon} setInputMessage={setInputMessage} inputMessage={inputMessage} CallBackReply={subriceCallBack}/>
+            )}
+            {infoDicrectUser && infoDicrectUser.friendStatus !==  FriendStatus.Normal &&(
+                <>
+                    <Message severity="warn" text="Can't send message to this user!" />
+                </>
+            )}
         </div>
     )
 }

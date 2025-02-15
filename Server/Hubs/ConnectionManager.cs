@@ -8,7 +8,7 @@ namespace Server.Hubs
 
         public void AddConnection(string connectionId, string userId)
         {
-            _connectedUsers[connectionId] = userId;
+            _connectedUsers[connectionId] = userId.ToLower();
         }
 
         public void RemoveConnection(string connectionId)

@@ -12,3 +12,25 @@
         display: block !important;
     }
 }
+
+.message .message-img img{
+    max-width: 320px;
+    max-height: 250px;
+
+}
+
+.theme_dark{
+    .message-system .message-content{
+        background-color: #292929  !important;
+    }
+    .message-content-file a{
+        color: pink !important;
+    }
+}
+
+.theme_light{
+
+    .message-content-file a{
+        color: #ff748c !important;
+    }
+}

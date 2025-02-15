@@ -5,6 +5,7 @@ import {ThemeContext} from "../../ThemeContext.tsx";
 import useStore from "../../store/useStore.tsx";
 import {ToHCMLite, toHCMTime} from "../../utils/Convertor.tsx";
 import  "./ConversationCard.css"
+import apiClient from "../../utils/apiClient.tsx";
 
 interface CardProps{
     Conversation: any;
@@ -30,55 +31,111 @@ const ConversationCard : React.FC<CardProps> = ({Conversation, ClickCallback, us
     const cardColor = currentTheme.getCard()
 
     // data
-    const [imgGroup, setImgGroup] = useState(Conversation.imageUrl);
-    const [nameChat, setNameChat] = useState(Conversation.name);
-    const [oponentChat, setOponentChat] = useState(null);
-    const [lastMessage, setLastMessage] = useState(Conversation.lastMessage)
-    const [timeMessage, setTimeMessage] = useState(ToHCMLite(Conversation.lastMessage.createdAt));
-    const [countUnRead, setCountUnRead] = useState(Conversation.unRead);
+    const [imgGroup, setImgGroup] = useState();
+    const [nameChat, setNameChat] = useState();
+    const [oponentChat, setOponentChat] = useState({});
+    const [lastMessage, setLastMessage] = useState(null)
+    const [timeMessage, setTimeMessage] = useState("");
+    const [countUnRead, setCountUnRead] = useState(0);
     const [currentMembers, setCurrentMembers] = useState([]);
+    const [CurrentConv, setCurrentConv] = useState<any>({});
+    const [lastSender, setLastSender] = useState("");
 
     useEffect(() => {
-        if(Conversation)
+        if(Conversation )
+        {
+            if(Conversation.isNew)
+            {
+                loadConversation()
+            }
+            else{
+                setCurrentConv(Conversation)
+            }
+        }
+    }, [Conversation]);
+
+    useEffect(() => {
+        if(CurrentConv)
         {
 
-            var members = ListMembers[Conversation.id].members
-            var dict = {}
-            members.forEach((d)=>{
-                // @ts-ignore
-                dict[d.userId] = d
-            })
+            var members = ListMembers[CurrentConv.id]?.members ?? []
 
-            setCurrentMembers(dict)
-
-            if(Conversation.unRead > 99) setCountUnRead("99+");
-
-            if(Conversation.type === ConversationType.Group)
+            if(members)
             {
-                setImgGroup(Conversation.imageUrl + token)
+                var dict = {}
+                members.forEach((d)=>{
+                    // @ts-ignore
+                    dict[d.userId] = d
+                })
+
+                setCurrentMembers(dict)
             }
-            else if(Conversation.type === ConversationType.Direct)
+
+            if(CurrentConv.unRead > 99)
             {
-                var members = Conversation.members
+                setCountUnRead("99+")
+            }
+            else{
+                setCountUnRead(CurrentConv.unRead)
+            }
+            setLastMessage(CurrentConv?.lastMessage)
+            setTimeMessage(ToHCMLite(CurrentConv?.lastMessage?.createdAt))
+            SenderSend(CurrentConv?.lastMessage, dict)
+            if(CurrentConv.type === ConversationType.Group)
+            {
+                setImgGroup(CurrentConv.imageUrl + token)
+                setNameChat(CurrentConv.name)
+            }
+            else if(CurrentConv.type === ConversationType.Direct)
+            {
+                var members = CurrentConv.members
                 var op = members.filter((i: any) => i.userId !==  userId)[0]
                 setOponentChat(op)
-                setNameChat(op.name)
-                setImgGroup(op.imageUrl)
+                setNameChat(op?.name ?? "")
+                setImgGroup(op?.imageUrl ?? "")
             }
         }
 
 
-    }, [Conversation]);
-    return(
+    }, [CurrentConv]);
+
+    const loadConversation = async( )=>{
+
+        try{
+            var rs = await apiClient.get(`/chat/conversation/${Conversation.id}`)
+            var status = rs.status
+            if(status === 200)
+            {
+                var data = rs.data.data
+
+                setCurrentConv(data)
+            }
+        }
+        catch(err){
+            console.log(err)
+        }
+    }
+
+    const SenderSend = (lastMess, listMems)=> {
+
+        var sender = ""
+        // @ts-ignore
+        if (lastMess?.isSystem) sender= "System:";
+        // @ts-ignore
+        else if (lastMess && lastMess?.senderId === userId) sender = "You:";
+        // @ts-ignore
+        else sender = listMems[lastMess?.senderId]?.name ? `${listMems[lastMess?.senderId]?.name}:` : "_:";
+        setLastSender(sender)
+
+    }
+    return (
         <>
             <div
-
-
                 className="ConversationCard"
                 style={{
                     marginTop: 3,
                     borderRadius: 8,
-                    backgroundColor: Conversation.isSelected ? cardColor : "transparent",
+                    backgroundColor: CurrentConv?.isSelected ? cardColor : "transparent",
                     padding: "15px 5px",
                     display: "flex",
                     alignItems: "center", // Căn giữa theo chiều dọc
@@ -86,25 +143,25 @@ const ConversationCard : React.FC<CardProps> = ({Conversation, ClickCallback, us
                 }}
             >
 
-                <Avatar   onClick={()=>ClickCallback(Conversation)} style={{minWidth: 30, minHeight: 30}}  image={imgGroup} size="normal" shape="circle" className="p-mr-2">
+                <Avatar   onClick={()=>ClickCallback(CurrentConv??{})} style={{minWidth: 30, minHeight: 30}}  image={imgGroup} size="normal" shape="circle" className="p-mr-2">
 
                 </Avatar>
 
-                <div   onClick={()=>ClickCallback(Conversation)} style={{flexGrow: 1, width:"60%"}}>
-                    <span  style={{fontWeight: "bold", color: textColor}}>{nameChat}</span>
+                <div   onClick={()=>ClickCallback(CurrentConv??{})} style={{flexGrow: 1, width:"60%"}}>
+                    <span  style={{fontWeight: "bold", color: CurrentConv?.type === ConversationType.Group? "magenta" : textColor}}>{nameChat}</span>
 
                     <div style={{marginTop: 5,display: "flex", alignItems: "center", width: "100%"}}>
                         <p style={{
                             margin: 0,
                             flexGrow: 1,
                             fontSize: 12,
-                            color: lastMessage.isSystem ? "aqua" : textHintColor,
+                            color: textHintColor,
                             whiteSpace: "nowrap",
                             overflow: "hidden",
                             textOverflow: "ellipsis"
                         }}>
                             {/*// @ts-ignore*/}
-                           <span  style={{fontSize: 12, fontWeight: "bold"}}> {lastMessage.senderId === userId ? "You:" : (`${currentMembers[lastMessage.senderId]?.name}: ` ?? "")}</span> {lastMessage.content}
+                            <span style={{fontSize: 12, fontWeight: "bold"}}> {lastSender}</span> {lastMessage?.content}
                         </p>
 
                         <p style={{ margin: 0,fontSize: 12, color: textHintColor, marginLeft: "10px", whiteSpace: "nowrap"}}>
@@ -112,16 +169,17 @@ const ConversationCard : React.FC<CardProps> = ({Conversation, ClickCallback, us
                         </p>
                     </div>
                 </div>
-
-                <p style={{
-                    margin : 0,
-                    padding: "2px 4px",
-                    fontSize: 10,
-                    backgroundColor: "red",
-                    borderRadius: "100%",
-                    color: "white"
-                }}>{countUnRead}</p>
-                <Button style={{display: "none"}} icon="pi pi-ellipsis-h" className="p-button-text btn-card-more"/>
+                {countUnRead > 0 && (
+                    <p style={{
+                        margin : 0,
+                        padding: "2px 4px",
+                        fontSize: 10,
+                        backgroundColor: "red",
+                        borderRadius: "100%",
+                        color: "white"
+                    }}>{countUnRead}</p>
+                )}
+                {/*<Button style={{display: "none"}} icon="pi pi-ellipsis-h" className="p-button-text btn-card-more"/>*/}
             </div>
 
         </>

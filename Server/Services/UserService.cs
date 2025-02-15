@@ -27,6 +27,7 @@ namespace Server.Services
         private readonly string _ServerHost;
         private readonly string _PublicUrl;
         private readonly int LIMIT_PAGE_POST = 5;
+        private readonly int LIMIT_FRIEND = 20;
 
 
         public UserService(APIDbContext context, RoleManager<Role> roleManager, UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration configuration)
@@ -295,6 +296,47 @@ namespace Server.Services
                 post.SumLike = likeCounts.ContainsKey(post.Id) ? likeCounts[post.Id] : 0;
                 post.SumComment = commentCounts.ContainsKey(post.Id) ? commentCounts[post.Id] : 0;
             }
+
+
+            return profile;
+        }
+        public async Task<UserResponse> FindById(string userId, string id)
+        {
+            var myAccount = _userManager.FindByIdAsync(userId);
+            if (myAccount == null) throw new Exception("Account-Your account not exists");
+
+            var profile = await context.Users
+             .Where(u => u.Id.ToString() == id)
+        
+             .Select(u => new UserResponse()
+             {
+                 Id = u.Id,
+                 UserName = u.UserName,
+                 UserProfile = u.UserProfile,
+                 Bio = u.Bio,
+                 Name = u.Name,
+                 Gender = u.Gender,
+                 Email = u.Email,
+                 Phone = u.Phone,
+                 ImageUrl = $"{_PublicUrl}/{u.Id}/{u.ImageUrl}",
+                 IsDeleted = u.IsDeleted,
+                 CreatedAt = u.CreatedAt,
+             })
+             .FirstOrDefaultAsync();
+
+
+            if (profile == null) return null;
+
+            var relation = await context.FriendShips
+                .Where(f => f.UserId.ToString() == userId && f.FriendId == profile.Id)
+                .FirstOrDefaultAsync();
+
+            //if (relation != null && relation.Status == FriendShip.FriendStatus.Obstructed)
+            //{
+            //    throw new Exception("Account-You not allow to view this profile");
+            //}
+
+            profile.FriendStatus = relation?.Status ?? FriendShip.FriendStatus.Normal;
 
 
             return profile;
@@ -651,6 +693,25 @@ namespace Server.Services
              
             
             return notifies;
+
+        }
+        public async Task<List<UserResponse>> GetFriends(string userId, int page = 1)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null) throw new Exception("Account-Your account not exists");
+            if (page < 1) page = 1;
+
+            var friends = await context.FriendShips
+                .Where(f => f.UserId == new Guid(userId) && f.IsFriend == true && f.Status == FriendShip.FriendStatus.Normal)
+                .Include(f => f.Friend)
+                .Skip((page-1) * LIMIT_FRIEND)
+                .Take(LIMIT_FRIEND)
+                .Select(f => new UserResponse(f.Friend, _ServerHost, _PublicUrl))
+                .ToListAsync();
+
+            //Console.WriteLine("===== ===================: " + friends.Count + "-" + userId);
+            return friends;
 
         }
 

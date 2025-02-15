@@ -1,0 +1,5 @@
+MAIL_CLIENT_ID=1090902638436-fif4i75fv1a6arog22doq7f8h0998p7e.apps.googleusercontent.com
+MAIL_CLIENT_SECRET=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
+MAIL_MY_EMAIL=px4.vnd@gmail.com
+MAIL_REDIRECT_URI=https://developers.google.com/oauthplayground
+MAIL_REFRESH_TOKEN=1//04uENFF898GWNCgYIARAAGAQSNwF-L9Ir9A66Ap7hKoReyVJ034qJf6y8npn_W_mVXTtUGFywcv9g4XJgXjabHMxO6FjSRpipu28

@@ -19,6 +19,8 @@ namespace Server.DTOs.Communication
         public ConvPermission CanSend { get; set; }
         public ConvPermission CanEdit { get; set; }
 
+        public List<MessageResponse> ListNewMessage { get; set; } = new List<MessageResponse>();
+
         //member
         public  List<MemberResponse> Members { get; set; }
        
@@ -33,6 +35,10 @@ namespace Server.DTOs.Communication
         {
             initValue(conversation, serverHost, accessImg);
             this.LastMessage = new MessageResponse(lastMessage);
+            if (lastMessage.Seens != null && lastMessage.Seens.Count > 0)
+            {
+                this.LastMessage.SeenIds = lastMessage.Seens.Select(s => s.UserId.ToString()).ToList();
+            }
             this.UnRead = unRead;
         }
 

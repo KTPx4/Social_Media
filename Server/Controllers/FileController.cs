@@ -75,6 +75,10 @@ namespace Server.Controllers
                 {
                     result = await _fileService.GetPathMediaConversation(userId, id);
                 }
+                else if(t == "message")
+                {
+                    result = await _fileService.GetPathMediaMessage(userId, id);
+                }
 
                 var path = result.GetValueOrDefault("path");
                 var contentType = result.GetValueOrDefault("contentType");
@@ -87,7 +91,7 @@ namespace Server.Controllers
 
                 var fileStream = System.IO.File.OpenRead(filePath);
 
-                return File(fileStream, contentType);
+                return File(fileStream, contentType, Path.GetFileName(filePath));
             }
             catch (Exception ex) 
             {

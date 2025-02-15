@@ -62,7 +62,6 @@ const ProfilePage = () => {
   const loadPost = async()=>{
     if(!canLoad ) return
     setLoading(true)
-    console.log(postType)
     try{
       var rs = await apiClient.get(`/user/profile/${myAccount?.userProfile}/${postType}?page=${page}`)
       var status = rs.status

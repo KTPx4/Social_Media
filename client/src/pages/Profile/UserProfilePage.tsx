@@ -40,7 +40,7 @@ const UserProfilePage = () => {
   // const queryParams = new URLSearchParams(location.search);
   const { userProfileString } = useParams<{ userProfileString: string }>();
   const navigate = useNavigate();
-  const { userId } = useStore();
+  const { userId , myAccount} = useStore();
   // const userProfileString = queryParams.get("userProfile");
   const textColor = currentTheme.getText();
   const backgroundColor = currentTheme.getBackground();
@@ -73,6 +73,15 @@ const UserProfilePage = () => {
   const toast = useRef<Toast>(null);
   const [visibleFastChat, setVisibleFastChat] = useState(false);
   const [inputChat, setInputChat] = useState("")
+  useEffect(() => {
+    if(userProfileString)
+    {
+      if(myAccount?.userProfile === userProfileString)
+      {
+        window.location.href = "/home/profile"
+      }
+    }
+  }, [userProfileString]);
 
   useEffect(() => {
     if(firstLoad)
@@ -298,6 +307,8 @@ const UserProfilePage = () => {
     else{
       toast.current?.show({severity:'error', summary: 'Message', detail:'Send message failed', life: 3000});
     }
+    setInputChat("")
+    setVisibleFastChat(false)
   }
 
   if (!userProfile)

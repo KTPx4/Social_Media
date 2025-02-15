@@ -5,12 +5,13 @@ import useStore from "./useStore.tsx";
 // Định nghĩa kiểu dữ liệu cho Context
 interface WebSocketContextProps {
     isConnected: boolean;
-    messages: { sender: string; message: string }[];
-    reactMessage: any;
-    sendMessage: (senderId: string, receiverUserId: string, message: string, type: number ) => any;
+    // messages: { sender: string; message: string }[];
+    // reactMessage: any;
+    subscribeToMessages: any;
+    sendMessage: (senderId: string, receiverUserId: string, message: string, type: number , replyMessageId: any) => any;
     setNewMessages: any;
     sendDirectMessage: any;
-    sendReact: any;
+    sendReactMessage: any;
 }
 
 const WebSocketContext = createContext<WebSocketContextProps | undefined>(undefined);
@@ -33,6 +34,9 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, child
 
     const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
 
+    const messageListeners = useRef<((message: any) => void)[]>([]);
+    const messagesRef = useRef<{ sender: string; message: string }[]>([]);
+    const [, forceRender] = useState(0); // State ảo để trigger render khi cần thiết
     const connectWebSocket = () => {
         if (!token || connectionRef.current) return; // Nếu không có token hoặc đã có kết nối thì không tạo mới
 
@@ -55,15 +59,48 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, child
 
                 // Lắng nghe tin nhắn từ server
                 connection.on("ReceiveMessage", (sender: string, message: string) => {
-
+                    console.log("Get message: ", { sender, conversationId: message.conversationId, message })
+                    const newMessage = { type: "message", sender, conversationId: message.conversationId, message };
                     // @ts-ignore
-                    setMessages({ sender, conversationId: message.conversationId, message });
+                    // setMessages({ sender, conversationId: message.conversationId, message });
+                    messagesRef.current = newMessage;
+
+                    // ✅ Gọi tất cả listener đã đăng ký
+                    messageListeners.current.forEach((callback) => callback(newMessage));
+
+                });
+
+                connection.on("SendFile", (sender: any, message: any) => {
+                    console.log("Get file: ", { sender, conversationId: message.conversationId, message })
+                    const newMessage = { type: "message", sender, conversationId: message.conversationId, message };
+                    messageListeners.current.forEach((callback) => callback(newMessage));
+
+                });
+
+                connection.on("UpdateGroup", (sender: string, message: string) => {
+                    // console.log("Get message: ", { sender, conversationId: message.conversationId, message })
+                    var listMess = message ?? []
+                    listMess?.map((mess)=>{
+                        const newMessage = { type: "message", sender, conversationId: mess.conversationId, mess };
+                        // @ts-ignore
+                        // setMessages({ sender, conversationId: message.conversationId, message });
+                        messagesRef.current = newMessage;
+
+                        // ✅ Gọi tất cả listener đã đăng ký
+                        messageListeners.current.forEach((callback) => callback(newMessage));
+                    })
+
                 });
 
                 connection.on("ReactMessage", (sender: string, message: string) => {
+                    // console.log("Get raction: ", { sender, conversationId: message.conversationId, message })
                     // @ts-ignore
-                    setReactMessage({ sender, conversationId: message.conversationId, message });
+                    // setReactMessage({ sender, conversationId: message.conversationId, message });
+                    const newMessage = { type: "react", sender, conversationId: message.conversationId, message };
+                    messageListeners.current.forEach((callback) => callback(newMessage));
+
                 });
+
 
                 // Xóa timeout nếu kết nối thành công
                 if (reconnectTimeout.current) {
@@ -84,6 +121,9 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, child
         });
     };
 
+    const subscribeToMessages = (callback: (message: any) => void) => {
+        messageListeners.current.push(callback);
+    };
     const retryConnection = () => {
         if (reconnectTimeout.current) return; // Nếu đã có timeout thì không tạo mới
 
@@ -108,14 +148,14 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, child
         }
     }, [isConnected]);
 
-    const sendMessage = async (senderId: string, receiverUserId: string, message: string, type: number) => {
+    const sendMessage = async (senderId: string, receiverUserId: string, message: string, type: number, replyMessageId: any = null) => {
 
         if (connectionRef.current && isConnected && userId && receiverUserId !== userId) {
             try {
 
                 var body ={
                     ConversationId: receiverUserId,
-                    ReplyMessageId: null,
+                    ReplyMessageId: replyMessageId,
                     Content: message,
                     SenderId: senderId,
                     Type: type
@@ -131,13 +171,13 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, child
             return null
         }
     };
-    const sendDirectMessage = async (senderId: string, receiverUserId: string, message: string, type: number = MessageType.Text) => {
+    const sendDirectMessage = async (senderId: string, receiverUserId: string, message: string, type: number = MessageType.Text, replyMessageId: any = null) => {
 
         if (connectionRef.current && isConnected && userId && receiverUserId !== userId) {
             try {
                 var body ={
                     ConversationId: receiverUserId,
-                ReplyMessageId: null,
+                    ReplyMessageId: replyMessageId,
                     Content: message,
                     SenderId: senderId,
                     Type: type
@@ -174,7 +214,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, child
         }
     };
     return (
-        <WebSocketContext.Provider value={{ isConnected, messages, reactMessage, sendMessage, sendDirectMessage , setNewMessages:{setMessages} , sendReact:{sendReactMessage}}}>
+        <WebSocketContext.Provider value={{ isConnected,  subscribeToMessages , sendMessage, sendDirectMessage , setNewMessages:{setMessages} , sendReactMessage}}>
             {children}
         </WebSocketContext.Provider>
     );
