@@ -331,10 +331,13 @@ namespace Server.Services
                 .Where(f => f.UserId.ToString() == userId && f.FriendId == profile.Id)
                 .FirstOrDefaultAsync();
 
-            if (relation != null && relation.Status == FriendShip.FriendStatus.Obstructed)
-            {
-                throw new Exception("Account-You not allow to view this profile");
-            }
+            //if (relation != null && relation.Status == FriendShip.FriendStatus.Obstructed)
+            //{
+            //    throw new Exception("Account-You not allow to view this profile");
+            //}
+
+            profile.FriendStatus = relation?.Status ?? FriendShip.FriendStatus.Normal;
+
 
             return profile;
         }

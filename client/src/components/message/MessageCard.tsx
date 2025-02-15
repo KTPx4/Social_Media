@@ -11,15 +11,25 @@ import {Messages} from "primereact/messages";
 import {Tooltip} from "primereact/tooltip";
 import {toHCMTime} from "../../utils/Convertor.tsx";
 import apiClient from "../../utils/apiClient.tsx";
+import {Image} from "primereact/image";
+
+const enum MessageType
+{
+    Text = 0, Image = 1, Video = 2, File = 3
+}
 
 const MessageCard : React.FC<any> = ({ListMembers, Message, sendReact, showReactions, ReplyMessage}) => {
+    var urlServer =  import.meta.env.VITE_SERVER_URL ||  "https://localhost:7000";
     const {userId, setId} = useStore()
     // const {reactMessage } = useWebSocketContext()
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
+    const Url = `${urlServer}/api/file/src?t=message&id=`
 
     // theme
     const themeContext = useContext(ThemeContext);
     // @ts-ignore
     const { currentTheme, changeTheme } = themeContext;
+    const keyTheme = currentTheme.getKey()
     const textColor = currentTheme.getText()
     const textHintColor = currentTheme.getHint()
     const captionColor = currentTheme.getCaption()
@@ -66,7 +76,8 @@ const MessageCard : React.FC<any> = ({ListMembers, Message, sendReact, showReact
     useEffect(() => {
         if(Message)
         {
-            console.log(Message)
+
+
             if(!ListMembers[Message.senderId] )
             {
                 LoadUser(Message.senderId)
@@ -121,7 +132,7 @@ const MessageCard : React.FC<any> = ({ListMembers, Message, sendReact, showReact
                     userId:  mess.senderId
                 })
             }
-            console.log(newList)
+
             SetListUniqueIcon(newList)
             return newList
 
@@ -145,7 +156,8 @@ const MessageCard : React.FC<any> = ({ListMembers, Message, sendReact, showReact
         ReplyMessage(Message)
     }
     const ShowReactions = () =>{
-        console.log("show")
+
+
         showReactions(listReact)
     }
     const HandleReaction = async(emoji) =>{
@@ -167,7 +179,8 @@ const MessageCard : React.FC<any> = ({ListMembers, Message, sendReact, showReact
             setListReact(newListReact)
             SetListUniqueIcon(newListReact)
         }
-        console.log("rs react: ",rs)
+
+
     }
 
     const handleEmojiSelect = (emoji: any) => {
@@ -184,8 +197,9 @@ const MessageCard : React.FC<any> = ({ListMembers, Message, sendReact, showReact
         setShowReaction(true)
     };
 
+    const textColorSystem= Message?.content?.includes("remove") ? "red" : ( Message?.content?.includes("added") ? "#44c944" : "aqua")
     return(
-        <>
+        <div className={keyTheme}>
             <div
                 className={ "message message-" + (Message.isSystem ? "system" : isMe)}
                 style={{
@@ -210,6 +224,7 @@ const MessageCard : React.FC<any> = ({ListMembers, Message, sendReact, showReact
                         gap: 5, // Khoảng cách giữa reply và message chính
                     }}>
 
+                        {/*//reply message*/}
                         {Message.messageReply && (
                             <p
 
@@ -234,40 +249,110 @@ const MessageCard : React.FC<any> = ({ListMembers, Message, sendReact, showReact
                             </p>
                         )}
 
+                        {/*message*/}
                         <div style={{
                             zIndex: 20,
-                            display:"flex",
-                            flexDirection: isMe==="me" ? "row-reverse" : "row",
+                            display: "flex",
+                            flexDirection: isMe === "me" ? "row-reverse" : "row",
+                            alignItems: "center"
 
                         }}>
-                            <Tooltip target=".message-content" />
-                            <p
-                                data-pr-tooltip={toHCMTime(Message.createdAt)}
-                                data-pr-position={isMe === "me" ? 'left' :"right"}
-                                className={"message-content"}
-                                style={{
-                                zIndex: 20,
-                                margin: "-12px 0 0 0", // Kéo message chính lên trên reply một chút
-                                backgroundColor: Message.isSystem ? "transparent" : backMessColor,
-                                color: Message.isSystem ? "aqua" : textColor,
-                                padding: 10,
-                                width: "fit-content",
-                                minWidth: 50,
-                                maxWidth: 400,
-                                borderRadius: 20,
-                                display: "flex",
-                                justifyContent: "center",
-                                fontSize: (Message.isSystem || Message.isDeleted) ? 12 : 16,
-                                fontStyle: (Message.isSystem || Message.isDeleted) ? "italic" : "normal",
-                                overflowWrap: "anywhere",
-                                boxShadow: "0px 2px 5px rgba(0,0,0,0.1)", // Đổ bóng nhẹ để nổi bật hơn
-                            }}>
-                                {Message.isDeleted ? "Message has been deleted!" : Message.content}
-                            </p>
+                            <Tooltip target=".message-content"/>
+
+                            {/*Type text */}
+                            {Message.type === MessageType.Text && (
+                                <p
+                                    data-pr-tooltip={toHCMTime(Message.createdAt)}
+                                    // data-pr-position={isMe === "me" ? 'left' : "right"}
+                                    data-pr-position={"top"}
+                                    className={"message-content"}
+                                    style={{
+                                        zIndex: 20,
+                                        margin: "-12px 0 0 0", // Kéo message chính lên trên reply một chút
+                                        backgroundColor: Message.isSystem ? "transparent" : backMessColor,
+                                        color: Message.isSystem ? textColorSystem : textColor,
+                                        padding: 10,
+                                        width: "fit-content",
+                                        minWidth: 50,
+                                        maxWidth: 400,
+                                        borderRadius: 20,
+                                        display: "flex",
+                                        justifyContent: "center",
+                                        fontSize: (Message.isSystem || Message.isDeleted) ? 12 : 16,
+                                        fontStyle: (Message.isSystem || Message.isDeleted) ? "italic" : "normal",
+                                        overflowWrap: "anywhere",
+                                        boxShadow: "0px 2px 5px rgba(0,0,0,0.1)", // Đổ bóng nhẹ để nổi bật hơn
+                                    }}>
+                                    {Message.isDeleted ? "Message has been deleted!" : Message.content}
+                                </p>
+                            )}
+
+                            { Message.type === MessageType.Image &&
+                                (
+                                    <>
+                                       <Image
+                                               preview className={"message-img"}
+                                               src={Message.content + token}
+                                               style={{margin: "30px 0", objectFit: "cover", maxWidth: 320, maxHeight: 250, display:"block"}} />
+                                    </>
+                                )
+                            }
+
+                            { Message.type === MessageType.Video &&
+                                (
+                                    <>
+                                        <video
+                                            controls style={{
+                                            maxWidth: 350, maxHeight: 270
+                                        }}>
+                                            <source src={Message.content + token} type="video/mp4"/>
+                                        </video>
+                                    </>
+                                )
+                            }
+                            {Message.type === MessageType.File &&
+                                (
+                                    <>
+                                        <div
+                                            data-pr-tooltip={toHCMTime(Message.createdAt)}
+                                            data-pr-position={isMe === "me" ? 'left' : "right"}
+                                            className={"message-content-file"}
+                                            style={{
+                                                zIndex: 20,
+                                                margin: "-12px 0 0 0", // Kéo message chính lên trên reply một chút
+                                                backgroundColor: Message.isSystem ? "transparent" : backMessColor,
+                                                color: Message.isSystem ? textColorSystem : textColor,
+                                                padding: 10,
+                                                width: "fit-content",
+                                                minWidth: 50,
+                                                maxWidth: 400,
+                                                borderRadius: 20,
+                                                display: "flex",
+                                                justifyContent: "center",
+                                                fontSize: (Message.isSystem || Message.isDeleted) ? 12 : 16,
+                                                fontStyle: (Message.isSystem || Message.isDeleted) ? "italic" : "normal",
+                                                overflowWrap: "anywhere",
+                                                boxShadow: "0px 2px 5px rgba(0,0,0,0.1)", // Đổ bóng nhẹ để nổi bật hơn
+                                            }}>
+                                            <a href={`${Url}${Message.id}&token=${token}`}
+
+                                               target={"_blank"} rel="noopener noreferrer"  style={{
+                                                color: "pink",
+
+                                                textDecoration: "underline !important",
+                                                wordBreak: "break-word",
+                                            }}>
+                                                <span className="pi pi-file"> {Message.content}</span>
+                                            </a>
+                                        </div>
+                                    </>
+                                )
+                            }
 
                             {!Message.isSystem && (
                                 <div style={{marginTop: -12, display: "flex", flexDirection: "row"}}>
-                                    <Button onClick={HandleReplyComment} className={"btn-more"} text icon={"pi pi-reply"}
+                                    <Button onClick={HandleReplyComment} className={"btn-more"} text
+                                            icon={"pi pi-reply"}
                                             style={{display: "none", height: 30}}/>
                                     <Button onClick={handleSelectMessageForReaction} className={"btn-more"} text
                                             icon={"pi pi-face-smile"} style={{display: "none", height: 30}}/>
@@ -299,40 +384,35 @@ const MessageCard : React.FC<any> = ({ListMembers, Message, sendReact, showReact
                             {emoji}
                             </span>
                                     ))}
-                                    <Button style={{height: 20, width: 25}} onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                    <Button style={{height: 20, width: 25}}
+                                            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                                             severity={"secondary"} text icon={"pi pi-plus-circle"}/>
                                     <Button style={{height: 20, width: 25}} onClick={() => {
                                         setShowReaction(false)
                                         setShowEmojiPicker(false)
                                     }} severity={"warning"} text icon={"pi pi-times-circle"}/>
-                                    {/*<span*/}
-                                    {/*    style={{ fontSize: "20px", fontWeight: "bold", cursor: "pointer", padding: "3px 8px", borderRadius: "50%", background: "#ddd" }}*/}
-                                    {/*    */}
-                                    {/*>*/}
-                                    {/*    +*/}
-                                    {/*</span>*/}
-
                                     {showEmojiPicker && (
-                                        <div style={{  zIndex: 10 }}>
-                                            <EmojiPicker onEmojiClick={handleEmojiSelect} />
+                                        <div style={{zIndex: 10}}>
+                                            <EmojiPicker onEmojiClick={handleEmojiSelect}/>
                                         </div>
                                     )}
                                 </div>
                             )}
 
                         </div>
-                        <div onClick={ShowReactions}>
-                            {listReactShow.map((r) =>
-                                <span key={r}>{r}</span>
+                            {listReactShow?.length > 0 && (
+                                <div  onClick={ShowReactions}>
+                                    {listReactShow.map((r) =>
+                                        <span key={r}>{r}</span>
+                                    )}
+                                </div>
                             )}
-                        </div>
                     </div>
-
 
                 </div>
 
             </div>
-        </>
+        </div>
     )
 }
 export default MessageCard;

@@ -36,9 +36,9 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
     // @ts-ignore
     const [Post, setPost] = useState(post)
     const {userId, setId, myAccount} = useStore()
-
+    const navigate = useNavigate()
     // var {id ,authorId,  createdAt, authorProfile, authorImg, content, listMedia} = Post
-    const navigate = useNavigate();
+
 
     //
     const [isLike, setIsLike] = useState<boolean>(post?.isLike ?? false);
@@ -107,7 +107,6 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
         }
         if(Post)
         {
-            console.log(Post)
             setListInfoMedia(Post.listMedia.map((media: { mediaUrl: any; contentType: any; isDeleted: any;}) =>  {
                 return {mediaUrl: media.mediaUrl + token, contentType: media.contentType, isDeleted: media.isDeleted}
             }))
@@ -162,6 +161,8 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
             }
         }]
     }
+    /// navigate profile
+
 ////// load history
     const loadHistory = async() =>{
         try{

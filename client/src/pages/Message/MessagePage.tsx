@@ -43,13 +43,37 @@ const MessagePage : React.FC = () => {
 
     const [showModalCreate, setShowModalCreate] = useState(false);
     const [listSuggest , setListSuggestFriend] = useState([])
-
+    const [opDicrectUser, setOpDicrectUser] = useState(null);
+    var infoComponent = useRef<any>(null)
 
     useEffect(() => {
         loadSuggest()
         LoadFromLocal();
         LoadData();
     }, []);
+
+    useEffect(() => {
+        if(currentConversation)
+        {
+
+            if(currentConversation.type === ConversationType.Group)
+            {
+                infoComponent.current = (<InfoChatGroup
+                    ListSuggest={listSuggest}
+                    UpdateMemberSuccess={UpdateMemberSuccess}
+                    ListMembers={listMembers}
+                    ConvId={currentConversation?.id}
+                    HandleCallBackInfo={HandleCallBackInfo}
+                    Image={currentConversation?.imageUrl + token}
+                    NameGroup={currentConversation?.name}/>)
+            }
+            else  if(opDicrectUser)
+            {
+                infoComponent.current = (
+                    <InfoChatDirect DirectUser={opDicrectUser} ListMembers={listMembers}   Conversation={currentConversation} /> )
+            }
+        }
+    }, [currentConversation, opDicrectUser]);
 
     const loadSuggest =async () =>{
         try{
@@ -69,13 +93,19 @@ const MessagePage : React.FC = () => {
     }
     const ClickConversation = async (Conversation: any) => {
         if (currentConversation && currentConversation.id === Conversation.id) return;
+        setShowInfo(false)
         setListConversation((prev)=> {
             var newList = prev.map((c) => c.id === Conversation.id ? {...c, unRead: 0} : c)
             return newList
         })
         setConversation(Conversation);
 
-
+        if(Conversation.type === ConversationType.Direct)
+        {
+            var members = Conversation.members
+            var op = members.filter((i: any) => i.userId !==  userId)[0]
+            await loadInfo(op.id ?? op.userId ?? "")
+        }
 
         if(Conversation.unRead < 1) return
         try{
@@ -86,7 +116,22 @@ const MessagePage : React.FC = () => {
             console.log(error)
         }
     };
+    const loadInfo = async (userid)=>{
+        try{
+            var rs = await  apiClient.get(`/user/search/${userid}`)
+            var status = rs.status
 
+            if(status === 200)
+            {
+                var data = rs.data.data
+                setOpDicrectUser(data)
+            }
+        }
+        catch (e)
+        {
+            console.log(e)
+        }
+    }
     const CloseInfo = () => {
         setShowInfo(false);
     };
@@ -117,7 +162,7 @@ const MessagePage : React.FC = () => {
     const LoadData = async () => {
         try {
             var rs = await apiClient.get("/chat/conversation");
-            console.log("get conversation: ", rs.data.data);
+
             var status = rs.status;
             if (status === 200) {
                 var dict = {};
@@ -153,7 +198,6 @@ const MessagePage : React.FC = () => {
 
             case "info":
                 // update group
-                console.log("Edit success: ", data)
                 var newList = listConversation.map(c => c.id === data.id  ?
                     {...c, imageUrl: data.imageUrl, name: data.name, time: Date.now()} : c)
 
@@ -202,12 +246,21 @@ const MessagePage : React.FC = () => {
              console.log(e)
          }
     }
-    const InfoContent = currentConversation === null ? null : (
-        currentConversation.type === ConversationType.Direct ? <InfoChatDirect /> : <InfoChatGroup ListSuggest={listSuggest} UpdateMemberSuccess={UpdateMemberSuccess} ListMembers={listMembers} ConvId={currentConversation?.id} HandleCallBackInfo={HandleCallBackInfo} Image={currentConversation?.imageUrl + token} NameGroup={currentConversation?.name}/>
-    );
+
+    // const InfoContent = currentConversation === null ? null : (
+    //     currentConversation.type === ConversationType.Direct ?
+    //         <InfoChatDirect DirectUser={opDicrectUser} ListMembers={listMembers}   Conversation={currentConversation} /> :
+    //         <InfoChatGroup
+    //             ListSuggest={listSuggest}
+    //             UpdateMemberSuccess={UpdateMemberSuccess}
+    //             ListMembers={listMembers}
+    //             ConvId={currentConversation?.id}
+    //             HandleCallBackInfo={HandleCallBackInfo}
+    //             Image={currentConversation?.imageUrl + token}
+    //             NameGroup={currentConversation?.name}/>
+    // );
 
     const HandleChangeLastMess = (newMess)=>{
-        console.log(newMess)
         if(callBackRef?.current)
         {
             const func = callBackRef.current
@@ -226,11 +279,22 @@ const MessagePage : React.FC = () => {
         <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "row" }}>
 
             <div className="left-info" style={{ height: "100vh", width: "25%", minWidth: 250, backgroundColor: "transparent" }}>
-                <LeftInfo key={Date.now()} showModalCreate={()=>setShowModalCreate(true)} CallBackUpdateLastMess={CallBackUpdateLastMess} isLoading={isLoading} ClickCallBack={ClickConversation} userId={userId} listConversation={listConversation} setListConversation={setListConversation} ListMembers={listMembers} />
+                <LeftInfo key={Date.now()}
+                          showModalCreate={()=>setShowModalCreate(true)}
+                          CallBackUpdateLastMess={CallBackUpdateLastMess}
+                          isLoading={isLoading}
+                          ClickCallBack={ClickConversation}
+                          userId={userId}
+                          listConversation={listConversation}
+                          setListConversation={setListConversation}
+                          ListMembers={listMembers}
+                          setListMembers={setListMembers}
+                />
             </div>
 
             <div className={"right-message"} style={{ height: "100%", width: showInfo ? "50%" : "75%", backgroundColor: "transparent" }}>
                 <RightContent
+                    DirectUser={opDicrectUser}
                     key={currentConversation?.id + Date.now()}
                     DbContext={db}
                     CurrentConversation={currentConversation}
@@ -245,7 +309,7 @@ const MessagePage : React.FC = () => {
             </div>
 
             <div className={"right-setting"} style={{ height: "100%", width: showInfo ? "25%" : "0%", backgroundColor: "transparent" }}>
-                {showInfo && InfoContent}
+                {showInfo && (infoComponent.current)}
             </div>
 
             {/* 🎉 Hiển thị Emoji Picker ngoài cùng */}

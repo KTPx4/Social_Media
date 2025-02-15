@@ -1,7 +1,9 @@
 import axios from "axios";
 
+var urlServer =  import.meta.env.VITE_SERVER_URL || "https://localhost:7000";
+
 const apiClient = axios.create({
-  baseURL: "https://localhost:7000/api",
+  baseURL: `${urlServer}/api`,
   timeout: 100000,
 });
 

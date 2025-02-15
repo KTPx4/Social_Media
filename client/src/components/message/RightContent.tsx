@@ -14,6 +14,7 @@ import {InputText} from "primereact/inputtext";
 import {ProgressSpinner} from "primereact/progressspinner";
 import {Dialog} from "primereact/dialog";
 import FooterRightContent from "./FooterRightContent.tsx";
+import {Message} from "primereact/message";
 
 
 enum ConversationType {
@@ -29,7 +30,10 @@ const FastMessage = {
     Heart: "❤️",
     Heart_2: "💘"
 }
-const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , listConversation, setListConversation, showInfo, ListMembers, HandleChangeLastMess })=>{
+const FriendStatus = {
+    Normal: 0, Prevented : 1, Obstructed :2
+}
+const RightContent : React.FC<any> = ({DirectUser, CurrentConversation, DbContext, userId , listConversation, setListConversation, showInfo, ListMembers, HandleChangeLastMess })=>{
     const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
 
     // @ts-ignore
@@ -61,6 +65,7 @@ const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , 
     const [listReactions, setListReactions] = useState([]);
 
     const CallBackReplyMessRef = useRef(null);
+    const [infoDicrectUser, setInfoDicrect] = useState(null)
 
     useEffect(() => {
         const handleNewMessage = (message) => {
@@ -92,7 +97,7 @@ const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , 
 
         if(listMessage && listMessage.length > 0 )
         {
-            if( !isScrollTop)scrollEndMess()
+            if( !isScrollTop) scrollEndMess()
         }
 
     }, [listMessage]);
@@ -126,6 +131,7 @@ const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , 
                 setOponentChat(op)
                 setNameChat(op.name)
                 setImgGroup(op.imageUrl)
+
             }
             setTimeout(()=>{
                 LoadMessages()
@@ -133,8 +139,13 @@ const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , 
             }, 400)
 
         }
+        if(DirectUser && CurrentConversation.type === ConversationType.Direct)
+        {
+            setInfoDicrect(DirectUser)
+        }
+        else  setInfoDicrect(null)
 
-    }, [CurrentConversation]);
+    }, [CurrentConversation, DirectUser]);
 
     const LoadLocal = async () =>{
         try{
@@ -169,8 +180,8 @@ const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , 
         setLoading(true)
         try{
            if(page > 1)  setScrollTop(true)
-            var rs = await apiClient.get(`/chat/conversation/${CurrentConversation.id}?page=${page}`)
-            console.log("get message: ", rs, page)
+            var rs = await apiClient.get(`/chat/conversation/${CurrentConversation.id}/chat?page=${page}`)
+
             var status = rs.status
             if(status === 200)
             {
@@ -306,7 +317,7 @@ const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , 
     if(!CurrentConversation){
         return(<></>)
     }
-    console.log(CurrentConversation)
+
     return (
         <div style={{
             height: "100vh",
@@ -323,7 +334,7 @@ const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , 
             >
                 {listReactions.map((e)=>
                     {
-                        console.log(listMembers[e.userId])
+
                         return (
                             <div key={e.userId} style={{display: "flex", flexDirection: "row", alignItems: "center"}}>
                                 <Avatar className={"mx-1"} size="normal" shape="circle" image={listMembers[e.userId]?.imageUrl}/>
@@ -405,7 +416,14 @@ const RightContent : React.FC<any> = ({CurrentConversation, DbContext, userId , 
             </div>
 
             {/*footer*/}
-            <FooterRightContent setReplyMess={setReplyMess} ListMembers={listMembers} SendMessage={SendMessage} SendLike={SendLike} showIcon={showIcon} setInputMessage={setInputMessage} inputMessage={inputMessage} CallBackReply={subriceCallBack}/>
+            {(!infoDicrectUser || (infoDicrectUser && infoDicrectUser.friendStatus ===  FriendStatus.Normal)) && (
+                <FooterRightContent CurrConvID={CurrentConversation?.id} setReplyMess={setReplyMess} ListMembers={listMembers} SendMessage={SendMessage} SendLike={SendLike} showIcon={showIcon} setInputMessage={setInputMessage} inputMessage={inputMessage} CallBackReply={subriceCallBack}/>
+            )}
+            {infoDicrectUser && infoDicrectUser.friendStatus !==  FriendStatus.Normal &&(
+                <>
+                    <Message severity="warn" text="Can't send message to this user!" />
+                </>
+            )}
         </div>
     )
 }

@@ -19,6 +19,8 @@ namespace Server.DTOs.Communication
         public ConvPermission CanSend { get; set; }
         public ConvPermission CanEdit { get; set; }
 
+        public List<MessageResponse> ListNewMessage { get; set; } = new List<MessageResponse>();
+
         //member
         public  List<MemberResponse> Members { get; set; }
        

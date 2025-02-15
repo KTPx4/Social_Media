@@ -59,7 +59,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, child
 
                 // Lắng nghe tin nhắn từ server
                 connection.on("ReceiveMessage", (sender: string, message: string) => {
-                    // console.log("Get message: ", { sender, conversationId: message.conversationId, message })
+                    console.log("Get message: ", { sender, conversationId: message.conversationId, message })
                     const newMessage = { type: "message", sender, conversationId: message.conversationId, message };
                     // @ts-ignore
                     // setMessages({ sender, conversationId: message.conversationId, message });
@@ -67,6 +67,28 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ url, child
 
                     // ✅ Gọi tất cả listener đã đăng ký
                     messageListeners.current.forEach((callback) => callback(newMessage));
+
+                });
+
+                connection.on("SendFile", (sender: any, message: any) => {
+                    console.log("Get file: ", { sender, conversationId: message.conversationId, message })
+                    const newMessage = { type: "message", sender, conversationId: message.conversationId, message };
+                    messageListeners.current.forEach((callback) => callback(newMessage));
+
+                });
+
+                connection.on("UpdateGroup", (sender: string, message: string) => {
+                    // console.log("Get message: ", { sender, conversationId: message.conversationId, message })
+                    var listMess = message ?? []
+                    listMess?.map((mess)=>{
+                        const newMessage = { type: "message", sender, conversationId: mess.conversationId, mess };
+                        // @ts-ignore
+                        // setMessages({ sender, conversationId: message.conversationId, message });
+                        messagesRef.current = newMessage;
+
+                        // ✅ Gọi tất cả listener đã đăng ký
+                        messageListeners.current.forEach((callback) => callback(newMessage));
+                    })
 
                 });
 

@@ -43,11 +43,11 @@ const  InfoChatGroup  = ({ListSuggest, ConvId, Image, NameGroup, HandleCallBackI
         if(ConvId  && ListMembers)
         {
             var conversation = ListMembers[ConvId]
-            var listMem = conversation.members ?? []
-
+            var listMem = conversation?.members ?? []
+            console.log(listMem)
             var me  = listMem.filter(m=> m.userId === userId)[0]
 
-            if(me.role === ConversationRole.Leader || me.role === ConversationRole.Deputy)
+            if(me?.role === ConversationRole.Leader || me?.role === ConversationRole.Deputy)
             {
 
                 setCanEdit(true)
@@ -179,11 +179,11 @@ const  InfoChatGroup  = ({ListSuggest, ConvId, Image, NameGroup, HandleCallBackI
             label: 'Privacy',
             // icon: 'pi pi-desktop',
             items: [
-                {
-                    label: 'Report',
-                    icon: 'pi pi-exclamation-triangle',
-                    command: handleReportClick
-                },
+                // {
+                //     label: 'Report',
+                //     icon: 'pi pi-exclamation-triangle',
+                //     command: handleReportClick
+                // },
                 {
                     label: 'Leave',
                     icon: 'pi pi-sign-out',

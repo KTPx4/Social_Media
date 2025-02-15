@@ -1,14 +1,18 @@
 import {Avatar} from "primereact/avatar";
 import {Button} from "primereact/button";
 import useStore from "../../store/useStore.tsx";
+import {useNavigate} from "react-router-dom";
 
 const FriendCard = ({canRemove = true, isAdd, Friend, Image, Name, ClickAdd, Profile, Role = "member"})=>{
     const {userId} = useStore()
+    const naviage = useNavigate();
     const OnclickButton = ()=>{
         ClickAdd(Friend , isAdd)
     }
 
-    console.log(Friend)
+    const ClickInfo = () =>{
+        naviage(`/home/profile/${Friend?.userProfile}`)
+    }
 
     return(
         <div style={{
@@ -18,9 +22,9 @@ const FriendCard = ({canRemove = true, isAdd, Friend, Image, Name, ClickAdd, Pro
             alignItems:"center",
             width: "100%"
         }}>
-            <Avatar image={Image} shape="circle" style={{ width: 30, height: 30}} />
+            <Avatar onClick={ClickInfo} image={Image} shape="circle" style={{ width: 30, height: 30}} />
             <div style={{display: "flex", flexDirection: "column"}}>
-                <p style={{margin: "3px 10px", width: 60, textOverflow: "ellipsis", overflow: "hidden"}}>{Name}</p>
+                <p onClick={ClickInfo} style={{margin: "3px 10px", width: 60, textOverflow: "ellipsis", overflow: "hidden"}}>{Name}</p>
                 {/*<p style={{margin: "3px 10px", fontSize: 13, fontStyle: "italic"}}>{Profile}</p>*/}
                 <p style={{margin: "0 10px", fontSize: 11, }}>{Role}</p>
             </div>

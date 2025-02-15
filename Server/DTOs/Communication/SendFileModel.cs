@@ -1,7 +1,10 @@
-﻿namespace Server.DTOs.Communication
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Server.DTOs.Communication
 {
     public class SendFileModel
     {
-        public IFormFile file;
+        [Required]
+        public IFormFile file { get; set; }
     }
 }

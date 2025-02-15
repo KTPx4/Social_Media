@@ -11,7 +11,7 @@ import {useWebSocketContext} from "../../store/WebSocketContext.tsx";
 import CreateGroupChat from "./CreateGroupChat.tsx";
 
 
-const LeftInfo : React.FC<any> = ({isLoading,ClickCallBack, userId, listConversation, setListConversation, ListMembers, CallBackUpdateLastMess, showModalCreate})=>{
+const LeftInfo : React.FC<any> = ({isLoading,ClickCallBack, userId, listConversation, setListConversation, ListMembers, CallBackUpdateLastMess, showModalCreate, setListMembers})=>{
     // @ts-ignore
     const { isConnected,  sendMessage, setNewMessages, subscribeToMessages } = useWebSocketContext();
     // theme
@@ -45,8 +45,8 @@ const LeftInfo : React.FC<any> = ({isLoading,ClickCallBack, userId, listConversa
     const subscriptUpdateLastMess =  (newMess) => {
         if(newMess)
         {
+
             setListShowConv((prevList) => {
-                // console.log("prev: ", prevList)
                 var newList = prevList.map((c) => {
                     if (c.id === newMess.conversationId) {
                         c.time = Date.now();
@@ -55,7 +55,6 @@ const LeftInfo : React.FC<any> = ({isLoading,ClickCallBack, userId, listConversa
                     }
                     return c;
                 });
-                console.log(newList)
                 if(newList.filter((c)=>c.id === newMess.conversationId).length < 1)
                 {
 
@@ -81,6 +80,21 @@ const LeftInfo : React.FC<any> = ({isLoading,ClickCallBack, userId, listConversa
                         return c;
                     });
 
+                    var conv = prevList.filter((c) => c.id === convId)
+                    if(!conv || conv.length < 1)
+                    {
+                        console.log("new conv")
+                        var newConv = {
+                            time: Date.now(),
+                            lastMessage: newMessage,
+                            unRead: 1,
+                            isSelected: false,
+                            isNew: true,
+                            id: convId
+                        }
+                        newList = [newConv,...newList ]
+                    }
+                    console.log("NewList:",newList)
                     return newList;
                 });
             }
@@ -108,6 +122,11 @@ const LeftInfo : React.FC<any> = ({isLoading,ClickCallBack, userId, listConversa
             isSelected: false
         }
         setListConversation((prev) => [newConv, ...prev])
+        var newDict = ListMembers
+        newDict[Conv.id] = newConv
+        console.log(newDict)
+        setListMembers(newDict)
+
     }
 
     // @ts-ignore

@@ -91,7 +91,7 @@ namespace Server.Controllers
 
                 var fileStream = System.IO.File.OpenRead(filePath);
 
-                return File(fileStream, contentType);
+                return File(fileStream, contentType, Path.GetFileName(filePath));
             }
             catch (Exception ex) 
             {

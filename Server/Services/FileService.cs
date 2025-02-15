@@ -128,9 +128,13 @@ namespace Server.Services
             if (message == null) throw new Exception("File-Media or file not exists");
             var conv = message.Conversation;
             var Members = conv.Members;
-            var type = message.Type == Models.Communication.Message.MessageType.Image ? "image/jpeg" :
-                    (message.Type == Models.Communication.Message.MessageType.Video ? "video/mp4" : "file");
-
+            var type = message.Type switch
+            {
+                Models.Communication.Message.MessageType.Image => "image/jpeg",
+                Models.Communication.Message.MessageType.Video => "video/mp4",
+                Models.Communication.Message.MessageType.File => GetContentType(message.Content),
+                _ => "application/octet-stream"
+            };
 
             // check post status
             if (!Members.Select(m => m.UserId.ToString()).Contains(userId)) throw new Exception("File-Can not access this media");
@@ -146,6 +150,15 @@ namespace Server.Services
             }
 
 
+        }
+        private string GetContentType(string fileName)
+        {
+            var provider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+            if (provider.TryGetContentType(fileName, out var contentType))
+            {
+                return contentType;
+            }
+            return "application/octet-stream"; // Nếu không xác định được, trả về default binary file
         }
     }
 }

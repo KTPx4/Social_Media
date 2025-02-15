@@ -25,6 +25,12 @@ namespace Server.Services.SCommunication
         public Guid FromId;
         public List<Guid> ToIds;
     }
+    public class RsSendFile
+    {
+        public MessageResponse MessageRs { get; set; }
+        public List<ConvMember> ListMember { get; set; }
+    }
+
     public interface ICommunicationService
     {
         Task<RsProcessMessage> ProcessMessageAsync(string senderUserId, MessageModel messageModel);
@@ -34,10 +40,12 @@ namespace Server.Services.SCommunication
         Task<ConversationResponse> CreateConversation(string userId, CreateGroupModel createGroupModel, FileInfoDto fileInfoDto);
         Task<List<ConversationResponse>> GetGroups(string userId);
         Task<List<ConversationResponse>> GetConversation(string userId, int page = 0);
+        Task<ConversationResponse> GetConversationById(string userId, string convId);
+
         Task<List<MessageResponse>> GetMessage(string userId, string convId, int page = 0);
 
         Task<List<MessageResponse>> GetMedia(string userId, string convId,int page = 0);
-        Task<MessageResponse> SendFile(string userId, string convId, IFormFile file);
+        Task<RsSendFile> SendFile(string userId, string convId, IFormFile file);
         Task<bool> SetSeen(string userId, string convId);
 
         Task<ConversationResponse> EditGroup(string userId, string convId, FileInfoDto file, string newName);
@@ -538,6 +546,42 @@ namespace Server.Services.SCommunication
             return rs; 
 
         }
+        public async Task<ConversationResponse> GetConversationById(string userId, string convId)
+        {
+            var conversation = await _context.Conversations
+             .Where(c => c.Id.ToString() == convId)
+             .Include(c => c.Members)
+             .ThenInclude(m=>m.User)
+             .Include(c => c.ConvSetting)
+             .Include(c => c.Messages)
+             .ThenInclude(m => m.Seens)
+             .Select(c => new
+             {
+                 Conversation = c,
+                 LastMessage = c.Messages
+                     .OrderByDescending(m => m.CreatedAt)
+                     .FirstOrDefault(),
+
+                 UnreadCount = c.Messages
+                     .Where(m => m.SenderId.ToString() != userId) // Tin nhắn không phải của user
+                     .Count(m => !m.Seens.Any(s => s.UserId.ToString() == userId)) // Chưa đọc
+             })
+             .FirstOrDefaultAsync();
+
+            if (conversation == null)
+                throw new Exception("Conversation not found");
+
+            if (!conversation.Conversation.Members.Any(m => m.UserId.ToString() == userId))
+                throw new Exception("Chat-You not allow to access");
+
+            return new ConversationResponse(
+                conversation.Conversation,
+                conversation.LastMessage,
+                conversation.UnreadCount,
+                _ServerHost,
+                _AccessImgAccount
+            );
+        }
 
         public async Task<List<MessageResponse>> GetMessage(string userId, string convId, int page = 1)
         {
@@ -547,6 +591,8 @@ namespace Server.Services.SCommunication
                 .Include(c => c.Members)
                 .FirstOrDefaultAsync();
 
+            if(Conversation == null) throw new Exception("Chat-Conversation not exists");
+           
             var Members = Conversation.Members;
             if (!Members.Any(m =>m.UserId.ToString() == userId)) 
             {
@@ -568,7 +614,7 @@ namespace Server.Services.SCommunication
                     ConversationId = m.ConversationId,
                     ReplyMessageId = m.ReplyMessageId,
                     Type = m.Type,
-                    Content = m.Content,
+                    Content = (m.Type == Message.MessageType.Text || m.Type == Message.MessageType.File) ? m.Content : $"{_ServerHost}/api/file/src?t=message&id={m.Id}&token=",
                     IsSystem = m.IsSystem,
                     IsDeleted = m.IsDeleted,
                     CreatedAt = m.CreatedAt,
@@ -609,11 +655,17 @@ namespace Server.Services.SCommunication
  
         }
 
-        public async Task<MessageResponse> SendFile(string userId, string convId, IFormFile file)
+        public async Task<RsSendFile> SendFile(string userId, string convId, IFormFile file)
         {
 
             // Kiểm tra xem user có phải là thành viên của conversation không
-            bool isMember = await _context.ConvMembers.AnyAsync(cm => cm.ConversationId.ToString() == convId && cm.UserId.ToString() == userId);
+            var listMembers = await _context.ConvMembers
+                .Where(cm => cm.ConversationId.ToString() == convId)
+                .ToListAsync();
+
+           
+
+            bool isMember = listMembers.Any(cm => cm.UserId.ToString() == userId);
             if (!isMember)
             {
                 throw new Exception("Chat-You are not a member of this conversation or not exists");
@@ -656,9 +708,17 @@ namespace Server.Services.SCommunication
             }
             var rs = new MessageResponse(newMess);
           
-            rs.Content = $"{_ServerHost}/api/file/src?t=message&id={rs.Id}&token=";
+            rs.Content = messageType == Message.MessageType.File ? fileName : $"{_ServerHost}/api/file/src?t=message&id={rs.Id}&token=";
 
-            return rs;
+          
+
+            RsSendFile rsFile = new RsSendFile()
+            {
+                MessageRs = rs,
+                ListMember = listMembers
+            };
+
+            return rsFile;
         }
 
         public async Task<bool> SetSeen(string userId, string convId)
@@ -694,6 +754,7 @@ namespace Server.Services.SCommunication
 
         public async Task<ConversationResponse> EditMembers(string userId, string convId, List<string> membersId)
         {
+           
             var conversation = await _context.Conversations
                 .Where(c => c.Id.ToString() == convId && c.Type == Conversation.ConversationType.Group)
                 .Include(c => c.Members)
@@ -707,50 +768,125 @@ namespace Server.Services.SCommunication
             {
                 throw new Exception("Chat-You not allow to access");
             }
+
             var settings = conversation.ConvSetting;
             if(settings.CanEdit == ConvSetting.ConvPermission.Leader && me.Role != ConvMember.ConversationRole.Leader && me.Role != ConvMember.ConversationRole.Deputy)
             {
                 throw new Exception("Chat-You not allow to edit");
             }
             
+            var myProfile = me.User;
+
             var listOldId = members.Select(m => m.UserId.ToString()).ToList();
 
             var listNewId = membersId.Where(m => !listOldId.Contains(m)).ToList();
 
             var listRemove = listOldId.Where(m => !membersId.Contains(m) && m != userId).ToList();
+            
+            var listMessage = new List<Message>();
 
-            if(listRemove.Count > 0)
+            if (listRemove.Count > 0)
             {
                 var membersToRemove = await _context.ConvMembers
                     .Where(m => listRemove.Contains(m.UserId.ToString()) && m.ConversationId == conversation.Id).ToListAsync();
+                
+                // Dùng HashSet để kiểm tra nhanh hơn
+                var idSet = new HashSet<string>(listRemove);
 
+                // Lấy danh sách user một lần, chuyển về Dictionary<Guid, User> để truy xuất nhanh hơn
+                var newMemberDict = await _context.Users
+                    .Where(u => idSet.Contains(u.Id.ToString()))
+                    .ToDictionaryAsync(u => u.Id);
+                
+                foreach (var id in listRemove)
+                {
+                    if (!Guid.TryParse(id, out var newId) || !newMemberDict.TryGetValue(newId, out var newM))
+                    {
+                        continue; // Bỏ qua nếu không hợp lệ
+                    }
+
+                    listMessage.Add(new Message()
+                    {
+                        ConversationId = conversation.Id,
+                        SenderId = null,
+                        IsSystem = true,
+                        Type = Message.MessageType.Text,
+                        Content = $"'{newM.Name}' was remove by '{myProfile.Name}'"
+                    });
+                }
                 _context.ConvMembers.RemoveRange(membersToRemove);
             }
 
              var listNewPerson = new List<ConvMember>();
             if(listNewId.Count > 0)
             {
-                foreach(var id in listNewId)
+                // Dùng HashSet để kiểm tra nhanh hơn
+                var idSet = new HashSet<string>(listNewId);
+
+                // Lấy danh sách user một lần, chuyển về Dictionary<Guid, User> để truy xuất nhanh hơn
+                var newMemberDict = await _context.Users
+                    .Where(u => idSet.Contains(u.Id.ToString()))
+                    .ToDictionaryAsync(u => u.Id);
+
+                if (newMemberDict.Count != listNewId.Count)
                 {
+                    throw new Exception("Chat-Has non-existent member");
+                }
+
+                foreach (var id in listNewId)
+                {
+                    if (!Guid.TryParse(id, out var newId) || !newMemberDict.TryGetValue(newId, out var newM))
+                    {
+                        continue; // Bỏ qua nếu không hợp lệ
+                    }
+
                     listNewPerson.Add(new ConvMember()
                     {
                         ConversationId = conversation.Id,
                         Role = ConvMember.ConversationRole.Member,
                         Notify = ConvMember.SettingNotify.Normal,
-                        UserId = new Guid(id),
+                        UserId = newM.Id,
+                    });
+
+                    listMessage.Add(new Message()
+                    {
+                        ConversationId = conversation.Id,
+                        SenderId = null,
+                        IsSystem = true,
+                        Type = Message.MessageType.Text,
+                        Content = $"'{newM.Name}' was added by '{myProfile.Name}'"
                     });
                 }
-                await _context.AddRangeAsync(listNewPerson);
-            }
 
+                await _context.AddRangeAsync(listNewPerson);
+
+            }
+            var ListMessRs = new List<MessageResponse>();
+            if(listMessage.Count > 0)
+            {
+                await _context.Messages.AddRangeAsync(listMessage);
+                
+            }
             await _context.SaveChangesAsync();
 
             if(listNewPerson.Count > 0)
             {
                 conversation.Members.AddRange(listNewPerson);
-            }    
+            }
+            var rs = new ConversationResponse(conversation, _ServerHost, _AccessImgAccount);
+           
+            rs.ListNewMessage = listMessage.Select(m => new MessageResponse()
+            {
+                ConversationId = m.Id,
+                CreatedAt = m.CreatedAt,
+                Content = m.Content,
+                Id = m.Id,
+                IsSystem = m.IsSystem,
+                Type = m.Type,
+                SenderId = m.SenderId,
+            }).ToList();
 
-            return new ConversationResponse(conversation, _ServerHost, _AccessImgAccount);
+            return rs;
         }
 
         public async Task<bool> LeaveGroup(string userId, string convId)
@@ -800,6 +936,7 @@ namespace Server.Services.SCommunication
             
         }
 
+       
 
 
 

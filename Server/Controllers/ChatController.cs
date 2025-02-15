@@ -21,11 +21,13 @@ namespace Server.Controllers
     {
         private readonly ICommunicationService _communicationService;
         private readonly IHubContext<ChatHub> _hubContext;
+        private readonly ConnectionManager _connectionManager;
 
-        public ChatController(ICommunicationService communicationService,  IHubContext<ChatHub> hubContext)
+        public ChatController(ICommunicationService communicationService,  IHubContext<ChatHub> hubContext, ConnectionManager connectionManager)
         {
             _hubContext = hubContext;
             _communicationService = communicationService;
+            _connectionManager = connectionManager;
         } 
 
         [HttpGet("group")]
@@ -139,6 +141,32 @@ namespace Server.Controllers
 
         [HttpGet("conversation/{id}")]
         [Authorize]
+        public async Task<IActionResult> GetConversationById(string id)
+        {
+            try
+            {
+                var userId = User.FindFirstValue("UserId");
+                var rs = await _communicationService.GetConversationById(userId, id);
+                return Ok(new
+                {
+                    message = "Get groups chat success",
+                    data = rs
+                });
+            }
+            catch (Exception ex)
+            {
+                var mess = ex.Message;
+                if (mess.StartsWith("Chat-"))
+                {
+                    return BadRequest(new { message = mess.Split("-")[1] });
+                }
+                Console.WriteLine("Get conversation:" + mess);
+                return StatusCode(500, new { message = "Server Error. Try Again" });
+            }
+        }
+
+        [HttpGet("conversation/{id}/chat")]
+        [Authorize]
         public async Task<IActionResult> GetChat(string id,[FromQuery] int page = 1)
         {
             try
@@ -177,6 +205,22 @@ namespace Server.Controllers
                 }
 
                 var rs = await _communicationService.EditMembers(userId, id, editGroupModel.Members);
+                var members = rs.Members;
+                
+                var memberIds = members.Select(m => m.UserId).ToList();
+
+                //foreach(var memId in memberIds)
+                //{
+                //    await _hubContext.Clients.User(memId).SendAsync("UpdateGroup", new Guid(), rs.ListNewMessage);
+                //}
+
+                var connectionIds = _connectionManager.GetConnections(memberIds);
+                await _hubContext.Clients.Clients(connectionIds).SendAsync("UpdateGroup", new Guid(), rs.ListNewMessage);
+
+    //            var tasks = memberIds
+    //.               Select(memId => _hubContext.Clients.User(memId).SendAsync("UpdateGroup", new Guid(), rs.ListNewMessage));
+
+    //            await Task.WhenAll(tasks);
 
                 return Ok(new
                 {
@@ -307,13 +351,13 @@ namespace Server.Controllers
 
         [HttpPost("conversation/{id}/file")]
         [Authorize]
-        public async Task<IActionResult> SendFile(string id, SendFileModel sendFileModel)        
+        public async Task<IActionResult> SendFile(string id, [FromForm] SendFileModel sendFileModel)        
         {
             try
             {
                 var file = sendFileModel.file;
                 // Kiểm tra file
-                if (file == null || file.Length == 0)
+                if (file == null )
                 {
                     return BadRequest(new { message = "File is required" });
                 }
@@ -329,15 +373,23 @@ namespace Server.Controllers
                 {
                     return Unauthorized(new { message = "Invalid user id" });
                 }
-                var rs = await _communicationService.SendFile(userIdString, id, file);
 
-                //await _hubContext.Clients.User(receiverUserId).SendAsync("ReceiveMessage", messageModel.SenderId, messageModel.Content);
+                var rs = await _communicationService.SendFile(userIdString, id, file);
+                var listMembers = rs.ListMember;
+                var mess = rs.MessageRs;
+
+                var members = rs.ListMember;
+
+                var memberIds = members.Select(m => m.UserId).ToList();
+
+                var connectionIds = _connectionManager.GetConnections(memberIds);
+                await _hubContext.Clients.Clients(connectionIds).SendAsync("SendFile", new Guid(), mess);
 
 
                 return Ok(new
                 {
                     message = "Send file success",
-                    data = rs
+                    data = mess
                 });
 
             }
@@ -348,7 +400,7 @@ namespace Server.Controllers
                 {
                     return BadRequest(new { message = mess.Split("-")[1] });
                 }
-                Console.WriteLine("Get conversation:" + mess);
+                Console.WriteLine("----------------------------------------Get conversation:" + mess);
                 return StatusCode(500, new { message = "Server Error. Try Again" });
             }
         }
