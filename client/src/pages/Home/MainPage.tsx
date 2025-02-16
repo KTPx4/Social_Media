@@ -5,6 +5,7 @@ import {Helmet, HelmetProvider} from "react-helmet-async";
 import InfoContent from "./InfoContent.tsx";
 import {ThemeContext} from "../../ThemeContext.tsx";
 import useStore from "../../store/useStore.tsx";
+import PostContent from "./PostContent.tsx";
 
 const MainPage = () => {
 
@@ -31,8 +32,8 @@ const MainPage = () => {
               <div className="left-content flex-column justify-content-start align-items-center" style={{
                   borderRight: `1px solid ${borderColor}`
               }}>
-                  {/*<PostContent />*/}
-                  <h1 style={{color: "white"}}>id ={userId}</h1>
+                  <PostContent />
+
               </div>
 
               {/* Phần bên phải chiếm 20% */}

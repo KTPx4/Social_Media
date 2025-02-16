@@ -73,7 +73,7 @@ const ProfilePage = () => {
         else {
           var newData = dt.filter(p => !listPost.map(post => post.id).includes(p.id))
           var dataSource = page === 1 ? dt : newData
-          var newComponents = dataSource.map((p) => <PostCard post={p} isHideComment={true} key={p.id+Date.now()}/>)
+          var newComponents = dataSource.map((p) => <PostCard post={p} isHideComment={false} key={p.id+Date.now()} />)
 
           if(page === 1)
           {

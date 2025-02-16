@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Server.Data;
 using Server.DTOs.Account;
 using Server.DTOs.Posts;
@@ -29,7 +30,7 @@ namespace Server.Services.SPosts
         private readonly int LIMIT_SIZE = 10;
 
         private readonly int LIMIT_COMMENT_SIZE = 10;
-
+        private readonly int _PAGE_SIZE_SUGGEST_POST = 15;
         public PostService(APIDbContext context, IConfiguration configuration, UserManager<User> userManager)
         {
             this._context = context;
@@ -379,68 +380,86 @@ namespace Server.Services.SPosts
             return postUpdates;
         }
 
-        public async Task<List<PostResponse>> GetAllMyPost(string userId, int page)
+        public async Task<List<PostResponse>> GetSuggestPost(string userId, int page)
         {
-            var user = await _userManager.FindByIdAsync(userId);
+            if (page < 1) page = 1;
+            var guidId = new Guid(userId);
+            // Danh sách user mà userId đang follow
+            var followingIds = _context.Follows
+                                      .Where(f => f.FollowerId == guidId)
+                                      .Select(f => f.UserId)
+                                      .ToList();
 
-            if (user == null) return null;
+            // Danh sách bạn bè
+            var friendIds = await _context.FriendShips
+                                   .Where(f => f.UserId == guidId && f.IsFriend && f.Status == FriendStatus.Normal)
+                                   .Select(f =>  f.FriendId)
+                                   .ToListAsync();
 
-            try
-            {
-                // Lấy danh sách bài viết của người dùng
-                var listPost = await _context.Posts
-                    .Where(p => p.AuthorId.ToString() == userId)
-                    .Include(p => p.Medias)
-                    .Include(p => p.Updates)
-                    .OrderByDescending(p => p.CreatedAt)
-                    .Skip((page - 1) * LIMIT_SIZE)
-                    .Take(LIMIT_SIZE)
-                    .Select(p => new PostResponse(p, _ServerHost))
-                    .ToListAsync();
-
-                // Lấy danh sách ID bài viết
-                var postIds = listPost.Select(p => p.Id).ToList();
-
-                // Truy vấn dữ liệu Like và Save
-                var postLikes = await _context.PostLikes
-                    .Where(l => postIds.Contains(l.PostId) && l.UserId.ToString() == userId)
-                    .ToListAsync();
-
-                var postSaves = await _context.PostSaves
-                    .Where(s => postIds.Contains(s.PostId) && s.UserId.ToString() == userId)
-                    .ToListAsync();
-
-                // Truy vấn tổng số Like và Comment
-                var likeCounts = await _context.PostLikes
-                    .Where(l => postIds.Contains(l.PostId))
-                    .GroupBy(l => l.PostId)
-                    .Select(g => new { PostId = g.Key, Count = g.Count() })
-                    .ToDictionaryAsync(g => g.PostId, g => g.Count);
-
-                var commentCounts = await _context.PostComments
-                    .Where(c => postIds.Contains(c.PostId))
-                    .GroupBy(c => c.PostId)
-                    .Select(g => new { PostId = g.Key, Count = g.Count() })
-                    .ToDictionaryAsync(g => g.PostId, g => g.Count);
-
-                // Gán dữ liệu vào từng bài viết
-                foreach (var post in listPost)
+            // Truy vấn danh sách bài viết
+            var listPost = await _context.Posts
+                .Where(p =>
+                    p.Status == Post.PostStatus.Public || // Bài viết công khai
+                    (p.Status == Post.PostStatus.Friend && friendIds.Contains(p.AuthorId)) || // Bài viết từ bạn bè
+                    (followingIds.Contains(p.AuthorId) && p.Status == Post.PostStatus.Public)// Bài viết từ người đang follow
+                )
+                .OrderByDescending(p => p.CreatedAt) // Sắp xếp theo ngày mới nhất
+                .Skip((page - 1) * _PAGE_SIZE_SUGGEST_POST) // Bỏ qua các bài đã lấy ở trang trước
+                .Take(_PAGE_SIZE_SUGGEST_POST) // Lấy số lượng bài viết theo trang
+                .Include(p=> p.Medias)
+                .Include(p=>p.Author)
+                .Select(post => new PostResponse()
                 {
-                    post.isLike = postLikes.Any(l => l.PostId == post.Id);
-                    post.isSave = postSaves.Any(s => s.PostId == post.Id);
+                    Id = post.Id,
+                    CreatedAt = post.CreatedAt,
+                    AuthorId = post.AuthorId,
+                    Content = post.Content,
+                    PostShareId = post.PostShareId,
+                    IsHide = post.IsHide,
+                    Status = post.Status,
+                    Type = post.Type,
+                    AuthorImg = $"{_ServerHost}/public/account/{post.Author.Id.ToString()}/{post.Author.ImageUrl}",
+                    AuthorProfile = post.Author.UserProfile,
+                    SumComment = post.Comments.Count,
+                    SumLike = post.Likes.Count,
+                    ListMedia = post.Medias
+                                .Select(m => new MediaResponse()
+                                {
+                                    Id = m.Id,
+                                    Content = m.Content,
+                                    ContentType = m.ContentType,
+                                    IsDeleted = m.IsDeleted,
+                                    MediaUrl = $"{_ServerHost}/api/file/src?id={m.Id.ToString()}&token=",
+                                    PostId = m.PostId,
+                                    Type = m.Type
+                                })
+                                .ToList(),
+                    //PostShare = new PostResponse(post.PostShare, _ServerHost)
+                })
+                .ToListAsync();
 
-                    post.SumLike = likeCounts.ContainsKey(post.Id) ? likeCounts[post.Id] : 0;
-                    post.SumComment = commentCounts.ContainsKey(post.Id) ? commentCounts[post.Id] : 0;
-                }
+            // Lấy danh sách ID các bài viết
+            var postIds = listPost.Select(p => p.Id).ToList();
 
-                return listPost;
-            }
-            catch (Exception e)
+            // Lấy thông tin Like và Save một lần
+            var postLikes = await _context.PostLikes
+                .Where(l => postIds.Contains(l.PostId) && l.UserId.ToString() == userId)
+                .ToListAsync();
+
+            var postSaves = await _context.PostSaves
+                .Where(s => postIds.Contains(s.PostId) && s.UserId.ToString() == userId)
+                .ToListAsync();
+
+            // Gán thông tin Like và Save
+            foreach (var post in listPost)
             {
-                Console.WriteLine(e.Message);
+                post.isLike = postLikes.Any(l => l.PostId == post.Id);
+                post.isSave = postSaves.Any(s => s.PostId == post.Id);
             }
 
-            return null;
+            return listPost;
+
+           
         }
 
 

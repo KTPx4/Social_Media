@@ -12,17 +12,19 @@ import {Dialog} from "primereact/dialog";
 import {ThemeContext} from "../../ThemeContext.tsx";
 import {Avatar} from "primereact/avatar";
 import {Button} from "primereact/button";
-import {InputText} from "primereact/inputtext"; // Import Emoji Picker
+import {InputText} from "primereact/inputtext";
+import {useSearchParams} from "react-router-dom"; // Import Emoji Picker
 
 enum ConversationType {
     Direct = 0,
     Group = 1
 }
 const MessagePage : React.FC = () => {
+    const [searchParams] = useSearchParams()
 
     const { userId } = useStore();
     const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
-    const db = new IndexedDBService("ChatDB", "messages");
+    const db = new IndexedDBService("ChatDB", "stored");
     // theme
     const themeContext = useContext(ThemeContext);
     // @ts-ignore
@@ -33,7 +35,7 @@ const MessagePage : React.FC = () => {
     const [listConversation, setListConversation] = useState([]);
     const [currentConversation, setConversation] = useState(null);
     const [listMembers, setListMembers] = useState([]);
-
+    const [firstLoad, setFirstLoad] = useState(true)
 
 
     const [showInfo, setShowInfo] = useState<boolean>(false);
@@ -45,12 +47,37 @@ const MessagePage : React.FC = () => {
     const [listSuggest , setListSuggestFriend] = useState([])
     const [opDicrectUser, setOpDicrectUser] = useState(null);
     var infoComponent = useRef<any>(null)
+    const currentConversationRef = useRef(null)
 
     useEffect(() => {
         loadSuggest()
         LoadFromLocal();
         LoadData();
+
+
     }, []);
+
+    useEffect(() => {
+        if(firstLoad && listConversation && listConversation.length > 0)
+        {
+            setFirstLoad(false)
+            const conversation = searchParams.get("c")
+
+            if(conversation)
+            {
+                var findConv = listConversation.filter((c)=>c.id === conversation)[0]
+
+                if(!findConv)
+                {
+
+                    window.history.replaceState({}, "","/message")
+                }
+                else{
+                    ClickConversation(findConv)
+                }
+            }
+        }
+    }, [listConversation]);
 
     useEffect(() => {
         if(currentConversation)
@@ -70,7 +97,7 @@ const MessagePage : React.FC = () => {
             else  if(opDicrectUser)
             {
                 infoComponent.current = (
-                    <InfoChatDirect DirectUser={opDicrectUser} ListMembers={listMembers}   Conversation={currentConversation} /> )
+                    <InfoChatDirect DirectUser={opDicrectUser} ListMembers={listMembers}  Conversation={currentConversation} /> )
             }
         }
     }, [currentConversation, opDicrectUser]);
@@ -95,10 +122,11 @@ const MessagePage : React.FC = () => {
         if (currentConversation && currentConversation.id === Conversation.id) return;
         setShowInfo(false)
         setListConversation((prev)=> {
-            var newList = prev.map((c) => c.id === Conversation.id ? {...c, unRead: 0} : c)
+            var newList = prev.map((c) => c.id === Conversation.id ? {...c, unRead: 0, isSelected: true} : {...c, isSelected: false})
             return newList
         })
         setConversation(Conversation);
+        currentConversationRef.current = Conversation
 
         if(Conversation.type === ConversationType.Direct)
         {
@@ -150,7 +178,9 @@ const MessagePage : React.FC = () => {
 
             setListMembers(dict);
             data = data?.map((e: any) => {
-                return { ...e, isSelected: false, time: Date.now() };
+                var selected = false
+                if(currentConversationRef?.current && currentConversationRef?.current.id === e.id) selected = true
+                return { ...e, isSelected: selected, time: Date.now() };
             });
 
             setListConversation(data);
@@ -167,6 +197,7 @@ const MessagePage : React.FC = () => {
             if (status === 200) {
                 var dict = {};
                 var data = rs.data.data;
+
                 await db.addItem({ id: "conversations", conversations: data });
 
                 data.forEach((d) => {
@@ -174,8 +205,11 @@ const MessagePage : React.FC = () => {
                 });
 
                 setListMembers(dict);
+
                 data = data.map((e: any) => {
-                    return { ...e, isSelected: false, time: Date.now() };
+                    var selected = false
+                    if(currentConversationRef?.current && currentConversationRef?.current.id === e.id) selected = true
+                    return { ...e, isSelected: selected, time: Date.now() };
                 });
 
                 setListConversation(data);

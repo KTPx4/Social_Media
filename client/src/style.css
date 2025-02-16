@@ -42,8 +42,16 @@ a{
 }
 
 
+.p-dialog ::-webkit-scrollbar {
+    width: 0px; /* Chiều rộng thanh cuộn */
+  }
+ .post-detail ::-webkit-scrollbar {
+   width: 3px; /* Chiều rộng thanh cuộn */
+ }
+
+
 ::-webkit-scrollbar {
-  width: 3px; /* Chiều rộng thanh cuộn */
+  width: 3px ; /* Chiều rộng thanh cuộn */
 }
 ::-webkit-scrollbar-thumb {
   background: #a6a4a4; /* Màu của phần cuộn */

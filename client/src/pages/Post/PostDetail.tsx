@@ -43,7 +43,7 @@ interface PostData {
     listMedia: Media[];
 }
 
-const PostDetail: React.FC = () => {
+const PostDetail: React.FC<any> = ({postId}) => {
 
     // @ts-ignore
     const {userId, setId} = useStore()
@@ -52,7 +52,7 @@ const PostDetail: React.FC = () => {
     const [comment, setComment] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [files, setFiles] = useState([])
-
+    const [idPost, setIdPost] = useState("")
     const toast = useRef<Toast>(null);
 
     // theme
@@ -65,7 +65,7 @@ const PostDetail: React.FC = () => {
     const backgroundColor = currentTheme.getBackground()
     const textHintColor = currentTheme.getHint()
     const keyTheme = currentTheme.getKey()
-
+    const cardColor = currentTheme.getCard()
 
     const [listComment , setListComment] = useState([])
     const [page, setPage] = useState(1)
@@ -74,13 +74,19 @@ const PostDetail: React.FC = () => {
     const [replyCommentId, setReplyCommentId] = useState("");
     const [isWaitComment, setIsWaitComment] = useState(false);
     const [inputComment, setInputComment] = useState("")
-
+    useEffect(() => {
+        if(!id)
+        {
+            setIdPost(postId)
+        }
+        else setIdPost(id)
+    }, []);
 // load list comment
     const loadListComment = async (p: number)=>{
         if(!isCanLoadComment) return
 
         try{
-            var rs = await  apiClient.get(`/post/${id}/comment?page=${p}`)
+            var rs = await  apiClient.get(`/post/${idPost}/comment?page=${p}`)
             console.log(rs)
             setIsWaitLoadComment(false)
             var statusCode = rs.status
@@ -104,43 +110,48 @@ const PostDetail: React.FC = () => {
         }
     }
     useEffect(() => {
-        const fetchPost = async () => {
-            try {
-                const response = await apiClient.get(`/post/${id}`);
-                // console.log(response)
-                // if (data.message === 'Get success') {
-                //     setPost(data.data);
-                // }
-                var status = response.status
-                console.log(response)
-                setIsLoading(false)
-                if(status === 200)
-                {
+        if(idPost)
+        {
+            fetchPost();
+        }
+    }, [idPost]);
 
-                    setPost(response.data.data);
-                    setFiles(response.data.data.listMedia);
-                }
-                else{
-                    setPost(null);
-                }
+    useEffect(() => {
+        if(idPost )
+        {
+            loadListComment(page);
+        }
 
-            } catch (error) {
-                console.error('Error fetching post:', error);
-                // @ts-ignore
-                setIsLoading(false)
+    }, [idPost,page]);
+
+    const fetchPost = async () => {
+        try {
+            const response = await apiClient.get(`/post/${idPost}`);
+            // console.log(response)
+            // if (data.message === 'Get success') {
+            //     setPost(data.data);
+            // }
+            var status = response.status
+            console.log(response)
+            setIsLoading(false)
+            if(status === 200)
+            {
+
+                setPost(response.data.data);
+                setFiles(response.data.data.listMedia);
+            }
+            else{
                 setPost(null);
             }
 
-        };
+        } catch (error) {
+            console.error('Error fetching post:', error);
+            // @ts-ignore
+            setIsLoading(false)
+            setPost(null);
+        }
 
-        fetchPost();
-    }, [id]);
-
-    useEffect(() => {
-
-        loadListComment(page);
-
-    }, [page]);
+    };
     const handleComment = () => {
         console.log('Commented:', comment);
         setComment('');
@@ -155,8 +166,7 @@ const PostDetail: React.FC = () => {
         if(!inputComment || !inputComment.trim()) return;
 
         setIsWaitComment(true);
-        console.log(inputComment)
-        console.log(replyCommentId)
+
 
         var data = {
 
@@ -164,8 +174,8 @@ const PostDetail: React.FC = () => {
         }
 
         try{
-            var rs = await apiClient.post(`/post/${id}/comment`, data)
-            console.log(rs)
+            var rs = await apiClient.post(`/post/${idPost}/comment`, data)
+
             setIsWaitComment(false);
 
             var statusCode = rs.status
@@ -194,7 +204,7 @@ const PostDetail: React.FC = () => {
         });
     };
     const DeleteComment = async(commentId : string, callBackSuccess: any) =>{
-        console.log("Comment id: ", commentId)
+
 
         // show confirm
 
@@ -205,7 +215,7 @@ const PostDetail: React.FC = () => {
         }
 
         try{
-            var rs = await apiClient.delete(`/post/${id}/comment/${commentId}`)
+            var rs = await apiClient.delete(`/post/${idPost}/comment/${commentId}`)
             var statusCode = rs.status
             if(statusCode === 200 || statusCode === 204)
             {
@@ -265,7 +275,7 @@ const PostDetail: React.FC = () => {
 
 
     return (
-        <div className="post-detail" style={{width: "100%", maxHeight: 700}}>
+        <div className="post-detail" style={{width: "100%", maxHeight: 600}}>
             <ConfirmDialog/>
             <Toast ref={toast}/>
             <div className="post-detail-content" style={{borderRight: `1px solid ${borderColor} !important`}}>
@@ -282,10 +292,10 @@ const PostDetail: React.FC = () => {
             <div className="post-detail-comments">
 
                 <div className="comment-list"
-                     style={{height: "100%", overflow: "auto", backgroundColor: backgroundColor, minHeight: 500, border: `2px solid ${borderColor}`}}>
+                     style={{height: "90%", overflow: "auto", backgroundColor: borderColor, minHeight: 300, border: `2px solid ${borderColor}`}}>
                     {listComment.map((comment) =>{
                         // @ts-ignore
-                        return (<CommentComponent DeleteComment={DeleteComment} key={comment.id} comment={comment} postId={id}/>)
+                        return (<CommentComponent DeleteComment={DeleteComment} key={comment.id} comment={comment} postId={idPost}/>)
                     })}
                      {/*list comment*/}
 
@@ -308,7 +318,7 @@ const PostDetail: React.FC = () => {
                     )}
                 </div>
 
-                <div className="comment-input-div" style={{marginBottom: 40, minWidth: 300, maxWidth: 700}}>
+                <div className="comment-input-div" style={{marginBottom: 40, minWidth: 300, maxWidth: 700, left: 0, backgroundColor:"transparent"}}>
                     <IconField className="input-comment" style={{width: "100%", margin: "0 0px"}}>
                         <InputText
                             style={{

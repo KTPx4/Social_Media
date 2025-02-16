@@ -22,17 +22,19 @@ import {Image} from "primereact/image";
 import {Dialog} from "primereact/dialog";
 import {Dropdown} from "primereact/dropdown";
 import {useNavigate} from "react-router-dom";
+import PostDetail from "../../pages/Post/PostDetail.tsx";
 interface PostCardProps {
     post: any,
     isHideComment: boolean,
-    isShare: boolean
+    isShare: boolean,
+    isHideDetails: boolean
 }
 const PostType = {
     Post: 0,
     Share: 1
 }
 
-const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare= false}) => {
+const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare= false }) => {
     // @ts-ignore
     const [Post, setPost] = useState(post)
     const {userId, setId, myAccount} = useStore()
@@ -86,13 +88,17 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
     const [selectStatus, setSelectStatus] = useState(listStatus[0]);
 
     const [postShare, setPostShare] = useState(null)
+    const [showPostDetails, setShowPostDetail] = useState(false)
+
+    const [isWaitComment, setIsWaitComment] = useState(false);
+    const [inputComment, setInputComment] = useState("")
 
     useEffect(() => {
         const loadPostShare = async (shareId) =>{
-            console.log("run")
+
             try{
                 var rs = await  apiClient.get(`/post/${shareId}`)
-                console.log("rsrun:", rs)
+
                 var statusCode = rs.status
                 if(statusCode === 200)
                 {
@@ -112,7 +118,7 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
             }))
             if(Post.type == PostType.Share && Post.postShareId)
             {
-                console.log("--", Post.postShareId)
+
                 loadPostShare(Post.postShareId)
             }
         }
@@ -184,7 +190,7 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
 
 ///////////////delete post
     const handleParentAccept = async () => {
-        console.log("Parent accepted");
+
         var rs = await apiClient.delete(`/post/${Post.id}`)
         var statusCode = rs.status
         if(statusCode == 200)
@@ -202,7 +208,7 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
     };
 
     const deletePost = () =>{
-        console.log("postid-:",Post.id)
+
         setParentVisible(true);
 
     }
@@ -317,9 +323,15 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
             console.log(e)
         }
     }
+
+    ///// view comment
+    const viewComment = async()=>{
+        setShowPostDetail(true)
+    }
+
 //////////////// open modal
     const openModalPost = async()=>{
-
+        setShowPostDetail(true)
     }
 /////// edit post
     const [modalVisible, setModalVisible] = useState(false);
@@ -361,7 +373,37 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
         setCurrentIndex((prevIndex) => (prevIndex - 1 + listInfoMedia.length) % listInfoMedia.length);
         setIsLoading(true); // Đặt lại trạng thái loading khi chuyển sang media khác
     };
+    // post comment
+    const PostComment = async( ) =>{
+        if(isWaitComment) return;
+        if(!inputComment || !inputComment.trim()) return;
 
+        setIsWaitComment(true);
+
+        var data = {
+
+            Content: inputComment
+        }
+
+        try{
+            var rs = await apiClient.post(`/post/${post.id}/comment`, data)
+            console.log(rs)
+            setIsWaitComment(false);
+
+            var statusCode = rs.status
+            if( statusCode === 200 || statusCode === 201)
+            {
+                var rsComment = rs.data.data
+                // @ts-ignore
+                setListComment((prev) => [rsComment, ...prev])
+            }
+        }catch (e)
+        {
+            setIsWaitComment(false);
+            console.log(e)
+        }
+        setInputComment("")
+    }
     // @ts-ignore
     var InputComponent = <></>
     var ButtonComment= <></>
@@ -374,7 +416,16 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
         InputComponent =
             (
                 <IconField>
-                    <InputText placeholder="Add a comment..." className="input-comment p-inputtext-sm p-mr-2 border-none border-bottom-1"
+                    <InputText
+                        disabled={isWaitComment}
+                        value={inputComment}
+                        onChange={(e)=> setInputComment(e.target.value)}
+                        onKeyDown={(e)=>{
+                            if(e.key === "Enter") {
+                                PostComment()
+                            }
+                        }}
+                        placeholder="Add a comment..." className="input-comment p-inputtext-sm p-mr-2 border-none border-bottom-1"
                                              style={{backgroundColor: "transparent", width: "100%", color: textHintColor}}/>
                     <InputIcon className="pi pi-check" onClick={()=>{}}/>
                 </IconField>
@@ -610,6 +661,8 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
                 {/* Modal Confirm */}
 
                 <div>
+
+                    {/*share post*/}
                     <Dialog
                         className={keyTheme}
                         header="Share"
@@ -648,7 +701,20 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
 
                         </div>
                     </Dialog>
+
+                    {/*detail post*/}
+
+                    <Dialog
+                        className={keyTheme}
+                        visible={showPostDetails}
+                        header={"Details"}
+                        style={{maxWidth: "790px", maxHeight: 700}}
+                        onHide={()=>setShowPostDetail(false)}
+                    >
+                        <PostDetail postId={post.id}/>
+                    </Dialog>
                 </div>
+
                 <HistoryUpdate toast={toast} listPost={listPostHistory} visible={visibleHistory}
                                onHide={() => setVisibleHistory(false)}/>
                 <EditPostModal
@@ -825,6 +891,9 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
                                     {ButtonComment}
                                     <Button onClick={()=> setVisible(true)} icon="pi pi-share-alt" className="p-button-rounded p-button-text"/>
                                     <Button onClick={savePost} title={"Save"} icon={`pi ${isSave ? "pi-bookmark-fill" : "pi-bookmark"}`} className="p-button-rounded p-button-text"/>
+                                    {/*{!isHideDetails && (*/}
+                                    {/*    <Button onClick={viewComment} title={"View comment"} icon={`pi pi-comment`} className="p-button-rounded p-button-text"/>*/}
+                                    {/*)}*/}
                                 </div>
                                         {InputComponent}
 
