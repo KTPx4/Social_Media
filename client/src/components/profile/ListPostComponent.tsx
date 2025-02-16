@@ -40,7 +40,7 @@ const ListPostComponent : React.FC<any> = ({ listPost}) =>{
             alignItems:"center"
         }}>
             {listPost.map((p)=>
-                 <PostCard  key={p.id+Date.now()} post={p} isHideComment={true}/>
+                 <PostCard  key={p.id+Date.now()} post={p} isHideComment={false}/>
             )}
             {listPost.length < 1 && (
                 <h1>Nothing to show here</h1>

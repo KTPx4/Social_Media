@@ -103,10 +103,10 @@ const LeftInfo : React.FC<any> = ({isLoading,ClickCallBack, userId, listConversa
 
 
     const ClickConversationCard = async(Conversation : any)=>{
-        var dt = listConversation.map((prev: any) => prev.id !== Conversation.id ? {...prev, isSelected: false} : {...prev, isSelected: true})
-        // @ts-ignore
-        setListConversation(dt)
-
+        // var dt = listConversation.map((prev: any) => prev.id !== Conversation.id ? {...prev, isSelected: false} : {...prev, isSelected: true})
+        // // @ts-ignore
+        // setListConversation(dt)
+        window.history.replaceState({}, "",`/message?c=${Conversation.id}`)
         ClickCallBack(Conversation)
 
     }

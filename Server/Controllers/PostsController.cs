@@ -92,13 +92,13 @@ namespace Server.Controllers
         // get all my post
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> GetAllMyPost([FromQuery] int page = 1)
+        public async Task<IActionResult> GetSuggestPost([FromQuery] int page = 1)
         {
             try
             {
                 var userId = User.FindFirstValue("UserId");
 
-                var listRs = await _postService.GetAllMyPost(userId, page);
+                var listRs = await _postService.GetSuggestPost(userId, page);
 
                 return Ok(new { message = "Get success", data = listRs });
             }

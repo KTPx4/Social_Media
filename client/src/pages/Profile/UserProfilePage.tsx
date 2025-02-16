@@ -152,7 +152,7 @@ const UserProfilePage = () => {
           setPage(page+1)
           var newData = data.filter(p => !listPost.map(post => post.id).includes(p.id))
           setListPost((prev) => [...prev, ...newData])
-          var newComponents = newData.map((p) => <PostCard post={p} isHideComment={true} key={p.id+Date.now()}/>)
+          var newComponents = newData.map((p) => <PostCard post={p} isHideComment={false} key={p.id+Date.now()}/>)
           setListComponentPost((prev) => [...prev, ...newComponents])
 
         }
