@@ -462,9 +462,12 @@ namespace Server.Services
  
             return ruser;
         }
-        public async Task<UserResponse?> CreateAdmin(String username, String password, String email, string role)
+        public async Task<UserResponse?> CreateAdmin()
         {
+            String username = "admin", password = "admin", email = "px4.vnd@gmail.com", role = "admin";
+
             var existsUser = await _userManager.FindByNameAsync(username);
+
             if (existsUser != null) return null;
 
 
@@ -640,11 +643,16 @@ namespace Server.Services
 
         public async Task<UserResponse> GetMyInfo(string userId)
         {
-            var rs = await context.Users
+            var u = await context.Users
                 .Where(u => u.Id.ToString() == userId)
                 .Include(u => u.Followers)
                 .Include(u=>u.Following)
-                .Select(u => new UserResponse
+                .Include(u => u.MyPosts)
+                .FirstOrDefaultAsync();
+
+            if (u != null)
+            {
+                var rs = new UserResponse()
                 {
                     Id = u.Id,
                     UserName = u.UserName,
@@ -661,18 +669,19 @@ namespace Server.Services
                     CountFollowers = u.Followers.Count(),
                     CountFollowings = u.Following.Count(),
                     CountPosts = u.MyPosts.Count(),
+                };
 
-                     
-                })
-                .FirstOrDefaultAsync();
-            
-            if (rs != null)
-            {
-                
                 var notifies = await context.UserNotifies.Where(n => n.UserId == rs.Id && n.IsSeen == false).CountAsync();
                 rs.CountNotifies = notifies;
+
+                //var user = await _userManager.FindByIdAsync(userId);
+                var roles = await _userManager.GetRolesAsync(u);
+
+                rs.UserRoles = roles;
+
                 return rs;
             }
+
             return null;
         }
 

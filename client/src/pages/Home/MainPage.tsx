@@ -36,7 +36,7 @@ const MainPage = () => {
 
               </div>
 
-              {/* Phần bên phải chiếm 20% */}
+              {/*/!* Phần bên phải chiếm 20% *!/*/}
               <div className="right-content">
                   <InfoContent User={null}/>
               </div>

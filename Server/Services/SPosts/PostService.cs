@@ -3,11 +3,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Server.Data;
 using Server.DTOs.Account;
+using Server.DTOs.Admin;
 using Server.DTOs.Posts;
+using Server.DTOs.ReportDTO;
 using Server.Models.Account;
 using Server.Models.Community.Posts;
 using Server.Models.Community.PostsUpdates;
 using Server.Models.Community.PostUpdates;
+using Server.Models.Reports;
 using System.Drawing.Printing;
 using static Server.Models.Account.UserNotify;
 using static Server.Models.RelationShip.FriendShip;
@@ -20,7 +23,7 @@ namespace Server.Services.SPosts
         private readonly APIDbContext _context;
         private readonly UserManager<User> _userManager;
         private readonly IConfiguration _configuration;
-
+        private readonly RoleManager<Role> _roleManager;
         private readonly string _AccessImgAccount;
 
 
@@ -31,11 +34,12 @@ namespace Server.Services.SPosts
 
         private readonly int LIMIT_COMMENT_SIZE = 10;
         private readonly int _PAGE_SIZE_SUGGEST_POST = 15;
-        public PostService(APIDbContext context, IConfiguration configuration, UserManager<User> userManager)
+        public PostService(APIDbContext context, IConfiguration configuration, UserManager<User> userManager, RoleManager<Role> roleManager)
         {
             this._context = context;
             _configuration = configuration;
             _userManager = userManager;
+            this._roleManager = roleManager;
 
             var serverSettings = _configuration.GetSection("ServerSettings");
             _RootImgPost = serverSettings["RootImgPost"];
@@ -133,6 +137,44 @@ namespace Server.Services.SPosts
 
             return rs;
         }
+        public async Task<bool> ReportPost(string userId, string postId, ReportModel report)
+        {
+            // Kiểm tra xem bài viết có tồn tại không (chỉ khi report là Post)
+  
+            var postExists = await _context.Posts.AnyAsync(p => p.Id == report.TargetId);
+            if (!postExists) throw new Exception("Post-Post not exists");
+            Report newRp = new Report()
+            {
+                Reason = report.Reason,
+                ReportType = report.ReportType,
+                TargetId = report.TargetId,
+                Status = Report.ReportStatus.Pending,
+                TargetType = Report.TargetTypes.Post
+            };
+            await _context.Reports.AddAsync(newRp);
+            await _context.SaveChangesAsync();
+
+            UserNotify userNotify = new UserNotify()
+            {
+                UserId = new Guid(userId),
+                TargetId = newRp.Id,
+                Type = TypeNotify.Report,
+                DestinationId = new Guid(postId),
+                Content = "You have reported a post. Please update your report status regularly for more information!",
+                InteractId = new Guid(userId)
+            };
+            await _context.UserNotifies.AddAsync(userNotify);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<ReportResponse> GetReportPost(string userId, string reportId)
+        {
+            var rp = await _context.Reports.Where(r => r.Id.ToString() == reportId).FirstOrDefaultAsync();
+            if (rp == null) throw new Exception("Post-Report not exists");
+            return new ReportResponse(rp);
+        }
 
         public async Task<PostResponse> SharePost(string userID, string postId, SharePostModel sharePostModel)
         {
@@ -170,7 +212,12 @@ namespace Server.Services.SPosts
                 .FirstOrDefaultAsync();
 
             if (post == null) throw new Exception("Post-Post not exists");
-            if (post.AuthorId.ToString() != userId) throw new Exception("Post-You not allow to delete");
+
+            var user = await _userManager.FindByIdAsync(userId);
+            var roles = await _userManager.GetRolesAsync(user);
+            var canEdit = false;
+            if (roles != null && (roles.Contains("admin") || roles.Contains("mod-post"))) canEdit = true;
+            if (post.AuthorId.ToString() != userId && !canEdit) throw new Exception("Post-You not allow to delete");
             
             var listShare = await _context.Posts.Where(p => p.PostShareId == post.Id).ToListAsync();
 
@@ -380,6 +427,44 @@ namespace Server.Services.SPosts
             return postUpdates;
         }
 
+        public async Task<List<PostResponse>> SearchPost(string userId, string search)
+        {
+            var post = await _context.Posts
+                .Where(p => p.Content.Contains(search))
+                  .Include(p => p.Medias)
+                .Include(p => p.Author)
+                .Select(post => new PostResponse()
+                {
+                    Id = post.Id,
+                    CreatedAt = post.CreatedAt,
+                    AuthorId = post.AuthorId,
+                    Content = post.Content,
+                    PostShareId = post.PostShareId,
+                    IsHide = post.IsHide,
+                    Status = post.Status,
+                    Type = post.Type,
+                    AuthorImg = $"{_ServerHost}/public/account/{post.Author.Id.ToString()}/{post.Author.ImageUrl}",
+                    AuthorProfile = post.Author.UserProfile,
+                    SumComment = post.Comments.Count,
+                    SumLike = post.Likes.Count,
+                    ListMedia = post.Medias
+                                .Select(m => new MediaResponse()
+                                {
+                                    Id = m.Id,
+                                    Content = m.Content,
+                                    ContentType = m.ContentType,
+                                    IsDeleted = m.IsDeleted,
+                                    MediaUrl = $"{_ServerHost}/api/file/src?id={m.Id.ToString()}&token=",
+                                    PostId = m.PostId,
+                                    Type = m.Type
+                                })
+                                .ToList(),
+                    //PostShare = new PostResponse(post.PostShare, _ServerHost)
+                })
+                .ToListAsync();
+
+            return post;
+        }
         public async Task<List<PostResponse>> GetSuggestPost(string userId, int page)
         {
             if (page < 1) page = 1;

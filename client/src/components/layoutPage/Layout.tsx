@@ -9,6 +9,7 @@ import {Sidebar} from "primereact/sidebar";
 import NotificationPage from "../../pages/Notification/NotificationPage.tsx";
 import {TieredMenu} from "primereact/tieredmenu";
 import { ConfirmPopup, confirmPopup } from 'primereact/confirmpopup';
+import {Dialog} from "primereact/dialog";
 const Layout: React.FC = () => {
   const { myAccount } = useStore();
 
@@ -17,8 +18,11 @@ const Layout: React.FC = () => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [isOpenCreate, setIsOpenCreate] = useState(false);
   const [countNotifies, setCountNotifies] = useState(myAccount.countNotifies ?? 0);
-    const [vNotifications, setVNotifications] = useState<boolean>(false);
-    const menu = useRef(null);
+  const [vNotifications, setVNotifications] = useState<boolean>(false);
+  const menu = useRef(null);
+  const [items, setItemMenu] = useState([])
+    const [showLogout, setShowlogout] = useState(false);
+
   // Hàm để hiển thị và ẩn modal
   // @ts-ignore
   const showModal = () => setModalVisible(true);
@@ -30,16 +34,22 @@ const Layout: React.FC = () => {
   // @ts-ignore
   const { currentTheme, changeTheme } = themeContext;
   const textColor = currentTheme.getText();
+    const  keyTheme = currentTheme.getKey()
   // @ts-ignore
   const textHintColor = currentTheme.getHint();
   // @ts-ignore
   const captionColor = currentTheme.getCaption();
   const backgroundColor = currentTheme.getBackground();
   const Logout = () =>{
+      setShowlogout(true)
+  }
+
+  const HandleLogout = () =>{
       localStorage.removeItem("token");
       sessionStorage.removeItem("token");
       navigate("/")
   }
+
   const ToMessage = () =>{
       navigate("/message")
   }
@@ -49,34 +59,59 @@ const Layout: React.FC = () => {
   const ToHome = () =>{
       navigate("/home")
   }
-    const items = [
-        {
-            label: 'Theme',
-            icon: 'pi pi-palette',
-            items: [
-                {
-                    label: 'Light',
-                    icon: "pi pi-sun",
-                    command: ()=>{
-                        changeTheme("theme_light")
-                    }
-                },
-                {
-                    label: 'Dark',
-                    icon: "pi pi-moon",
-                    command: ()=>{
-                        changeTheme("theme_dark")
-                    }
-                },
-            ]
-        },
-        {
-            label: 'Log out',
-            icon: 'pi pi-sign-out',
-            command: Logout
-        },
+  const ToAdmin = () =>{
+      navigate("/admin")
+  }
+  const ToSearch = ()=>{
+      navigate("/search")
 
-    ];
+  }
+    useEffect(() => {
+        if(myAccount)
+        {
+            var its = [
+                {
+                    label: 'Theme',
+                    icon: 'pi pi-palette',
+                    items: [
+                        {
+                            label: 'Light',
+                            icon: "pi pi-sun",
+                            command: ()=>{
+                                changeTheme("theme_light")
+                            }
+                        },
+                        {
+                            label: 'Dark',
+                            icon: "pi pi-moon",
+                            command: ()=>{
+                                changeTheme("theme_dark")
+                            }
+                        },
+                    ]
+                },
+                {
+                    label: 'Log out',
+                    icon: 'pi pi-sign-out',
+                    command: Logout
+                },
+
+            ];
+            var role = myAccount?.userRoles ?? []
+            var isCan = role.includes("admin") || role.includes("mod") || role.includes("mod-post") || role.includes("mod-account")
+            if(myAccount?.userRoles && myAccount.userRoles.length > 0 && isCan){
+
+                its =[
+                    {
+                        label: 'Manage',
+                        icon: 'pi pi-microsoft',
+                        command: ToAdmin
+                    }
+                    ,...its]
+            }
+            setItemMenu(its)
+        }
+    }, [myAccount]);
 
 
 
@@ -88,6 +123,21 @@ const Layout: React.FC = () => {
             flexDirection: "column",
           }}
         >
+            <Dialog
+                className={keyTheme}
+                visible={showLogout}
+                header={"Do you want log out?"}
+                onHide={()=> setShowlogout(false)}>
+                <div style={{
+                    width: "100%",
+                    display: "flex",
+                    justifyContent: "center"
+                }}>
+                    <Button onClick={HandleLogout} text severity={"danger"} label={"Yes"}/>
+                    <Button onClick={()=>setShowlogout(false)} text severity={"secondary"} label={"No"}/>
+                </div>
+            </Dialog>
+
           <div
             className="body-main-content"
             style={{
@@ -141,6 +191,7 @@ const Layout: React.FC = () => {
                     icon="pi pi-search"
                     label="Search"
                     className="navbar-item"
+                    onClick={ToSearch}
                     style={{ color: textColor }}
                   />
                   {/*<Button icon="pi pi-compass" label="Explore" className="navbar-item"/>*/}
@@ -256,6 +307,7 @@ const Layout: React.FC = () => {
             />
             <Button
               icon="pi pi-search"
+              onClick={ToSearch}
               rounded
               text
               className="horizontal-navbar-item"

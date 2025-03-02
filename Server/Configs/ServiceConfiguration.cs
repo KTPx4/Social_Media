@@ -20,6 +20,7 @@ namespace Server.Configs
 
             // Đăng ký UserService vào DI container
             services.AddScoped<UserService>();
+            services.AddScoped<AdminService>();
 
             services.AddScoped<PostService>();
             services.AddScoped<FileService>();

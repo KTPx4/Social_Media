@@ -425,16 +425,16 @@ namespace Server.Controllers
         }
        
         [HttpPost("register-admin")]
-        public async Task<IActionResult> RegisterAdmin( [FromBody] RegisterAdminModel userRegister)
+        public async Task<IActionResult> RegisterAdmin( )
         {
             try
             {
-
-                var user = await _userService.CreateAdmin(userRegister.UserName, userRegister.Password, userRegister.Email, userRegister.Role);
+                //[FromBody] RegisterAdminModel userRegister
+                var user = await _userService.CreateAdmin();
 
                 if (user == null)
                 {
-                    return BadRequest(new { message = "Username is exists" });
+                    return BadRequest(new { message = "Admin is exists" });
                 }
 
                 String token = _tokenService.GenerateUserToken(user);

@@ -1,7 +1,7 @@
 import { InputText } from "primereact/inputtext";
 import "primeflex/primeflex.css";
 import { Button } from "primereact/button";
-import { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
 import { userContext } from "../store/UserContext";
@@ -84,79 +84,89 @@ const RegisterPage = () => {
   }
 
   return (
-    <form
-      className="h-screen flex flex-column align-items-center justify-content-center  p-4"
-      onSubmit={handleSubmit}
-    >
-      <h1 className="font-italic text-4xl mb-4">Interval</h1>
-      <div className="flex flex-column justify-content-center align-items-center w-full max-w-xs">
-        <InputText
-          type="text"
-          className="p-inputtext-lg w-3"
-          placeholder="Username"
-          onChange={(e) => {
-            setUserInformation({
-              ...userInformation,
-              username: e.target.value,
-            });
-          }}
-        />
-        <p className="text-xs text-red-700">{formErrors.username}</p>
-
-        <InputText
-          type="email"
-          className="p-inputtext-lg w-3"
-          placeholder="Email"
-          onChange={(e) => {
-            setUserInformation({
-              ...userInformation,
-              email: e.target.value,
-            });
-          }}
-        />
-        <p className="text-xs text-red-700">{formErrors.email}</p>
-
-        <InputText
-          type="password"
-          className="p-inputtext-lg w-3"
-          placeholder="Password"
-          onChange={(e) => {
-            setUserInformation({
-              ...userInformation,
-              password: e.target.value,
-            });
-          }}
-        />
-        <p className="text-xs text-red-700">{formErrors.password}</p>
-
-        <InputText
-          type="password"
-          className="p-inputtext-lg w-3"
-          placeholder="Confirm Password"
-          onChange={(e) => {
-            setUserInformation({
-              ...userInformation,
-              confirmPassword: e.target.value,
-            });
-          }}
-        />
-        <p className="text-xs text-red-700">{formErrors.confirmPassword}</p>
-      </div>
-
-      <div className="flex flex-column justify-content-center align-items-center gap-2 mt-4 w-full max-w-xs">
-        <Button
-          className="p-button-primary text-center w-3"
-          label="Register"
-          type="submit"
-        />
-        <p className="mt-2">
-          Already have an account?{" "}
-          <Link to="/" className="mt-2 text-blue-500 cursor-pointer">
-            Login
-          </Link>
+      <form
+          className="h-screen flex flex-column align-items-center justify-content-center  p-4"
+          onSubmit={handleSubmit}
+      >
+        <p
+            className="font-italic text-4xl mb-4"
+            style={{
+              marginLeft: 15,
+              fontFamily: "Arizonia, serif",
+              fontSize: "60px !important",
+              color: "black",
+            }}
+        >
+          Internal
         </p>
-      </div>
-    </form>
+        <div className="flex flex-column justify-content-center align-items-center w-full max-w-xs">
+          <InputText
+              type="text"
+              className="p-inputtext-lg w-3"
+              placeholder="Username"
+              onChange={(e) => {
+                setUserInformation({
+                  ...userInformation,
+                  username: e.target.value,
+                });
+              }}
+          />
+          <p className="text-xs text-red-700">{formErrors.username}</p>
+
+          <InputText
+              type="email"
+              className="p-inputtext-lg w-3"
+              placeholder="Email"
+              onChange={(e) => {
+                setUserInformation({
+                  ...userInformation,
+                  email: e.target.value,
+                });
+              }}
+          />
+          <p className="text-xs text-red-700">{formErrors.email}</p>
+
+          <InputText
+              type="password"
+              className="p-inputtext-lg w-3"
+              placeholder="Password"
+              onChange={(e) => {
+                setUserInformation({
+                  ...userInformation,
+                  password: e.target.value,
+                });
+              }}
+          />
+          <p className="text-xs text-red-700">{formErrors.password}</p>
+
+          <InputText
+              type="password"
+              className="p-inputtext-lg w-3"
+              placeholder="Confirm Password"
+              onChange={(e) => {
+                setUserInformation({
+                  ...userInformation,
+                  confirmPassword: e.target.value,
+                });
+              }}
+          />
+          <p className="text-xs text-red-700">{formErrors.confirmPassword}</p>
+        </div>
+
+        <div className="flex flex-column justify-content-center align-items-center gap-2 mt-4 w-full max-w-xs">
+          <Button
+              className="p-button-primary text-center w-3"
+              label="Register"
+              type="submit"
+          />
+          <p className="mt-2">
+            Already have an account?{" "}
+            <Link to="/" className="mt-2 text-blue-500 cursor-pointer">
+              Login
+            </Link>
+          </p>
+        </div>
+      </form>
   );
 };
 
