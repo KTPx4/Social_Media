@@ -7,12 +7,13 @@ const SERVER: string = 'https://localhost:7000/api';
 interface UseAuthReturn {
     isAuthenticated: boolean;
     loading: boolean;
+    data: any;
 }
 
 const useAuth = (token: string): UseAuthReturn => {
     const [loading, setLoading] = useState<boolean>(true);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-
+    const [data, setData] = useState(null)
 
     // @ts-ignore
     const { userId, setId, myAccount, setMyAccount } = useStore();
@@ -40,12 +41,15 @@ const useAuth = (token: string): UseAuthReturn => {
                         setMyAccount(data);
                         setId(data.id);
                         setIsAuthenticated(true);
+                        setData(data)
                     } else {
                         setIsAuthenticated(false);
+                        setData({})
                     }
                     setLoading(false);
                 }
             } catch (err) {
+                setData({})
                 if (isMounted) setIsAuthenticated(false);
             } finally {
 
@@ -60,7 +64,7 @@ const useAuth = (token: string): UseAuthReturn => {
     }, [token, setId, setMyAccount]);
 
 
-    return { isAuthenticated, loading };
+    return { isAuthenticated, loading, data };
 };
 
 export default useAuth;

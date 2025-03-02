@@ -27,6 +27,13 @@ import UserRouter from "./routes/UserRouter.tsx";
 import UserProfilePage from "./pages/Profile/UserProfilePage.tsx";
 import NotificationPage from "./pages/Notification/NotificationPage.tsx";
 import MessagePage from "./pages/Message/MessagePage.tsx";
+import AdminRouter from "./routes/AdminRouter.tsx";
+import AdminPage from "./pages/Admin/AdminPage.tsx";
+import LayoutAdmin from "./components/layoutPage/LayoutAdmin.tsx";
+import ManageAccount from "./pages/Admin/ManageAccount.tsx";
+import ManageReport from "./pages/Admin/ManageReport.tsx";
+import DetailsReport from "./pages/Report/DetailsReport.tsx";
+import SearchPage from "./pages/Search/SearchPage.tsx";
 
 axios.defaults.baseURL = "https://localhost:7212/api/";
 function App() {
@@ -65,6 +72,18 @@ function App() {
               <Route index element={<PostDetail />} />
             </Route>
 
+              {/*report*/}
+              <Route
+                  path="/report/:id"
+                  element={
+                      <UserRouter>
+                          <Layout />
+                      </UserRouter>
+                  }
+              >
+                  <Route index element={<DetailsReport />} />
+              </Route>
+
               {/*notification*/}
             <Route
                 path="/notifications"
@@ -87,6 +106,32 @@ function App() {
                   }
               >
                   <Route index element={<MessagePage />} />
+              </Route>
+
+              {/*Search*/}
+              <Route
+                  path="/search"
+                  element={
+                      <UserRouter>
+                          <Layout />
+                      </UserRouter>
+                  }
+              >
+                  <Route index element={<SearchPage />} />
+              </Route>
+
+              {/*Admin page*/}
+              <Route
+                  path="/admin"
+                  element={
+                      <AdminRouter>
+                          <LayoutAdmin />
+                      </AdminRouter>
+                  }
+              >
+                  <Route index element={<AdminPage />} />
+                  <Route path={"account"} element={<ManageAccount />} />
+                  <Route path={"report"} element={<ManageReport />} />
               </Route>
 
             <Route path="*" element={<NotFoundPage />}></Route>

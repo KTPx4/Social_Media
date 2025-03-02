@@ -30,7 +30,7 @@ namespace Server.Services
             // config asp.net identity
             services.AddIdentity<User, Role>( opts =>
             {
-                opts.Password.RequiredLength = 6;
+                opts.Password.RequiredLength = 5;
                 opts.Password.RequireNonAlphanumeric = false;
                 opts.Password.RequireUppercase = false;
                 opts.Password.RequireDigit = false;

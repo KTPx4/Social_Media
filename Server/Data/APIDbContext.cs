@@ -39,18 +39,18 @@ namespace Server.Data
             });
 
             // Staff
-            modelBuilder.Entity<Staff>(e =>
-            {                 
-                e.Property(u => u.CreatedAt).HasDefaultValueSql("getutcdate()");
+            //modelBuilder.Entity<Staff>(e =>
+            //{                 
+            //    e.Property(u => u.CreatedAt).HasDefaultValueSql("getutcdate()");
 
-                e.Property(u => u.UserProfile).IsRequired(false);
-                e.Property(u => u.Bio).IsRequired(false);
-                e.Property(u => u.Name).IsRequired(false);
-                e.Property(u => u.Gender).IsRequired(false);
-                e.Property(u => u.Email).IsRequired(false);
-                e.Property(u => u.Phone).IsRequired(false);
-                e.Property(u => u.ImageUrl).IsRequired(false);
-            });
+            //    e.Property(u => u.UserProfile).IsRequired(false);
+            //    e.Property(u => u.Bio).IsRequired(false);
+            //    e.Property(u => u.Name).IsRequired(false);
+            //    e.Property(u => u.Gender).IsRequired(false);
+            //    e.Property(u => u.Email).IsRequired(false);
+            //    e.Property(u => u.Phone).IsRequired(false);
+            //    e.Property(u => u.ImageUrl).IsRequired(false);
+            //});
 
             // Report
             modelBuilder.Entity<Report>(entity =>
@@ -59,7 +59,7 @@ namespace Server.Data
                 entity.Property(m => m.ResolvedAt).HasDefaultValueSql("getutcdate()");
 
                 entity.HasOne(r => r.StaffResolve)
-                .WithMany(s => s.Reports)
+                .WithMany()
                 .HasForeignKey(r => r.StaffResolveId)
                 .OnDelete(DeleteBehavior.Restrict);
             });

@@ -30,33 +30,42 @@ const Notification: React.FC<NotificationProps> = ({Notify, CallBackClick}) => {
 
     const ClickElement = async () =>{
 
-
-        CallBackClick()
-        if(isSeen === false)
+        switch (type)
         {
-            try{
-                var rs = await apiClient.post(`/notify/${id}`)
-                console.log(rs)
-                var status = rs.status
-                if(status === 204)
+            case 1:
+                CallBackClick()
+                if(isSeen === false)
                 {
-                    isSeen = true
-                    setMyAccount({...myAccount, countNotifies: myAccount.countNotifies - 1})
+                    try{
+                        var rs = await apiClient.post(`/notify/${id}`)
+                        console.log(rs)
+                        var status = rs.status
+                        if(status === 204)
+                        {
+                            isSeen = true
+                            setMyAccount({...myAccount, countNotifies: myAccount.countNotifies - 1})
+                        }
+
+                    }
+                    catch(error){
+                        console.log(error)
+                    }
                 }
 
-            }
-            catch(error){
-                console.log(error)
-            }
+                if(window.location.href.includes(`/post/${destinationId}`))
+                {
+                    window.location.reload()
+                }
+                else{
+                    navigate(`/post/${destinationId}`)
+                }
+                break;
+
+            case 3:
+                navigate(`/report/${id}`)
+                break
         }
 
-        if(window.location.href.includes(`/post/${destinationId}`))
-        {
-            window.location.reload()
-        }
-        else{
-            navigate(`/post/${destinationId}`)
-        }
     }
 
     const renderContent = () => {
@@ -85,6 +94,27 @@ const Notification: React.FC<NotificationProps> = ({Notify, CallBackClick}) => {
                         </div>
                     </div>
                 );
+            case 3: // report
+                return (
+                    <div style={{width: "100%", display: 'flex', alignItems: 'center',  cursor: "pointer" }}>
+                        <img src={'/vite.png'} alt="User  Avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', marginRight: '10px' }} />
+                        <div style={{display: "flex", flexDirection: "column"}}>
+                            <div style={{width: "100%", display: "flex", flexDirection: "row", alignItems: "center"}}>
+
+                                <span style={{color: textColor, fontSize: 13, wordWrap: "break-word"}}>
+                                    {content}
+                                </span>
+                                {!isSeen && (
+                                    <div className={"point-seen"}/>
+                                )}
+                            </div>
+                            <div>
+                                <span style={{fontSize: 10, color: textHintColor}}>{time} ago</span>
+                            </div>
+                        </div>
+                    </div>
+                );
+
             // Add cases for other types in the future
             default:
                 return null;

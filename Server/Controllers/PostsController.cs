@@ -8,9 +8,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
+using Server.DTOs.Admin;
 using Server.DTOs.Posts;
 using Server.Models.Account;
 using Server.Models.Community.Posts;
+using Server.Models.Reports;
 using Server.Modules;
 using Server.Services.SPosts;
 
@@ -92,15 +94,24 @@ namespace Server.Controllers
         // get all my post
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> GetSuggestPost([FromQuery] int page = 1)
+        public async Task<IActionResult> GetSuggestPost([FromQuery] int page = 1, [FromQuery] string search = "")
         {
             try
             {
+             
                 var userId = User.FindFirstValue("UserId");
+                if(search != null && !string.IsNullOrEmpty(search))
+                {
+                    var rs = await _postService.SearchPost(userId, search);
+                    return Ok(new { message = "Get success", data = rs });
+                }
+                else
+                {
+                    var rs = await _postService.GetSuggestPost(userId, page);
+                    return Ok(new { message = "Get success", data = rs });
 
-                var listRs = await _postService.GetSuggestPost(userId, page);
+                }
 
-                return Ok(new { message = "Get success", data = listRs });
             }
             catch (Exception ex) {
                 return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
@@ -353,6 +364,58 @@ namespace Server.Controllers
             }
         }
 
+        [HttpPost("{id}/report")]
+        [Authorize] 
+
+        public async Task<IActionResult> ReportPost(string id, [FromBody] ReportModel report)
+        {
+            try
+            {
+                var userId = User.FindFirstValue("UserId");
+
+                var rsPost = await _postService.ReportPost(userId, id , report);
+
+                return NoContent();
+
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                if (message.StartsWith("Post-"))
+                {
+                    return BadRequest(new { message = message.Split("-")[1] });
+                }
+                Console.WriteLine("report post: " + ex.Message);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
+            }
+        }
+        [HttpGet("{id}/report")]
+        [Authorize]
+
+        public async Task<IActionResult> GetReportPost(string id)
+        {
+            try
+            {
+                var userId = User.FindFirstValue("UserId");
+
+                var rsPost = await _postService.GetReportPost(userId, id);
+
+                return Ok(new {message = "Get Success", data = rsPost});
+
+            }
+            catch (Exception ex)
+            {
+                string message = ex.Message;
+                if (message.StartsWith("Post-"))
+                {
+                    return BadRequest(new { message = message.Split("-")[1] });
+                }
+                Console.WriteLine("report post: " + ex.Message);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Server error. Try again" });
+            }
+        }
 
 
         // like post

@@ -29,7 +29,7 @@ namespace Server.Models.Reports
         public DateTime CreatedAt { get; set; }
         public DateTime ResolvedAt { get; set; }
 
-        public Staff? StaffResolve { get; set; }
+        public User? StaffResolve { get; set; }
 
 
     }

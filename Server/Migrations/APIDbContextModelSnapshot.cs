@@ -163,9 +163,7 @@ namespace Server.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("getutcdate()");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
                         .HasColumnType("nvarchar(max)");
@@ -930,6 +928,9 @@ namespace Server.Migrations
                     b.Property<int>("Result")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("StaffId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid?>("StaffResolveId")
                         .HasColumnType("uniqueidentifier");
 
@@ -943,6 +944,8 @@ namespace Server.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("StaffId");
 
                     b.HasIndex("StaffResolveId");
 
@@ -1164,7 +1167,7 @@ namespace Server.Migrations
                     b.HasOne("Server.Models.Community.Posts.Post", "PostShare")
                         .WithMany()
                         .HasForeignKey("PostShareId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Author");
 
@@ -1365,8 +1368,12 @@ namespace Server.Migrations
 
             modelBuilder.Entity("Server.Models.Reports.Report", b =>
                 {
-                    b.HasOne("Server.Models.Account.Staff", "StaffResolve")
+                    b.HasOne("Server.Models.Account.Staff", null)
                         .WithMany("Reports")
+                        .HasForeignKey("StaffId");
+
+                    b.HasOne("Server.Models.Account.User", "StaffResolve")
+                        .WithMany()
                         .HasForeignKey("StaffResolveId")
                         .OnDelete(DeleteBehavior.Restrict);
 

@@ -1,7 +1,7 @@
 import { InputText } from "primereact/inputtext";
 import { Button } from "primereact/button";
 import { Link, useNavigate } from "react-router-dom";
-import { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Checkbox } from "primereact/checkbox";
 import DialogBox from "../components/login/DialogBox";
 import apiClient from "../utils/apiClient";
@@ -56,10 +56,10 @@ const LoginPage = () => {
     if (!userInformation.password) {
       errors.password = "This field can not be empty";
     } else if (
-      userInformation.password.length < 6 ||
+      userInformation.password.length < 5 ||
       userInformation.password.length > 30
     ) {
-      errors.password = "Password must be between  6 to 30  characters long";
+      errors.password = "Password must be between  5 to 30  characters long";
     }
     const isValid = Object.values(errors).every((e) => e === "");
     if (isValid) {
@@ -93,63 +93,73 @@ const LoginPage = () => {
       {" "}
       <DialogBox setIsVisible={setVisible} visible={visible} />
       <form
-        onSubmit={handleSubmit}
-        className="h-screen flex flex-column align-items-center justify-content-center  p-4"
+          onSubmit={handleSubmit}
+          className="h-screen flex flex-column align-items-center justify-content-center  p-4"
       >
-        <h1 className="font-italic text-4xl mb-4">Internal</h1>
+        <p
+            className="font-italic text-4xl mb-4"
+            style={{
+              marginLeft: 15,
+              fontFamily: "Arizonia, serif",
+              fontSize: "40px !important",
+              color: "black",
+            }}
+        >
+          Internal
+        </p>
         <div className="flex flex-column justify-content-center align-items-center  w-full max-w-xs">
           <InputText
-            type="text"
-            className="p-inputtext-lg w-3"
-            placeholder="Username"
-            onChange={(e) => {
-              setUserInformation((prevstate) => ({
-                ...prevstate,
-                username: e.target.value,
-              }));
-            }}
+              type="text"
+              className="p-inputtext-lg w-3"
+              placeholder="Username"
+              onChange={(e) => {
+                setUserInformation((prevstate) => ({
+                  ...prevstate,
+                  username: e.target.value,
+                }));
+              }}
           />
           <p className="text-xs text-red-700">{formErrors.username}</p>
 
           <InputText
-            type="password"
-            className="p-inputtext-lg w-3"
-            placeholder="Password"
-            onChange={(e) => {
-              setUserInformation((prevstate) => ({
-                ...prevstate,
-                password: e.target.value,
-              }));
-            }}
+              type="password"
+              className="p-inputtext-lg w-3"
+              placeholder="Password"
+              onChange={(e) => {
+                setUserInformation((prevstate) => ({
+                  ...prevstate,
+                  password: e.target.value,
+                }));
+              }}
           />
           <p className="text-xs text-red-700">{formErrors.password}</p>
         </div>
         <div className="flex w-3 justify-content-between">
           <div className="flex align-items-center">
             <Checkbox
-              inputId="ingredient1"
-              value="RememberMe"
-              onChange={(e) => {
-                setRememberMe(e.checked);
-              }}
-              checked={rememberMe}
+                inputId="ingredient1"
+                value="RememberMe"
+                onChange={(e) => {
+                  setRememberMe(e.checked);
+                }}
+                checked={rememberMe}
             />
             <label htmlFor="ingredient1" className="ml-2">
               Remember Me
             </label>
           </div>
           <Button
-            label="Forgot password?"
-            icon="pi pi-external-link"
-            onClick={() => setVisible(true)}
-            className="p-button-link border-none"
+              label="Forgot password?"
+              icon="pi pi-external-link"
+              onClick={() => setVisible(true)}
+              className="p-button-link border-none"
           />
         </div>
         <div className="flex flex-column justify-content-center align-items-center gap-2 mt-4 w-full max-w-xs">
           <Button
-            type="submit"
-            className="p-button-secondary w-3 mt-2"
-            label="Login"
+              type="submit"
+              className="p-button-secondary w-3 mt-2"
+              label="Login"
           />
           <p className=" mt-2">
             Don't have an account{" "}

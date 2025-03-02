@@ -23,6 +23,7 @@ import {Dialog} from "primereact/dialog";
 import {Dropdown} from "primereact/dropdown";
 import {useNavigate} from "react-router-dom";
 import PostDetail from "../../pages/Post/PostDetail.tsx";
+import ReportPostDialog from "../admin/ReportPostDialog.tsx";
 interface PostCardProps {
     post: any,
     isHideComment: boolean,
@@ -92,6 +93,7 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
 
     const [isWaitComment, setIsWaitComment] = useState(false);
     const [inputComment, setInputComment] = useState("")
+    const [showReportDialog, setShowReportDialog] = useState(false)
 
     useEffect(() => {
         const loadPostShare = async (shareId) =>{
@@ -125,7 +127,11 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
     }, [Post]);
 
     // @ts-ignore
-    const isOwn = Post?.authorId === userId
+    var role = myAccount?.userRoles ?? []
+
+    var isCanDelete = role.includes("admin") || role.includes("mod") || role.includes("mod-post")
+
+    const isOwn = (Post?.authorId === userId )
 
     const menu = useRef(null);
     var items = []
@@ -146,7 +152,7 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
             label: 'Report',
             icon: 'pi pi-exclamation-triangle',
             command: () =>{
-
+                setShowReportDialog(true)
             }
         } : {
             label: 'Edit',
@@ -157,7 +163,7 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
         },
     ];
 
-    if(Post?.authorId === userId)
+    if(Post?.authorId === userId || isCanDelete)
     {
         items = [...items, {
             label: 'Delete',
@@ -525,6 +531,9 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
     {
         return (
             <>
+
+                <ReportPostDialog postId={post.id} visible={showReportDialog} onHide={() => setShowReportDialog(false)} />
+
                 <HistoryUpdate toast={toast} listPost={listPostHistory} visible={visibleHistory}
                                onHide={() => setVisibleHistory(false)}/>
                 <EditPostModal
@@ -661,6 +670,7 @@ const PostCard: React.FC<PostCardProps> = ({post, isHideComment= false, isShare=
                 {/* Modal Confirm */}
 
                 <div>
+                    <ReportPostDialog postId={post.id} visible={showReportDialog} onHide={() => setShowReportDialog(false)} />
 
                     {/*share post*/}
                     <Dialog
