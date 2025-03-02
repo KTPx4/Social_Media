@@ -76,6 +76,15 @@ dotnet restore
 dotnet run
 ```
 
+### Database Setup
+```sh
+# Update database migrations
+dotnet ef database update
+
+# Run the SQL script to populate initial data with file 'database.sql'
+
+```
+
 ### Frontend Setup (ReactJS)
 ```sh
 cd ../client
