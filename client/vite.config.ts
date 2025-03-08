@@ -7,8 +7,5 @@ export default defineConfig({
   optimizeDeps: {
     include: ["primereact/chart"], // Thêm PrimeReact Chart vào danh sách tối ưu
   },
-  server: {
-    host: "localhost", // Specify the host
-    port: 3000, // Specify the port
-  },
+  base: "/"
 });
