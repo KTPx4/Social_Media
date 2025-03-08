@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import useStore from "../store/useStore";
 
-const SERVER: string = 'https://localhost:7000/api';
+const SERVER: string = `${import.meta.env.VITE_SERVER_URL || "https://localhost:7000"}/api`;
 
 interface UseAuthReturn {
     isAuthenticated: boolean;
